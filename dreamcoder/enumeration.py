@@ -17,6 +17,13 @@ def multicoreEnumeration(g, tasks, _=None,
                          testing=False):
     '''g: Either a Grammar, or a map from task to grammar.
     Returns (list-of-frontiers, map-from-task-to-search-time)'''
+    if solver == 'sampling':
+      likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout)
+      return sampling_search(g, tasks, likelihoodModel, enumerationTimeout, maximumFrontier)
+    if solver == 'sqrt_sampling':
+      # sqrt_g = sqrt(g)
+      likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout)
+      return sampling_search(sqrt_g, tasks, likelihoodModel, enumerationTimeout, maximumFrontier)
 
     # We don't use actual threads but instead use the multiprocessing
     # library. This is because we need to be able to kill workers.
@@ -465,5 +472,46 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
 
 
 
+def sampling_search(g, tasks, likelihoodModel, timeout, maximumFrontier):
+    assert timeout is not None, \
+        "sampling_search: You must provide a timeout."
+
+    from time import time
+
+    # store all of the hits in a list
+    # we will store 'maximumFrontier' many solutions
+    hits = {task: [] for task in tasks}
+    count_hits = {task: 0 for task in tasks}
+    searchTimes = {task: None for task in tasks}
+
+    starting = time()
+    try:
+      for task in tasks:
+        print("trying to solve the following task:\n")
+        eprint(task)
+        starting_task = time()
+        while(count_hits[task] < maximumFrontier):
+          if time() > starting + timeout:
+            raise EnumerationTimeout
+
+          program = g.sample(task.request)
+          # eprint("Program sampled:")
+          # eprint(program)
+          success, likelihood = likelihoodModel.score(program, task)
+          if not success:
+            continue
+          prior = g.logLikelihood(request, program)
+
+          entry = FrontierEntry(program=program,logLikelihood=likelihood,logPrior=prior)
+          hits[task].append(entry)
+          count_hits[task] += 1
+        searchTimes[task] = time() - starting_task
+
+    except EnumerationTimeout:
+        pass
+    frontiers = [Frontier(hits[task], task=task) for task in tasks]
+    # print(frontiers)
+
+    return frontiers, searchTimes
 
 

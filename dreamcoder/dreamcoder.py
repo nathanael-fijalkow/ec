@@ -847,6 +847,8 @@ def commandlineArguments(_=None,
     parser.add_argument(
         "--solver",
         choices=[
+            "sampling",
+            "sqrt_sampling",
             "ocaml",
             "pypy",
             "python"],

@@ -100,6 +100,66 @@ class Grammar(object):
             lines.append(l)
         return "\n".join(lines)
 
+    # UPDATE HERE
+    # productions = list of (log probability, type, primitive)
+    # my formalism:
+    # rules: a dictionary of type {'V': l}
+    # with V a non-terminal and l a list of triples ['F',l', w] with F a function symbol, l' a list of non-terminals, and w a weight
+    # representing the derivation V -> F(S1,S2,..) with weight w for l' = [S1,S_2,...]
+
+    # def compute_Z(self):
+    # '''
+    # take a WCFG and compute the partition functions Z as a dictionary {X: Z^X}
+    # '''
+    # Z = {X: 1 for X in self.rules}
+    # for i in range(1000):
+    #   for X in self.rules:
+    #       s = 0
+    #       for f, args, w in self.rules[X]:
+    #           prod = w
+    #           for symbol in args:
+    #               prod*=Z[symbol]
+    #           s+=prod
+    #       Z[X] = s
+    # return Z
+    
+    # UPDATE HERE
+    # def sqrt_pcfg(self, power = 1/2, threshold = 1000000):
+    # '''
+    # Output the sqrt PCFG. If Z > threshold, return -1
+    # '''
+    #   partition_function = {X: 1 for X in self.rules}
+
+    #   for X in self.rules:
+    #       for i in range(len(self.rules[X])):
+    #           self.rules[X][i][2] = self.rules[X][i][2]**(power)
+        
+    #   for i in range(100):
+    #       for X in self.rules:
+    #           s = 0
+    #           for f, args, w in self.rules[X]:
+    #               prod = w
+    #               for symbol in args:
+    #                   prod*=partition_function[symbol]
+    #               s+=prod
+    #           partition_function[X] = s
+
+    #   if partition_function[start] > threshold:
+    #       print("sum sqrt(G) probably divergent")
+    #       return -1
+            
+    #   r = copy.deepcopy(self.productions)
+    #   for X in r:
+    #       for i in range(len(r[X])):
+    #           for s in r[X][i][1]:
+    #               r[X][i][2] *= partition_function[s]
+    #           r[X][i][2] *= (1/partition_function[X])
+                
+    #   return Grammar(logVariable=self.logVariable,
+    #                  productions=[(l???,t,p)
+    #                               for l,t,p in self.productions ],
+    #                  continuationType=self.continuationType)
+
     def json(self):
         j = {"logVariable": self.logVariable,
              "productions": [{"expression": str(p), "logProbability": l}
