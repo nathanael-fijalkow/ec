@@ -1,5 +1,6 @@
 from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
 from dreamcoder.grammar import *
+from dreamcoder.pcfg import *
 from dreamcoder.utilities import get_root_dir
 
 import os
@@ -21,9 +22,10 @@ def multicoreEnumeration(g, tasks, _=None,
       likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout)
       return sampling_search(g, tasks, likelihoodModel, enumerationTimeout, maximumFrontier)
     if solver == 'sqrt_sampling':
-      # sqrt_g = sqrt(g)
+      eprint(g)
+      new_g = g.approximate_sqrt()
       likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout)
-      return sampling_search(sqrt_g, tasks, likelihoodModel, enumerationTimeout, maximumFrontier)
+      return sampling_search(new_g, tasks, likelihoodModel, enumerationTimeout, maximumFrontier)
 
     # We don't use actual threads but instead use the multiprocessing
     # library. This is because we need to be able to kill workers.
