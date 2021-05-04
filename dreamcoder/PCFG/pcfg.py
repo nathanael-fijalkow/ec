@@ -1,6 +1,7 @@
 from type_system import *
 from program import *
 import random
+import re
 
 class PCFG:
 	'''
@@ -10,9 +11,10 @@ class PCFG:
 	with S a non-terminal and l a list of triples ['F',l', w] with F a function symbol, 
 	l' a list of non-terminals, and w a weight
 	representing the derivation S -> F(S1,S2,..) with weight w for l' = [S1,S2,...]
-	IMPORTANT: We assume that the derivations are sorted in non-decreasing order of weights
 
-	proba: a dictionary of type {'F': w}
+	IMPORTANT: we assume that the derivations are sorted in non-decreasing order of weights
+
+	probability: a dictionary of type {'F': w}
 	with F a function symbol and w a weight 
 	representing the weight of F
 
@@ -52,12 +54,12 @@ class PCFG:
 
 	def __repr__(self):
 		s = "Print a PCFG\n"
-		s += "start: {}\n".format(self.start)
+		s += "start: {}\n".format(remove_underscore(self.start))
 		for S in self.rules:
 			s += '#\n {}\n'.format(S)
 			for F, args, w in self.rules[S]:
-				s += '   {}: {}     {}\n'.format(F, args, w)
-		# s += "\n \n arities: {}".format(self.arities)
+				args_name = list(map(lambda x: format(remove_underscore(x)), args))
+				s += '   {}: {}     {}\n'.format(remove_underscore(F), args_name, w)
 		return s
 		
 	def probability(self, program, res = 1):

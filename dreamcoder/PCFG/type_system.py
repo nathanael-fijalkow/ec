@@ -1,3 +1,8 @@
+
+def remove_underscore(t):
+	l = t.split('_')
+	return l[0]
+
 class Type:
 	'''
 	Object that represents a type
@@ -140,7 +145,7 @@ class List(Type):
 
 INT = Primitive('int')
 BOOL = Primitive('bool')
-STRING = Primitive('string')
+STRING = Primitive('str')
 # INTLIST = Primitive('list(int)'): better use List(INT)
 
 t1 = Arrow(Arrow(INT,INT),Arrow(List(INT),List(INT)))

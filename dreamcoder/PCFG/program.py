@@ -12,7 +12,12 @@ class Variable(Program):
 		self.type_var = type_var
 
 	def __repr__(self):
-		return "{}: {}".format(self.variable, self.type_var)
+		l = self.variable.split('_')
+		name = l[0]
+		if self.type_var:
+			return "{}: {}".format(name, self.type_var)
+		else:
+			return name
 
 class Function(Program):
 	def __init__(self, primitive, arguments, type_program = None, variables = []):
@@ -22,9 +27,14 @@ class Function(Program):
 		self.variables = variables
 
 	def __repr__(self):
-		rep_pr = repr(self.primitive)
-		rep_args = [repr(arg) for arg in self.arguments]
-		return "{} ({})".format(rep_pr, rep_args)
+		name_primitive = remove_underscore(format(self.primitive))
+		s = name_primitive + " ("
+		for arg in self.arguments[:-1]:
+			name_arg = remove_underscore(format(arg))
+			s += name_arg + ', '
+		name_arg = remove_underscore(format(self.arguments[-1]))
+		s += name_arg + ')'
+		return s
 
 t0 = PolymorphicType('t0')
 t1 = PolymorphicType('t1')

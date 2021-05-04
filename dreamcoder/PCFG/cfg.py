@@ -1,3 +1,5 @@
+from type_system import *
+
 class CFG:
 	'''
 	Object that represents a context-free grammar
@@ -92,10 +94,10 @@ class CFG:
 		return min_program_depth
 
 	def __repr__(self):
-		s = "Print a CFG\n"
-		s += "start: {}\n".format(self.start)
+		s = "Print a PCFG\n"
+		s += "start: {}\n".format(remove_underscore(self.start))
 		for S in self.rules:
-			s += '#\n {}\n'.format(S)
+			s += '#\n {}\n'.format(remove_underscore(S))
 			for F, args in self.rules[S]:
 				s += '   {}: {}\n'.format(F, args)
 		return s

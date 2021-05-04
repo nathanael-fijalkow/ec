@@ -14,14 +14,13 @@ class DSL:
 	mapping a function symbol F to its type
 	'''
 	def __init__(self, semantics, primitive_types):
-		# check_types(semantics, primitive_type)
 		self.semantics = semantics
 		self.primitive_types = primitive_types
 
 	def __repr__(self):
 		s = "Print a DSL\n"
 		for prim in primitive_types:
-			s = s + "{}: {}\n".format(repr(prim), repr(self.primitive_types[prim]))
+			s = s + "{}: {}\n".format(remove_underscore(format(prim)), remove_underscore(format(self.primitive_types[prim])))
 		return s
 
 	def evaluate(self, program, environment):
@@ -121,9 +120,8 @@ class DSL:
 
 ###### TEST DEEPCODER
 from DSL.deepcoder import *
-# from deepcoder import *
 deepcoder = DSL(semantics, primitive_types)
-print(deepcoder)
+# print(deepcoder)
 
 # var = Variable(1, List(INT))
 # program = Application('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
@@ -133,8 +131,33 @@ print(deepcoder)
 t = Arrow(List(INT),List(INT))
 # print(deepcoder.DSL_to_CFG(t))
 
-deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
+deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t, max_program_depth = 5)
 print(deepcoder_PCFG_t)
-gen = deepcoder_PCFG_t.sampling()
-for i in range(1):
+
+# gen = deepcoder_PCFG_t.sampling()
+# for i in range(100):
+# 	print("program {}:".format(i))
+# 	print(next(gen))
+
+from Algorithms.sqrt_sampling import *
+
+gen = sqrt_sampling(deepcoder_PCFG_t)
+for i in range(100):
+	print("program {}:".format(i))
 	print(next(gen))
+
+###### TEST CIRCUITS
+# from DSL.circuits import *
+# circuits = DSL(semantics, primitive_types)
+# print(circuits)
+
+# t = Arrow(BOOL,Arrow(BOOL,Arrow(BOOL,BOOL)))
+# print(circuits.DSL_to_CFG(t))
+
+# circuits_PCFG_t = circuits.DSL_to_Uniform_PCFG(t, max_program_depth = 5)
+# print(circuits_PCFG_t)
+
+# gen = circuits_PCFG_t.sampling()
+# for i in range(100):
+# 	print("program {}:".format(i))
+# 	print(next(gen))

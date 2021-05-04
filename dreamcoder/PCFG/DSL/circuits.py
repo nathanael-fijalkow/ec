@@ -1,25 +1,15 @@
-import random
+from type_system import *
+ 
+primitive_types = {
+  'and' : Arrow(BOOL,Arrow(BOOL,BOOL)),
+  'or'  : Arrow(BOOL,Arrow(BOOL,BOOL)),
+  'xor' : Arrow(BOOL,Arrow(BOOL,BOOL)),
+  'not' : Arrow(BOOL,BOOL),
+  }
 
-start_circuits = 'symbol'
-  
-rules_circuits = {
-    'symbol': [['and', ['symbol','symbol']],
-              ['or', ['symbol','symbol']],
-              ['xor', ['symbol','symbol']],
-              ['not', ['symbol']]]
-    }
-
-semantics_circuits = {
+semantics = {
 	'and' : lambda bool1, bool2: bool1 and bool2,
 	'or'  : lambda bool1, bool2: bool1 or bool2,
 	'xor' : lambda bool1, bool2: bool1^bool2,
 	'not' : lambda bool: not bool
 }
-
-types_circuits = {
-  'symbol'  : "Bool"
-  }
-
-generate_circuits = {
-  'Bool' : lambda b: random.randint(0,1)
-  }
