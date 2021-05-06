@@ -20,11 +20,10 @@ class Variable(Program):
 			return name
 
 class Function(Program):
-	def __init__(self, primitive, arguments, type_program = None, variables = []):
+	def __init__(self, primitive, arguments, type_program = None):
 		self.primitive = primitive
 		self.arguments = arguments
 		self.type_program = type_program
-		self.variables = variables
 
 	def __repr__(self):
 		name_primitive = remove_underscore(format(self.primitive))
@@ -36,9 +35,9 @@ class Function(Program):
 		s += name_arg + ')'
 		return s
 
-t0 = PolymorphicType('t0')
-t1 = PolymorphicType('t1')
-var1 = Variable(1, t0)
-var2 = Variable(2, t1)
-p = Function('REV', [var1, var2], Arrow(List(INT),List(INT)))
+# t0 = PolymorphicType('t0')
+# t1 = PolymorphicType('t1')
+# var1 = Variable(1, t0)
+# var2 = Variable(2, t1)
+# p = Function('REV', [var1, var2], Arrow(List(INT),List(INT)))
 

@@ -2,6 +2,7 @@ from type_system import *
 from program import *
 from cfg import * 
 from pcfg import * 
+import copy
 
 class DSL:
 	'''
@@ -41,14 +42,85 @@ class DSL:
 				return self.semantics[F](*eval_args)
 			except: print("The semantics of %s is not defined" % F)
 
+	def instantiate_polymorphic_types(self,
+		upper_bound_type_size = 3, 
+		upper_bound_type_nesting = 1):
+
+		set_primitive_types = set()
+		for F in self.primitive_types:
+			set_primitive_types_F,set_polymorphic_types_F = self.primitive_types[F].decompose_type()
+			set_primitive_types = set_primitive_types | set_primitive_types_F
+		# print("primitive types")
+		# print(set_primitive_types)
+
+		set_types = set_primitive_types
+		stable = False
+		while not stable:
+			new_types = set()
+			stable = True
+			for type_ in set_types:
+				new_type = List(type_)
+				if not new_type in set_types \
+				and new_type.size() <= upper_bound_type_size \
+				and new_type.nesting() <= upper_bound_type_nesting:
+					new_types.add(new_type)
+					stable = False
+
+				for type_2 in set_types:
+					new_type = Arrow(type_,type_2)
+					if not new_type in set_types \
+					and new_type.size() <= upper_bound_type_size \
+					and new_type.nesting() <= upper_bound_type_nesting:
+						new_types.add(new_type)
+						stable = False
+			set_types = set_types | new_types
+		# print("set of types")
+		# print(set_types)
+
+		new_primitive_types = {}
+		to_be_removed_primitive_types = []
+
+		for F in self.primitive_types:
+			type_F = self.primitive_types[F]
+			set_primitive_types_F,set_polymorphic_types_F = type_F.decompose_type()
+			if set_polymorphic_types_F:
+				# print("type_F")
+				# print(type_F)
+				# print("set of polymorphic types")
+				# print(set_polymorphic_types_F)
+				set_instantiated_types = set()
+				set_instantiated_types.add(type_F)
+				for poly_type in set_polymorphic_types_F:
+					new_set_instantiated_types = set()
+					for type_ in set_types:
+						for instantiated_type in set_instantiated_types:
+							unifier = {str(poly_type): type_}
+							intermediate_type = copy.deepcopy(instantiated_type)
+							new_type = intermediate_type.apply_unifier(unifier)
+							new_set_instantiated_types.add(new_type)
+					set_instantiated_types = new_set_instantiated_types
+				# print("final set_instantiated_types")
+				# print(set_instantiated_types)
+
+				new_primitive_types.update({F + '_' + str(type_) : type_ for type_ in set_instantiated_types})
+				to_be_removed_primitive_types.append(F)
+
+		# print(new_primitive_types)
+		# print(to_be_removed_primitive_types)
+		self.primitive_types.update(new_primitive_types)
+		for old_poly_primitive in to_be_removed_primitive_types:
+			del self.primitive_types[old_poly_primitive]
+		# print(self)
+
 	def DSL_to_CFG(self, type_request, 
-		upper_bound_type_size = 10, 
-		upper_bound_type_nesting = 2, 
+		upper_bound_type_size = 3, 
+		upper_bound_type_nesting = 1, 
 		max_program_depth = 4):
 		'''
 		Constructs a CFG from a DSL imposing bounds on size and nesting of the types
 		and on the maximum program depth
 		'''
+		self.instantiate_polymorphic_types(upper_bound_type_size,upper_bound_type_nesting)
 		return_type = type_request.returns()
 		args = type_request.arguments()
 		var_list = [r"var{}".format(str(i)) for i in range(len(args))]
@@ -72,32 +144,17 @@ class DSL:
 				return_F = type_F.returns()
 				# print("\nchecking:")
 				# print(F)
-				unifier = return_F.unify(current_type)
-				if unifier != False:
-					candidate_type = type_F.apply_unifier(unifier)
-					# print("unified!")
-					# print(candidate_type)
-					if candidate_type.size() <= upper_bound_type_size \
-					and candidate_type.nesting() <= upper_bound_type_nesting:
-						# print("adding:")
-						# print(F)
-
-						list_types = candidate_type.find_polymorphic_types()
-						# A bit of cheating here: if there are more than one poly types,
-						# we should consider more general unifiers.
-						# Not sure there's a practical use case for that though
-						simple_unifier = {poly_type: return_type for poly_type in list_types}
-						actual_candidate_type = candidate_type.apply_unifier(simple_unifier)
-
-						arguments_F = actual_candidate_type.arguments()
-
-						if current_type in rules:
-							rules[current_type].append((F, arguments_F))
-						else:
-							rules[current_type] = [(F, arguments_F)]
-						for arg in arguments_F:
-							if not (arg in rules):
-								collect(self, arg)
+				if return_F == current_type:
+					# print("adding:")
+					# print(F)
+					arguments_F = type_F.arguments()
+					if current_type in rules:
+						rules[current_type].append((F, arguments_F))
+					else:
+						rules[current_type] = [(F, arguments_F)]
+					for arg in arguments_F:
+						if not (arg in rules):
+							collect(self, arg)
 
 		collect(self, return_type)
 		# print(rules)
@@ -108,8 +165,8 @@ class DSL:
 		return unfolded_CFG.trim(max_program_depth)
 
 	def DSL_to_Uniform_PCFG(self, type_request, 
-		upper_bound_type_size = 10, 
-		upper_bound_type_nesting = 2,
+		upper_bound_type_size = 3, 
+		upper_bound_type_nesting = 1,
 		max_program_depth = 4):
 		CFG = self.DSL_to_CFG(type_request, upper_bound_type_size, upper_bound_type_nesting, max_program_depth)
 		augmented_rules = {}
@@ -122,6 +179,7 @@ class DSL:
 from DSL.deepcoder import *
 deepcoder = DSL(semantics, primitive_types)
 # print(deepcoder)
+# deepcoder.instantiate_polymorphic_types()
 
 # var = Variable(1, List(INT))
 # program = Application('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
@@ -129,7 +187,9 @@ deepcoder = DSL(semantics, primitive_types)
 # print(deepcoder.evaluate(program,environment))
 
 t = Arrow(List(INT),List(INT))
-# print(deepcoder.DSL_to_CFG(t))
+
+# deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
+# print(deepcoder_CFG_t)
 
 deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t, max_program_depth = 5)
 print(deepcoder_PCFG_t)
@@ -141,10 +201,10 @@ print(deepcoder_PCFG_t)
 
 from Algorithms.sqrt_sampling import *
 
-gen = sqrt_sampling(deepcoder_PCFG_t)
-for i in range(100):
-	print("program {}:".format(i))
-	print(next(gen))
+# gen = sqrt_sampling(deepcoder_PCFG_t)
+# for i in range(1):
+# 	print("program {}:".format(i))
+# 	print(next(gen))
 
 ###### TEST CIRCUITS
 # from DSL.circuits import *

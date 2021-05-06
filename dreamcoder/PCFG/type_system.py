@@ -1,3 +1,4 @@
+import copy
 
 def remove_underscore(t):
 	l = t.split('_')
@@ -10,8 +11,8 @@ class Type:
 	def __eq__(self, other):
 		b = isinstance(self,PolymorphicType) and isinstance(other,PolymorphicType) and self.name == other.name
 		b = b or (isinstance(self,Primitive) and isinstance(other,Primitive) and self.type == other.type)
-		b = b or (isinstance(self,Arrow) and isinstance(other,Arrow) and self.type_in == other.type_in and self.type_out == other.type_out)
-		b = b or (isinstance(self,List) and isinstance(other,List) and self.type_elt == other.type_elt)
+		b = b or (isinstance(self,Arrow) and isinstance(other,Arrow) and self.type_in.__eq__(other.type_in) and self.type_out.__eq__(other.type_out))
+		b = b or (isinstance(self,List) and isinstance(other,List) and self.type_elt.__eq__(other.type_elt))
 		return b
 
 	def __hash__(self):
@@ -60,6 +61,26 @@ class Type:
 			set_types = self.type_elt.find_polymorphic_types_rec(set_types)
 		return set_types
 
+	def decompose_type(self):
+		set_primitive_types = set()
+		set_polymorphic_types = set()
+		return self.decompose_type_rec(set_primitive_types,set_polymorphic_types)
+
+	def decompose_type_rec(self,set_primitive_types,set_polymorphic_types):
+		if isinstance(self,Primitive):
+			set_primitive_types.add(self)
+		if isinstance(self,PolymorphicType):
+			set_polymorphic_types.add(self)
+		if isinstance(self,Arrow):
+			self.type_in.decompose_type_rec(set_primitive_types,set_polymorphic_types)
+			self.type_out.decompose_type_rec(set_primitive_types,set_polymorphic_types)
+		if isinstance(self,List):
+			self.type_elt.decompose_type_rec(set_primitive_types,set_polymorphic_types)
+		return set_primitive_types,set_polymorphic_types
+
+	'''
+	Not useful anymore: polymorphic types are instantiated right from the beginning
+	'''
 	def unify(self, other):
 		'''
 		Checks whether self can be instantiated into other,
@@ -171,6 +192,26 @@ t8 = Arrow(List(t4), List(t7))
 t9 = Arrow(List(INT), List(BOOL))
 t10 = Arrow(List(t4), List(t4))
 t11 = Arrow(List(INT), List(BOOL))
+
+# set_instantiated_types = set()
+# set_instantiated_types.add(t8)
+# new_set_instantiated_types = set()
+# for instantiated_type in set_instantiated_types:
+# 	unifier = {'t0': INT}
+# 	intermediate_type = copy.deepcopy(instantiated_type)
+# 	new_type = intermediate_type.apply_unifier(unifier)
+# 	print("new type")
+# 	print(new_type)
+# 	new_set_instantiated_types.add(new_type)
+# print(new_set_instantiated_types)
+
+# t8bis = copy.deepcopy(t8)
+# print(t8)
+# print(t8bis)
+# t8bisbis = t8.apply_unifier({'t0': INT})
+# print(t8)
+# print(t8bis)
+# print(t8bisbis)
 
 # print("\nDoes")
 # print(t4)

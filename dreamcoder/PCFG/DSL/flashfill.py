@@ -21,6 +21,8 @@ primitive_types = {
   'contains' : Arrow(STRING,Arrow(STRING,BOOL)),
 }
 
+TO DO !!!!
+
 semantics = {
   '++' : lambda string1, string2: string1 + string2,
   'replace'  : lambda string1, string2: string1 + string2,

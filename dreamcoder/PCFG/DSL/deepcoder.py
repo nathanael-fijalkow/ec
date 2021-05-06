@@ -108,4 +108,5 @@ primitive_types = {
 	'SCANL1[MIN]': Arrow(List(INT), List(INT)),
 	'SCANL1[MAX]': Arrow(List(INT), List(INT)),
 	'MAP': Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+	# 'MAP2': Arrow(t0,Arrow(List(t0),List(t1))),
 	}

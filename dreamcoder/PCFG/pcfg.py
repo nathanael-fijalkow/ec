@@ -56,9 +56,9 @@ class PCFG:
 		s = "Print a PCFG\n"
 		s += "start: {}\n".format(remove_underscore(self.start))
 		for S in self.rules:
-			s += '#\n {}\n'.format(S)
+			s += '#\n {}\n'.format(remove_underscore(S))
 			for F, args, w in self.rules[S]:
-				args_name = list(map(lambda x: format(remove_underscore(x)), args))
+				args_name = list(map(lambda x: remove_underscore(x), args))
 				s += '   {}: {}     {}\n'.format(remove_underscore(F), args_name, w)
 		return s
 		

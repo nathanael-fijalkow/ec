@@ -7,7 +7,7 @@ def sqrt_sampling(G: PCFG):
     A generator that samples programs according to the PCFG G
     '''
     SQRT = sqrt_PCFG(G)
-    print(SQRT)
+    # print(SQRT)
     while True:
         yield SQRT.sample_program(SQRT.start)
 
@@ -19,7 +19,7 @@ def sqrt_PCFG(G: PCFG):
     for S in G.rules:
         WCFG_rules[S] = [(F, args_F, w ** (0.5)) for F, args_F, w in G.rules[S]]
     
-    # Yeah, I know... not exactly a PCFG, but fits the bill
+    # Yeah, I know... not exactly a PCFG (probabilities do not sum to 1), but it fits the bill
     WCFG = PCFG(start = G.start, rules = WCFG_rules)
     partition_function = compute_Z(WCFG)
     # print(partition_function)
@@ -41,7 +41,7 @@ def compute_Z(G: PCFG):
     '''
     Z = {S: 1 for S in G.rules}
 
-    for i in range(1000):
+    for i in range(100):
         for S in G.rules:
             s = 0
             for f, args, w in G.rules[S]:
@@ -50,5 +50,6 @@ def compute_Z(G: PCFG):
                     prod *= Z[arg]
                 s += prod
             Z[S] = s
+        # print(Z)
     return Z
 
