@@ -1,62 +1,52 @@
 from pcfg import *
-import random
-from math import sqrt
+from program import *
+
+from collections import deque
 from heapq import heappush, heappop
-import copy
-import timeit
-import itertools
+import time 
 
-# -----------------------------------
-# ------ THRESHOLD ALGORITHM ---------
-# ----------------------------------- 
+def bounded_threshold(G : PCFG, threshold = 0.0001):
+    '''
+    A generator that enumerates all programs with probability greater than the threshold
+    '''
+    frontier = deque()
+    initial_non_terminals = deque()
+    initial_non_terminals.append(G.start)
+    frontier.append(([], initial_non_terminals, 1))
+    # A frontier is a queue of triples (partial_program, non_terminals, probability)
+    # describing a partial program:
+    # partial_program is the list of primitives and variables describing the leftmost derivation,
+    # non_terminals is the queue of non-terminals appearing from left to right, and
+    # probability is the probability of the partial program
 
-def threshold_search(G: PCFG, scale_factor: float):
-    current_threshold = 0.1
-    dictionary = {}
-    seen = set()
-    
-    for X in G.rules:
-        set_max_tuple(G, X, seen, dictionary)
-        
-    max_weights = {X:dictionary[X][1] for X in G.rules}
-        
-    gen = threshold(G, current_threshold, max_weights)
+    chrono = -time.perf_counter()
+    while len(frontier) != 0:
+        partial_program, non_terminals, probability = frontier.pop()
+        if len(non_terminals) == 0: 
+            # print(partial_program)
+            yield partial_program
+        else:
+            S = non_terminals.pop()
+            for F, args_F, w in G.rules[S]:
+                new_probability = probability * w
+                if new_probability > threshold:
+                    new_partial_program = partial_program.copy()
+                    new_partial_program.append(F)
+                    new_non_terminals = non_terminals.copy()
+                    for arg in args_F:
+                        new_non_terminals.append(arg)
+                    frontier.append((new_partial_program, new_non_terminals, new_probability))
+
+def threshold_search(G: PCFG, initial_threshold = 0.0001, scale_factor = 100):        
+    threshold = initial_threshold
+    print("Initialising threshold to {}".format(threshold))
+    gen = bounded_threshold(G, threshold)
+
     while True:
         try:
             yield next(gen)
         except StopIteration:
-            current_threshold/=scale_factor
-            gen = threshold(G, current_threshold, max_weights)
+            threshold /= scale_factor
+            print("Decreasing threshold to {}".format(threshold))
+            gen = bounded_threshold(G, threshold)
     
-
-def threshold(G : PCFG, threshold: float, max_weights):
-    '''
-    A generator that samples all terms with proba greater than or equal to threshold
-    '''
-    
-    T = [([G.start], [[0]], max_weights[G.start])] # partials term and the indices where we should try to expand in LIFO style
-    
-    while T:
-        term, indices, max_w = T.pop()
-        index_to_change = indices.pop()
-        ns = get_value(term,index_to_change) # symbol to be replaced in the term nt
-                
-        for f, args, w in G.rules[ns]:
-            new_weights = 1
-            for s in args:
-                new_weights*=max_weights[s] # product of the maximum weights for the new elements
-            new_term = copy.deepcopy(term)
-            set_value(new_term, index_to_change, copy.deepcopy([f,args]))
-            
-            new_indices = copy.deepcopy(indices)
-            for j in range(len(args)-1,-1,-1):
-                new_index = copy.deepcopy(index_to_change)
-                new_index.extend([1,j])
-                new_indices.append(new_index)
-            new_max_weight = w*max_w*new_weights/max_weights[ns]
-            if new_max_weight >= threshold:
-                if len(new_indices) == 0:
-                    yield new_term[0]# , new_max_weight
-                else:
-                    T.append((new_term,new_indices, new_max_weight)) #weight of derivation* max all new symbols / max symbol that has been replaced
-

@@ -21,7 +21,7 @@ def sqrt_PCFG(G: PCFG):
     
     # Yeah, I know... not exactly a PCFG (probabilities do not sum to 1), but it fits the bill
     WCFG = PCFG(start = G.start, rules = WCFG_rules)
-    partition_function = compute_Z(WCFG)
+    partition_function = compute_partition_function(WCFG)
     # print(partition_function)
 
     PCFG_rules = {}
@@ -34,7 +34,7 @@ def sqrt_PCFG(G: PCFG):
 
     return PCFG(G.start,PCFG_rules)
 
-def compute_Z(G: PCFG):
+def compute_partition_function(G: PCFG):
     '''
     Computes the partition function Z as a dictionary {S: Z(S)}
     where Z(S) = sum_{P generated from S} Probability(P)
@@ -44,12 +44,11 @@ def compute_Z(G: PCFG):
     for i in range(100):
         for S in G.rules:
             s = 0
-            for f, args, w in G.rules[S]:
+            for F, args_F, w in G.rules[S]:
                 prod = w
-                for arg in args:
+                for arg in args_F:
                     prod *= Z[arg]
                 s += prod
             Z[S] = s
         # print(Z)
     return Z
-

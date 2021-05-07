@@ -1,60 +1,41 @@
 from pcfg import *
-import random
-from math import sqrt
+from program import *
+
+from collections import deque
 from heapq import heappush, heappop
-import copy
-import timeit
-import itertools
+import time 
 
-# -----------------------------------
-# --------- A* ALGORITHM ------------
-# -----------------------------------
-def a_star(G : PCFG, *param):
+def a_star(G : PCFG):
     '''
-    A generator that samples all terms with proba greater than or equal to threshold
+    A generator that enumerates all programs using A*.
+    Assumes that the PCFG only generates programs of bounded depth.
     '''
+    frontier = []
+    initial_non_terminals = deque()
+    initial_non_terminals.append(G.start)
+    heappush(frontier, ( -G.max_probability[G.start][0], ([], initial_non_terminals, 1)))
+    # A frontier is a heap of pairs (-max_probability, (partial_program, non_terminals, probability))
+    # describing a partial program:
+    # max_probability is the most likely program completing the partial program
+    # partial_program is the list of primitives and variables describing the leftmost derivation,
+    # non_terminals is the queue of non-terminals appearing from left to right, and
+    # probability is the probability of the partial program
 
-    dictionary = {}
-    seen = set()
-    for X in G.rules:
-        set_max_tuple(G, X, seen, dictionary)
-    
-    max_weights = {X:dictionary[X][1] for X in G.rules}
-    T = [([G.start], [[0]], max_weights[G.start])] # partials term and the indices where we should try to expand in LIFO style
-    T = []
-    heappush(T,( -max_weights[G.start], ([G.start], [[0]])))
-    while T:
-        max_w, term_indices = heappop(T)
-        term, indices = term_indices
-        if len(indices) == 0:
-            yield term[0]# , -max_w
+    chrono = -time.perf_counter()
+    while len(frontier) != 0:
+        max_probability, (partial_program, non_terminals, probability) = heappop(frontier)
+        if len(non_terminals) == 0: 
+            # print(partial_program)
+            yield partial_program
         else:
-
-            index_to_change = indices.pop()
-            ns = get_value(term,index_to_change) # symbol to be replaced in the term nt
-                
-            for f, args, w in G.rules[ns]:
-                new_weights = 1
-                for s in args:
-                    new_weights*=max_weights[s] # product of the maximum weights for the new elements
-                new_term = copy.deepcopy(term)
-                set_value(new_term, index_to_change, copy.deepcopy([f,args]))
-
-                new_indices = copy.deepcopy(indices)
-                for j in range(len(args)-1,-1,-1):
-                    new_index = copy.deepcopy(index_to_change)
-                    new_index.extend([1,j])
-                    new_indices.append(new_index)
-                new_max_weight = w*max_w*new_weights/max_weights[ns]
-                # heappush(T, (new_max_weight, (new_term,new_indices))) # unstable due to division, approximation problems
-                heappush(T, (-probability_partial(new_term[0],G.proba, max_weights), (new_term,new_indices)))
-
-def probability_partial(term, proba_symbol, max_proba_symbol):
-    if isinstance(term,str):
-        return max_proba_symbol[term]
-    res = 1
-    symbol, sub_terms = term[0], term[1]
-    for t in sub_terms:
-        res*=probability_partial(t, proba_symbol, max_proba_symbol)
-        
-    return res*proba_symbol[symbol]
+            S = non_terminals.pop()
+            for F, args_F, w in G.rules[S]:
+                new_partial_program = partial_program.copy()
+                new_partial_program.append(F)
+                new_non_terminals = non_terminals.copy()
+                new_probability = probability * w
+                new_max_probability = new_probability
+                for arg in args_F:
+                    new_non_terminals.append(arg)
+                    new_max_probability *= G.max_probability[arg][0]
+                heappush(frontier, (-new_max_probability, (new_partial_program, new_non_terminals, new_probability)))

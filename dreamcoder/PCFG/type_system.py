@@ -1,5 +1,3 @@
-import copy
-
 def remove_underscore(t):
 	l = t.split('_')
 	return l[0]
@@ -192,26 +190,6 @@ t8 = Arrow(List(t4), List(t7))
 t9 = Arrow(List(INT), List(BOOL))
 t10 = Arrow(List(t4), List(t4))
 t11 = Arrow(List(INT), List(BOOL))
-
-# set_instantiated_types = set()
-# set_instantiated_types.add(t8)
-# new_set_instantiated_types = set()
-# for instantiated_type in set_instantiated_types:
-# 	unifier = {'t0': INT}
-# 	intermediate_type = copy.deepcopy(instantiated_type)
-# 	new_type = intermediate_type.apply_unifier(unifier)
-# 	print("new type")
-# 	print(new_type)
-# 	new_set_instantiated_types.add(new_type)
-# print(new_set_instantiated_types)
-
-# t8bis = copy.deepcopy(t8)
-# print(t8)
-# print(t8bis)
-# t8bisbis = t8.apply_unifier({'t0': INT})
-# print(t8)
-# print(t8bis)
-# print(t8bisbis)
 
 # print("\nDoes")
 # print(t4)

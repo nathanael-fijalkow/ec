@@ -6,8 +6,8 @@ class CFG:
  
 	start: a non-terminal
 
-	rules: a dictionary of type {'S': l}
-	with S a non-terminal and l a list of pairs ('F',l') with F a function symbol 
+	rules: a dictionary of type {S: l}
+	with S a non-terminal and l a list of pairs (F,l') with F a function symbol 
 	and l' a list of non-terminals representing the derivation S -> F(S1,S2,..) 
 	with l' = [S1,S2,...]
 	'''
