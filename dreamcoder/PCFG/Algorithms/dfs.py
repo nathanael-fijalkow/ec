@@ -4,7 +4,7 @@ from program import *
 from collections import deque 
 import time 
 
-def dfs(G : PCFG, beam = None):
+def dfs(G : PCFG):
     '''
     A generator that enumerates all programs using a DFS.
     Assumes that the PCFG only generates programs of bounded depth.
@@ -16,7 +16,7 @@ def dfs(G : PCFG, beam = None):
     # chrono += time.perf_counter()
     # print("Sorted the rules in {}".format(chrono))
 
-    frontier = deque(maxlen = beam)
+    frontier = deque()
     initial_non_terminals = deque()
     initial_non_terminals.append(G.start)
     frontier.append(([], initial_non_terminals))
@@ -24,7 +24,6 @@ def dfs(G : PCFG, beam = None):
     # partial_program is the list of primitives and variables describing the leftmost derivation, and
     # non_terminals is the queue of non-terminals appearing from left to right
 
-    chrono = -time.perf_counter()
     while len(frontier) != 0:
         partial_program, non_terminals = frontier.pop()
         if len(non_terminals) == 0: 

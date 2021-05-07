@@ -113,6 +113,20 @@ class PCFG:
 		res = mid+1 if cumulative[mid] < threshold else mid
 		return res
 
+	def sample_rule_batch(self, cumulative, batch_size):
+		low, high = 0, len(cumulative)-1
+		threshold = random.random()
+	
+		while low <= high:
+			mid = (high+low)//2
+			if cumulative[mid] < threshold:
+				low = mid+1
+			else:
+				high = mid-1
+
+		res = mid+1 if cumulative[mid] < threshold else mid
+		return res
+
 	def put_random_weights(self, alpha = 1):
 		'''
 		return a grammar with the same structure but with random weights on the transitions

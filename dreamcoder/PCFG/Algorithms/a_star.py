@@ -21,7 +21,6 @@ def a_star(G : PCFG):
     # non_terminals is the queue of non-terminals appearing from left to right, and
     # probability is the probability of the partial program
 
-    chrono = -time.perf_counter()
     while len(frontier) != 0:
         max_probability, (partial_program, non_terminals, probability) = heappop(frontier)
         if len(non_terminals) == 0: 

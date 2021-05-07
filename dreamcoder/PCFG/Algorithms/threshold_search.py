@@ -19,7 +19,6 @@ def bounded_threshold(G : PCFG, threshold = 0.0001):
     # non_terminals is the queue of non-terminals appearing from left to right, and
     # probability is the probability of the partial program
 
-    chrono = -time.perf_counter()
     while len(frontier) != 0:
         partial_program, non_terminals, probability = frontier.pop()
         if len(non_terminals) == 0: 
