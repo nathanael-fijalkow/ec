@@ -89,6 +89,16 @@ class PCFG:
 		while True:
 			yield self.sample_program(self.start, batch_size)
 
+	def sample_program_as_list(self, S):
+		F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
+		if len(args_F) == 0:
+			return [F]
+		else:
+			sub_programs = [F]
+			for arg in args_F:
+				sub_programs += self.sample_program_as_list(arg)
+			return sub_programs
+
 	def sample_program(self, S):
 #		sampled_rule = self.vose_samplers[S].sample()
 		F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
@@ -102,7 +112,6 @@ class PCFG:
 			for arg in args_F:
 				sub_programs.append(self.sample_program(arg))
 			return Function(F,sub_programs)
-
 
 	def sample_rule(self, cumulative):
 		low, high = 0, len(cumulative)-1

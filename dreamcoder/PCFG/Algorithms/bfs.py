@@ -3,7 +3,6 @@ from program import *
 
 from collections import deque 
 from heapq import heappush, heappop, heappushpop
-import copy
 
 def bfs(G : PCFG, beam_width = 50000):
     '''
@@ -37,7 +36,7 @@ def bfs(G : PCFG, beam_width = 50000):
                     yield partial_program
                 else:
                     S = non_terminals.pop()
-                    for i, (F, args_F, w) in enumerate(G.rules[S]):
+                    for F, args_F, w in G.rules[S]:
                         new_partial_program = partial_program.copy()
                         new_non_terminals = non_terminals.copy()
                         new_probability = probability * w
