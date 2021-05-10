@@ -3,6 +3,7 @@ from program import *
 import random
 import re
 import numpy as np
+import vose
 
 class PCFG:
 	'''
@@ -49,6 +50,7 @@ class PCFG:
 		# 		self.probability[F] = w
 
 		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
+		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
 
 	def initialise(self, S):
 		'''
@@ -88,7 +90,9 @@ class PCFG:
 			yield self.sample_program(self.start, batch_size)
 
 	def sample_program(self, S):
-		F, args_F, w = self.rules[S][self.sample_rule(self.cumulatives[S])]
+#		sampled_rule = self.vose_samplers[S].sample()
+		F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
+		# F, args_F, w = self.rules[S][self.sample_rule(self.cumulatives[S])] # Old way of sampling a transition
 		if len(args_F) == 0:
 			return Variable(F)
 		else:
@@ -98,6 +102,7 @@ class PCFG:
 			for arg in args_F:
 				sub_programs.append(self.sample_program(arg))
 			return Function(F,sub_programs)
+
 
 	def sample_rule(self, cumulative):
 		low, high = 0, len(cumulative)-1
@@ -121,14 +126,16 @@ class PCFG:
 			population = []
 			weights = []
 			total_weight = 0
-			for F, args_F, w in self.rules[S]:
-				population.append((F, args_F))
-				total_weight += w
-				weights.append(total_weight)
-			extensions[S] = random.choices(
-				population = population, 
-				cum_weights = weights, 
-				k = count_request[S])
+			extensions[S] = [self.rules[S][self.vose_samplers[S].sample()][:2] for _ in range(count_request[S])]
+			#extensions[S] = self.vose_samplers[S].sample(count_request[S]) # does not work for a bad reason, when k = 1, it output an integer, not a list
+			# for F, args_F, w in self.rules[S]:
+			# 	population.append((F, args_F))
+			# 	total_weight += w
+			# 	weights.append(total_weight)
+			# extensions[S] = random.choices(
+			# 	population = population, 
+			# 	cum_weights = weights, 
+			# 	k = count_request[S])
 			for F, args_F in extensions[S]:
 				if len(args_F) > 0:
 					over = False
