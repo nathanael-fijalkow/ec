@@ -1,12 +1,8 @@
 from pcfg import *
-import random
-from math import sqrt
 from heapq import heappush, heappop
 import copy
-import timeit
-import itertools
 
-def heap_search(G: PCFG, *param):
+def heap_search(G: PCFG):
     H = heap_search_object(G)
     return H.generator()
 
@@ -25,14 +21,6 @@ class heap_search_object:
         self.arities = G.arities
         self.current = () # current program
         self.pointer = 0
-
-
-        # Setting the heaps
-        # 1. Computing max tuple for each symbol
-        max_tuple = {}
-        seen = set()
-        for X in G.rules:
-            set_max_tuple(G, X, seen, max_tuple)
 
         # 2. putting max derivations in the heaps (that is all S --> f(max, max, ...)
         for S in self.symbols:

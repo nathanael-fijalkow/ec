@@ -85,7 +85,7 @@ class PCFG:
 		A generator that samples programs according to the PCFG G
 		'''
 		while True:
-			yield self.sample_program(self.start)
+			yield self.sample_program(self.start, batch_size)
 
 	def sample_program(self, S):
 		F, args_F, w = self.rules[S][self.sample_rule(self.cumulatives[S])]
@@ -113,19 +113,55 @@ class PCFG:
 		res = mid+1 if cumulative[mid] < threshold else mid
 		return res
 
-	def sample_rule_batch(self, cumulative, batch_size):
-		low, high = 0, len(cumulative)-1
-		threshold = random.random()
-	
-		while low <= high:
-			mid = (high+low)//2
-			if cumulative[mid] < threshold:
-				low = mid+1
-			else:
-				high = mid-1
-
-		res = mid+1 if cumulative[mid] < threshold else mid
-		return res
+	def batch_sample_program(self, count_request):
+		new_count_request = {}
+		extensions = {}
+		over = True
+		for S in count_request:
+			population = []
+			weights = []
+			total_weight = 0
+			for F, args_F, w in self.rules[S]:
+				population.append((F, args_F))
+				total_weight += w
+				weights.append(total_weight)
+			extensions[S] = random.choices(
+				population = population, 
+				cum_weights = weights, 
+				k = count_request[S])
+			for F, args_F in extensions[S]:
+				if len(args_F) > 0:
+					over = False
+					for arg in args_F:
+						if arg in new_count_request:
+							new_count_request[arg] += 1
+						else:
+							new_count_request[arg] = 1
+		if not over:
+			programs = self.batch_sample_program(new_count_request)
+			progress = {S : 0 for S in programs}
+			new_programs = {}
+			# programs[arg] contains new_count_request[arg] programs generated from arg 
+			for S in count_request:
+				new_programs[S] = []
+				for F, args_F in extensions[S]:
+					if len(args_F) == 0:
+						new_programs[S].append([F])
+					else:
+						new_program = [F]
+						for arg in args_F:
+							sub_program = programs[arg][progress[arg]]
+							progress[arg] = progress[arg] + 1
+							new_program += sub_program
+						# new_program.append(F)
+						new_programs[S].append(new_program)
+		else:
+			new_programs = {}
+			for S in count_request:
+				new_programs[S] = []
+				for F, args_F in extensions[S]:
+					new_programs[S].append([F])
+		return new_programs
 
 	def put_random_weights(self, alpha = 1):
 		'''

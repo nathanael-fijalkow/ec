@@ -220,77 +220,89 @@ chrono += time.perf_counter()
 print("Put random weights in {}s".format(chrono))
 print(deepcoder_PCFG_t)
 
-N = int(5e5)
+N = int(1e5)
 # N = 20
 
-from Algorithms.dfs import *
-chrono = -time.perf_counter()
-gen = dfs(deepcoder_PCFG_t)
-print("\nStart enumerating {} programs using DFS".format(N))
-for i in range(N):
-	try:
-		# print("Enumerating program {}:".format(i))
-		# program = next(gen)
-		# program.reverse()
-		# print(deepcoder.reconstruct(program))
-		next(gen)
-	except StopIteration:
-		print("Enumerated all programs")
-		break
-chrono += time.perf_counter()
-print("Generated {} programs in {}s".format(N,chrono))
+# from Algorithms.dfs import *
+# chrono = -time.perf_counter()
+# gen = dfs(deepcoder_PCFG_t)
+# print("\nStart enumerating {} programs using DFS".format(N))
+# for i in range(N):
+# 	try:
+# 		# print("Enumerating program {}:".format(i))
+# 		# program = next(gen)
+# 		# program.reverse()
+# 		# print(deepcoder.reconstruct(program))
+# 		next(gen)
+# 	except StopIteration:
+# 		print("Enumerated all programs")
+# 		break
+# chrono += time.perf_counter()
+# print("Generated {} programs in {}s".format(N,chrono))
 
-from Algorithms.sort_and_add import *
-chrono = -time.perf_counter()
-gen = sort_and_add(deepcoder_PCFG_t)
-print("\nStart enumerating {} programs using Sort and Add".format(N))
-for i in range(N):
-	# print("Enumerating program {}:".format(i))
-	# program = next(gen)
-	# program.reverse()
-	# print(deepcoder.reconstruct(program))
-	next(gen)
-chrono += time.perf_counter()
-print("Generated {} programs in {}s".format(N,chrono))
+# from Algorithms.sort_and_add import *
+# chrono = -time.perf_counter()
+# gen = sort_and_add(deepcoder_PCFG_t)
+# print("\nStart enumerating {} programs using Sort and Add".format(N))
+# for i in range(N):
+# 	# print("Enumerating program {}:".format(i))
+# 	# program = next(gen)
+# 	# program.reverse()
+# 	# print(deepcoder.reconstruct(program))
+# 	next(gen)
+# chrono += time.perf_counter()
+# print("Generated {} programs in {}s".format(N,chrono))
 
-from Algorithms.threshold_search import *
-chrono = -time.perf_counter()
-gen = threshold_search(deepcoder_PCFG_t)
-print("\nStart enumerating {} programs using Threshold Search".format(N))
-for i in range(N):
-	# print("Enumerating program {}:".format(i))
-	# program = next(gen)
-	# program.reverse()
-	# print(deepcoder.reconstruct(program))
-	next(gen)
-chrono += time.perf_counter()
-print("Generated {} programs in {}s".format(N,chrono))
+# from Algorithms.threshold_search import *
+# chrono = -time.perf_counter()
+# gen = threshold_search(deepcoder_PCFG_t)
+# print("\nStart enumerating {} programs using Threshold Search".format(N))
+# for i in range(N):
+# 	# print("Enumerating program {}:".format(i))
+# 	# program = next(gen)
+# 	# program.reverse()
+# 	# print(deepcoder.reconstruct(program))
+# 	next(gen)
+# chrono += time.perf_counter()
+# print("Generated {} programs in {}s".format(N,chrono))
 
 from Algorithms.sqrt_sampling import *
 chrono = -time.perf_counter()
 print("\nStart sampling {} programs using SQRT sampling".format(N))
 gen = sqrt_sampling(deepcoder_PCFG_t)
 for i in range(N):
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# program.reverse()
-# 		# print(deepcoder.reconstruct(program))
+		# print("Enumerating program {}:".format(i))
+		# program = next(gen)
+		# program.reverse()
+		# print(deepcoder.reconstruct(program))
 		next(gen)
 chrono += time.perf_counter()
 print("Generated {} programs in {}s".format(N,chrono))
 
-from Algorithms.a_star import *
 chrono = -time.perf_counter()
-gen = a_star(deepcoder_PCFG_t)
-print("\nStart enumerating {} programs using A*".format(N))
+print("\nStart sampling {} programs using batch SQRT sampling".format(N))
+gen = batch_sqrt_sampling(deepcoder_PCFG_t, batch_size = 1)
 for i in range(N):
-	# print("Enumerating program {}:".format(i))
-	# program = next(gen)
-	# program.reverse()
-	# print(deepcoder.reconstruct(program))
-	next(gen)
+		# print("Enumerating program {}:".format(i))
+		# program = next(gen)
+		# program.reverse()
+		# print(deepcoder.reconstruct(program))
+		next(gen)
 chrono += time.perf_counter()
 print("Generated {} programs in {}s".format(N,chrono))
+
+# from Algorithms.a_star import *
+# chrono = -time.perf_counter()
+# gen = a_star(deepcoder_PCFG_t)
+# print("\nStart enumerating {} programs using A*".format(N))
+# for i in range(N):
+# 	# print("Enumerating program {}:".format(i))
+# 	# program = next(gen)
+# 	# program.reverse()
+# 	# print(deepcoder.reconstruct(program))
+# 	next(gen)
+# chrono += time.perf_counter()
+# print("Generated {} programs in {}s".format(N,chrono))
 
 ###### TEST CIRCUITS
 # from DSL.circuits import *
