@@ -283,6 +283,24 @@ N = int(1e6)
 # chrono += time.perf_counter()
 # print("Generated {} programs in {}s".format(N,chrono))
 
+D = set()
+from Algorithms.heap_search import *
+chrono = -time.perf_counter()
+print("\nStart sampling {} programs using heap search".format(N))
+gen = heap_search(deepcoder_PCFG_t)
+for i in range(N):
+		# print("Enumerating program {}:".format(i))
+		# program = next(gen)
+		# program.reverse()
+		# print(deepcoder.reconstruct(program))
+		t = next(gen)
+		if str(t) in D: print("oh oh, heap search has a problem")
+		D.add(str(t))
+		print(t)
+		#next(gen)
+chrono += time.perf_counter()
+print("Generated {} programs in {}s".format(N,chrono))
+
 from Algorithms.sqrt_sampling import *
 chrono = -time.perf_counter()
 print("\nStart sampling {} programs using SQRT sampling".format(N))
@@ -291,7 +309,7 @@ for i in range(N):
 		# print("Enumerating program {}:".format(i))
 		# program = next(gen)
 		# program.reverse()
-		# print(deepcoder.reconstruct(program))
+		# print(deepcoder.reconstruct(program))		
 		next(gen)
 chrono += time.perf_counter()
 print("Generated {} programs in {}s".format(N,chrono))

@@ -43,14 +43,19 @@ class PCFG:
 			if (not S in self.max_probability) or self.max_probability[S] == (-1,-1):
 				del self.rules[S]
 
-		# self.arities = {}
-		# for S in self.rules:
-		# 	for F, args_F, w in self.rules[S]:
-		# 		self.arities[F] = args_F
-		# 		self.probability[F] = w
+
 
 		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
 		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
+
+		# needed for heap search, to compute the probability of a given term
+		self.arities = {}
+		self.probability = {}
+		for S in self.rules:
+			for F, args_F, w in self.rules[S]:
+				self.arities[F] = args_F
+				self.probability[F] = w
+		# END needed for heap search, to compute the probability of a given term
 
 	def initialise(self, S):
 		'''
@@ -198,4 +203,15 @@ class PCFG:
 			self.rules[S] = new_rules_S.copy()
 			self.rules[S].sort(key = lambda x: -x[2])
 			# print(self.rules[S])
-		
+
+
+	# Needed for heap search (to delete later maybe?)
+	def proba_term(self, t):
+		if isinstance(t, Variable): return 1
+		F = t.primitive
+		args = t.arguments
+		weight = self.probability[F]
+		for a in args:
+			weight*=self.proba_term(a)
+		return weight
+	# END Needed for heap search (to delete later maybe?)
