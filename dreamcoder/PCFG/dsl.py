@@ -302,15 +302,15 @@ for i in range(N):
 		# program = next(gen)
 		# program.reverse()
 		# print(deepcoder.reconstruct(program))
-		t = next(gen)
-		if str(t) in D: 
-			print("oh oh, heap search has a problem\n\n", t, "\n\n", D[str(t)], i, j)
+	t = next(gen)
+	if str(t) in D: 
+		print("oh oh, heap search has a problem\n\n", t, "\n\n", D[str(t)], i, j)
 
-			print("\n\n")
-			D[str(t)].append(t)
-			# pp(t)
-			# print("--")
-			# pp(D[str(t)][0])
+		print("\n\n")
+		D[str(t)].append(t)
+		# pp(t)
+		# print("--")
+		# pp(D[str(t)][0])
 			# j+=1
 			# print(hash_term(t))
 			# print(hash_term(D[str(t)][0]))
@@ -318,9 +318,9 @@ for i in range(N):
 			# print(hash_term(t.arguments[0]))
 			# print("--")
 			# print(hash_term(D[str(t)][0].arguments[0]))
-			
+	else:			
 		D[str(t)] = [t]
-		#next(gen)
+	#next(gen)
 chrono += time.perf_counter()
 print("Generated {} programs in {}s".format(N,chrono))
 
