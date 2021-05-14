@@ -55,28 +55,23 @@ class heap_search_object:
         #         heappush(self.heaps[S], (-weight, t))
 
         # 3. add the first successors of each max program, in the order leaves --> root
-        proba, program = heappop(self.heaps[G.start])
-        self.succ[G.start]["()"] = program
-        for S in self.symbols:
-            if S == G.start: continue
-            heappop(self.heaps[S])
+        # proba, program = heappop(self.heaps[G.start])
+        # self.succ[G.start]["()"] = program
+        # for S in self.symbols:
+        #     if S == G.start: continue
+        #     heappop(self.heaps[S])
 
-    #     seen = set()
-    #     for S in self.symbols:
-    #         self.init_heaps(S, seen)
-        
-    #     for S in self.symbols:
-    #         print('\n####    ', S)
-    #         print(self.heaps[S])
-    #         print("\n\n")
+        seen = set()
+        for S in self.symbols:
+            self.init_heaps(S, seen)
                 
-    # def init_heaps(self, X, seen):
-    #     seen.add(X)
-    #     for f, args, w in self.rules[X]:
-    #         for a in args:
-    #             if a not in seen:
-    #                 self.init_heaps(a, seen)
-    #     self.query(X, '()')
+    def init_heaps(self, X, seen):
+        seen.add(X)
+        for f, args, w in self.rules[X]:
+            for a in args:
+                if a not in seen:
+                    self.init_heaps(a, seen)
+        self.query(X, '()')
                       
 
     def generator(self):
