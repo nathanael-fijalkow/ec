@@ -37,7 +37,7 @@ class PCFG:
 
 		self.max_probability = {}
 		self.initialise(self.start)
-		# print(self.max_probability)
+		#print(self.max_probability)
 
 		for S in set(self.rules):
 			if (not S in self.max_probability) or self.max_probability[S] == (-1,-1):

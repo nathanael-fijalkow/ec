@@ -283,7 +283,16 @@ N = int(1e6)
 # chrono += time.perf_counter()
 # print("Generated {} programs in {}s".format(N,chrono))
 
-D = set()
+D = {}
+j = 0
+def pp(t):
+	if isinstance(t, Function):
+		print(t.primitive)
+		for a in t.arguments:
+			print(id(a))
+			pp(a)
+	else:
+		print(t.variable)
 from Algorithms.heap_search import *
 chrono = -time.perf_counter()
 print("\nStart sampling {} programs using heap search".format(N))
@@ -294,9 +303,23 @@ for i in range(N):
 		# program.reverse()
 		# print(deepcoder.reconstruct(program))
 		t = next(gen)
-		if str(t) in D: print("oh oh, heap search has a problem")
-		D.add(str(t))
-		print(t)
+		if str(t) in D: 
+			print("oh oh, heap search has a problem\n\n", t, "\n\n", D[str(t)], i, j)
+
+			print("\n\n")
+			D[str(t)].append(t)
+			# pp(t)
+			# print("--")
+			# pp(D[str(t)][0])
+			# j+=1
+			# print(hash_term(t))
+			# print(hash_term(D[str(t)][0]))
+			# print("--")
+			# print(hash_term(t.arguments[0]))
+			# print("--")
+			# print(hash_term(D[str(t)][0].arguments[0]))
+			
+		D[str(t)] = [t]
 		#next(gen)
 chrono += time.perf_counter()
 print("Generated {} programs in {}s".format(N,chrono))
