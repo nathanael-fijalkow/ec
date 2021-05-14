@@ -12,7 +12,7 @@ def bounded_threshold(G : PCFG, threshold = 0.0001):
     frontier = deque()
     initial_non_terminals = deque()
     initial_non_terminals.append(G.start)
-    frontier.append(([], initial_non_terminals, 1))
+    frontier.append((None, initial_non_terminals, 1))
     # A frontier is a queue of triples (partial_program, non_terminals, probability)
     # describing a partial program:
     # partial_program is the list of primitives and variables describing the leftmost derivation,
@@ -22,15 +22,13 @@ def bounded_threshold(G : PCFG, threshold = 0.0001):
     while len(frontier) != 0:
         partial_program, non_terminals, probability = frontier.pop()
         if len(non_terminals) == 0: 
-            # print(partial_program)
             yield partial_program
         else:
             S = non_terminals.pop()
             for F, args_F, w in G.rules[S]:
                 new_probability = probability * w
                 if new_probability > threshold:
-                    new_partial_program = partial_program.copy()
-                    new_partial_program.append(F)
+                    new_partial_program = (F, partial_program)
                     new_non_terminals = non_terminals.copy()
                     for arg in args_F:
                         new_non_terminals.append(arg)
@@ -46,6 +44,6 @@ def threshold_search(G: PCFG, initial_threshold = 0.0001, scale_factor = 100):
             yield next(gen)
         except StopIteration:
             threshold /= scale_factor
-            print("Decreasing threshold to {}".format(threshold))
+            # print("Decreasing threshold to {}".format(threshold))
             gen = bounded_threshold(G, threshold)
     
