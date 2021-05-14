@@ -15,7 +15,7 @@ def hybrid(G : PCFG, DFS_depth = 4, width = 15):
     frontier = []
     initial_non_terminals = deque()
     initial_non_terminals.append(G.start)
-    frontier.append(([], initial_non_terminals))
+    frontier.append((None, initial_non_terminals))
     # A frontier is a list of pairs (partial_program, non_terminals) 
     # describing a partial program:
     # partial_program is the list of primitives and variables describing the leftmost derivation, and
@@ -26,27 +26,24 @@ def hybrid(G : PCFG, DFS_depth = 4, width = 15):
         while True:
             try:
                 (partial_program, non_terminals) = frontier.pop()
-                # print("partial_program")
-                # print(partial_program)
                 if len(non_terminals) > 0: 
                     S = non_terminals.pop()
                     for F, args_F, w in G.rules[S][:width]:
-                        new_partial_program = partial_program.copy()
+                        new_partial_program = (F, partial_program)
                         new_non_terminals = non_terminals.copy()
-                        new_partial_program.append(F)                       
                         for arg in args_F:
                             new_non_terminals.append(arg)
                         new_frontier.append((new_partial_program, new_non_terminals))
             except IndexError:
-                # print(new_frontier)
                 frontier = new_frontier
                 break
     while True:
+        # TO DO: 
+        ## * Adapt to the new representation of partial programs
+        ## * Sample proportionally to the probability of the partial program
+        ## * Get the list of non-terminals used and re-use samples: 
+        #### maybe simply sample programs from these and see how to branch them?
         for (partial_program, non_terminals) in frontier:
-            # print("partial_program")
-            # print(partial_program)
-            # print("non_terminals")
-            # print(non_terminals)
             for S in non_terminals:
                 partial_program += SQRT.sample_program_as_list(S)
             yield partial_program

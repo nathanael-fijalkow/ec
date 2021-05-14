@@ -43,8 +43,6 @@ class PCFG:
 			if (not S in self.max_probability) or self.max_probability[S] == (-1,-1):
 				del self.rules[S]
 
-
-
 		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
 		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
 
