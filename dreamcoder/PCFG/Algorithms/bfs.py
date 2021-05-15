@@ -26,6 +26,8 @@ def bfs(G : PCFG, beam_width = 50000):
     while True:
         new_frontier = []
         while True:
+            # TO DO: optimise by doing (at most) beam_width iterations with heappush
+            # and then heappushpop 
             try:
                 probability, (partial_program, non_terminals) = heappop(frontier)
                 if len(non_terminals) == 0: 

@@ -36,4 +36,3 @@ def dfs(G : PCFG):
                 for arg in args_F:
                     new_non_terminals.append(arg)
                 frontier.append((new_partial_program, new_non_terminals))
-

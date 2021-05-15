@@ -1,6 +1,7 @@
 from pcfg import *
+
 from math import sqrt, prod
-import copy
+from collections import deque 
 
 def sqrt_sampling(G: PCFG):
 	'''
@@ -11,21 +12,6 @@ def sqrt_sampling(G: PCFG):
 
 	while True:
 	    yield SQRT.sample_program(SQRT.start)
-
-def batch_sqrt_sampling(G: PCFG, batch_size = 100000):
-	'''
-	A generator that samples programs according to the PCFG G
-	'''
-	SQRT = sqrt_PCFG(G)
-	# print(SQRT)
-
-	while True:
-		count_request = {SQRT.start : batch_size}
-		programs = SQRT.batch_sample_program(count_request)[SQRT.start]
-		# print(programs)
-		# print("generated a batch")
-		for program in programs:
-			yield program
 
 def sqrt_PCFG(G: PCFG):
 	'''
@@ -48,7 +34,7 @@ def sqrt_PCFG(G: PCFG):
 			new_rules_S.append((F, args_F, w * multiplier * 1 / partition_function[S]))
 		PCFG_rules[S] = new_rules_S
 
-	return PCFG(G.start,PCFG_rules)
+	return PCFG(G.start, PCFG_rules)
 
 def compute_partition_function(G: PCFG):
 	'''
