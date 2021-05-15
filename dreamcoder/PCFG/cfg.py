@@ -62,13 +62,13 @@ class CFG:
 			l = S2.split('_')
 			S,i = l[0],int(l[1])
 			new_list = []
-			for f, args in self.rules[S2]:
+			for F, args_F in self.rules[S2]:
 				keep = True
-				for arg in args:
+				for arg in args_F:
 					if i + min_program_depth[arg] > max_program_depth:
 						keep = False
 				if keep:
-					new_list.append((f,args))
+					new_list.append((F,args_F))
 			self.rules[S2] = new_list
 
 		return CFG(start = self.start, rules = self.rules)

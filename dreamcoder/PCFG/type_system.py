@@ -1,6 +1,7 @@
 def remove_underscore(t):
 	l = t.split('_')
 	return l[0]
+	# return t
 
 class Type:
 	'''
@@ -76,41 +77,39 @@ class Type:
 			self.type_elt.decompose_type_rec(set_primitive_types,set_polymorphic_types)
 		return set_primitive_types,set_polymorphic_types
 
-	'''
-	Not useful anymore: polymorphic types are instantiated right from the beginning
-	'''
-	def unify(self, other):
-		'''
-		Checks whether self can be instantiated into other,
-		and returns the least unifier as a dictionary {t : type}
-		mapping polymorphic types to types.
-		We make the simplifying assumption that other does not contain polymorphic types,
-		which makes things much simpler. 
-		Example: 
-		* list(t0) can be instantiated into list(int) and the unifier is {t0 : int}
-		* list(t0) -> list(t1) can be instantiated into list(int) -> list(bool) 
-		and the unifier is {t0 : int, t1 : bool}
-		* list(t0) -> list(t0) cannot be instantiated into list(int) -> list(bool) 
-		'''
-		dic = {}
-		if self.unify_rec(other, dic):
-			return dic
-		else:
-			return False
+	## UNUSED
+	# def unify(self, other):
+	# 	'''
+	# 	Checks whether self can be instantiated into other,
+	# 	and returns the least unifier as a dictionary {t : type}
+	# 	mapping polymorphic types to types.
+	# 	We make the simplifying assumption that other does not contain polymorphic types,
+	# 	which makes things much simpler. 
+	# 	Example: 
+	# 	* list(t0) can be instantiated into list(int) and the unifier is {t0 : int}
+	# 	* list(t0) -> list(t1) can be instantiated into list(int) -> list(bool) 
+	# 	and the unifier is {t0 : int, t1 : bool}
+	# 	* list(t0) -> list(t0) cannot be instantiated into list(int) -> list(bool) 
+	# 	'''
+	# 	dic = {}
+	# 	if self.unify_rec(other, dic):
+	# 		return dic
+	# 	else:
+	# 		return False
 
-	def unify_rec(self, other, dic):
-		if isinstance(self,PolymorphicType):
-			if self.name in dic:
-				return dic[self.name] == other
-			else:
-				dic[self.name] = other
-				return True
-		if isinstance(self,Primitive):
-			return isinstance(other,Primitive) and self.type == other.type
-		if isinstance(self,Arrow):
-			return self.type_in.unify_rec(other.type_in, dic) and self.type_out.unify_rec(other.type_out, dic)
-		if isinstance(self,List):
-			return isinstance(other,List) and self.type_elt.unify_rec(other.type_elt, dic)
+	# def unify_rec(self, other, dic):
+	# 	if isinstance(self,PolymorphicType):
+	# 		if self.name in dic:
+	# 			return dic[self.name] == other
+	# 		else:
+	# 			dic[self.name] = other
+	# 			return True
+	# 	if isinstance(self,Primitive):
+	# 		return isinstance(other,Primitive) and self.type == other.type
+	# 	if isinstance(self,Arrow):
+	# 		return self.type_in.unify_rec(other.type_in, dic) and self.type_out.unify_rec(other.type_out, dic)
+	# 	if isinstance(self,List):
+	# 		return isinstance(other,List) and self.type_elt.unify_rec(other.type_elt, dic)
 
 	def apply_unifier(self, dic):
 		if isinstance(self,PolymorphicType):
@@ -167,9 +166,9 @@ BOOL = Primitive('bool')
 STRING = Primitive('str')
 # INTLIST = Primitive('list(int)'): better use List(INT)
 
-t1 = Arrow(Arrow(INT,INT),Arrow(List(INT),List(INT)))
-t2 = List(Arrow(INT,Arrow(INT,INT))) # int -> (int -> int) = int -> int -> int 
-t3 = List(Arrow(Arrow(List(INT),List(INT)), INT)) # (int -> int) -> int
+# t1 = Arrow(Arrow(INT,INT),Arrow(List(INT),List(INT)))
+# t2 = List(Arrow(INT,Arrow(INT,INT))) # int -> (int -> int) = int -> int -> int 
+# t3 = List(Arrow(Arrow(List(INT),List(INT)), INT)) # (int -> int) -> int
 # for t in [t1,t2,t3]:
 # 	print("\nnew type:")
 # 	print(t)
@@ -182,14 +181,14 @@ t3 = List(Arrow(Arrow(List(INT),List(INT)), INT)) # (int -> int) -> int
 # 	print("nesting:")
 # 	print(t.nesting())
 
-t4 = PolymorphicType('t0')
-t5 = List(INT)
-t6 = List(t4)
-t7 = PolymorphicType('t1')
-t8 = Arrow(List(t4), List(t7))
-t9 = Arrow(List(INT), List(BOOL))
-t10 = Arrow(List(t4), List(t4))
-t11 = Arrow(List(INT), List(BOOL))
+# t4 = PolymorphicType('t0')
+# t5 = List(INT)
+# t6 = List(t4)
+# t7 = PolymorphicType('t1')
+# t8 = Arrow(List(t4), List(t7))
+# t9 = Arrow(List(INT), List(BOOL))
+# t10 = Arrow(List(t4), List(t4))
+# t11 = Arrow(List(INT), List(BOOL))
 
 # print("\nDoes")
 # print(t4)

@@ -1,19 +1,34 @@
 from type_system import *
 
+'''
+	PROGRAM REPRESENTATION
+	* Explicit representation: using the class below
+	* (Top-down) list representation: list of primitives and variables 
+	from top to bottom and left to right
+	* (Top-down) compressed representation: (primitive, sub_program) 
+	where sub_program is a subprogramme or None
+
+	Example: 
+	* Function(primitive = F, arguments = [Variable(variable = a), Variable(variable = b)])
+	* [F, a, b]
+	* [F, [a, [b, None]]]
+
+	Remark: list and compressed representation are essentially the same thing,
+	the compressed variant is useful to avoid copies hence representing many programs 
+	with small memory
+'''
+
 class Program:
 	'''
 	Object that represents a program
 	'''
 	pass
 	# Fix: Overload comparison operators to be able to compare programs with equal probability in the heaps
-	#def __eq__(self, other): return True
 	def __le__(self, other): return True
 	def __lt__(self, other): return True
 	def __gt__(self, other): return False
 	def __ge__(self, other): return True
-	#def __ne__(self, other): return False
 	# END Overload comparison operators to be able to compare programs with equal probability in the heaps
-
 
 class Variable(Program):
 	def __init__(self, variable, type_var = None):
@@ -45,10 +60,3 @@ class Function(Program):
 			name_arg = remove_underscore(format(self.arguments[-1]))
 		s += name_arg + ')'
 		return s
-
-# t0 = PolymorphicType('t0')
-# t1 = PolymorphicType('t1')
-# var1 = Variable(1, t0)
-# var2 = Variable(2, t1)
-# p = Function('REV', [var1, var2], Arrow(List(INT),List(INT)))
-
