@@ -22,7 +22,8 @@ class Program:
 	'''
 	Object that represents a program
 	'''
-	pass
+	def __init__(self):
+		self.probability = 0
 	# Fix: Overload comparison operators to be able to compare programs with equal probability in the heaps
 	def __le__(self, other): return True
 	def __lt__(self, other): return True
@@ -34,6 +35,7 @@ class Variable(Program):
 	def __init__(self, variable, type_var = None):
 		self.variable = variable
 		self.type_var = type_var
+
 
 	def __repr__(self):
 		l = self.variable.split('_')

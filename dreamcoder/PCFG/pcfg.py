@@ -36,6 +36,8 @@ class PCFG:
 		# print(self.rules)
 
 		self.max_probability = {}
+		self.arities = {S: {} for S in self.rules}
+		self.probability = {S: {} for S in self.rules}
 		self.initialise(self.start)
 		# print(self.max_probability)
 
@@ -46,14 +48,6 @@ class PCFG:
 		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
 		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
 
-		# needed for heap search, to compute the probability of a given term
-		self.arities = {}
-		self.probability = {}
-		for S in self.rules:
-			for F, args_F, w in self.rules[S]:
-				self.arities[F] = args_F
-				self.probability[F] = w
-		# END needed for heap search, to compute the probability of a given term
 
 	def initialise(self, S):
 		'''
@@ -74,6 +68,13 @@ class PCFG:
 				else:
 					best_program = Function(primitive = F, arguments = [self.max_probability[arg][1] for arg in args_F])
 				self.max_probability[S] = (candidate_probability, best_program)
+
+		# START: for heap search
+		for S in self.rules:
+			for F, args_F, w in self.rules[S]:
+				self.arities[S][F] = args_F
+				self.probability[S][F] = w
+		# END needed for heap search, to compute the probability of a given term
 
 	def __repr__(self):
 		s = "Print a PCFG\n"
@@ -160,6 +161,8 @@ class PCFG:
 			self.rules[S] = new_rules_S.copy()
 			self.rules[S].sort(key = lambda x: -x[2])
 			# print(self.rules[S])
+			self.max_probability = {}
+			self.initialise(self.start)
 
 
 	# Needed for heap search (to delete later maybe?)
