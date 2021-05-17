@@ -116,7 +116,7 @@ class DSL:
 		# print(self)
 
 	def DSL_to_CFG(self, type_request, 
-		n_gram = 1,
+		n_gram = 0,
 		upper_bound_type_size = 2, 
 		upper_bound_type_nesting = 1, 
 		max_program_depth = 4,
@@ -189,10 +189,11 @@ class DSL:
 		return untrimmed_CFG.trim(max_program_depth)
 
 	def DSL_to_Uniform_PCFG(self, type_request, 
+		n_gram = 0,
 		upper_bound_type_size = 3, 
 		upper_bound_type_nesting = 1,
 		max_program_depth = 4):
-		CFG = self.DSL_to_CFG(type_request, upper_bound_type_size, upper_bound_type_nesting, max_program_depth)
+		CFG = self.DSL_to_CFG(type_request, n_gram, upper_bound_type_size, upper_bound_type_nesting, max_program_depth)
 		augmented_rules = {}
 		for S in CFG.rules:
 			p = len(CFG.rules[S])
