@@ -17,9 +17,10 @@ class DSL:
 	primitive_types: a dictionary of the form {'F' : type}
 	mapping a function symbol F to its type
 	'''
-	def __init__(self, semantics, primitive_types):
+	def __init__(self, semantics, primitive_types, no_repetitions):
 		self.semantics = semantics
 		self.primitive_types = primitive_types
+		self.no_repetitions = no_repetitions
 
 	def __repr__(self):
 		s = "Print a DSL\n"
@@ -116,7 +117,7 @@ class DSL:
 		# print(self)
 
 	def DSL_to_CFG(self, type_request, 
-		n_gram = 0,
+		n_gram = 1,
 		upper_bound_type_size = 2, 
 		upper_bound_type_nesting = 1, 
 		max_program_depth = 4,
@@ -161,25 +162,29 @@ class DSL:
 						type_F = self.primitive_types[F]
 						return_F = type_F.returns()
 						if return_F == current_type:
-							arguments_F = type_F.arguments() 
+							if len(context) == 0 or context[0] != F or not (F in self.no_repetitions):
+								# if len(context) > 0: 
+								# 	if context[0] == F:
+								# 		print(F)
+								# 		print(str(F) in no_repetitions)
+								arguments_F = type_F.arguments() 
 
-							new_context = context.copy()
-							new_context = [F] + new_context
-							if len(new_context) > n_gram: new_context.pop()
+								new_context = context.copy()
+								new_context = [F] + new_context
+								if len(new_context) > n_gram: new_context.pop()
 
-							decorated_arguments_F = \
-							[ repr(arg, new_context, depth + 1) \
-							for arg in arguments_F]
+								decorated_arguments_F = \
+								[ repr(arg, new_context, depth + 1) \
+								for arg in arguments_F]
 
-							if non_terminal in rules:
-								rules[non_terminal].append((F, decorated_arguments_F))
-							else:
-								# print("introducing non_terminal: {}".format(non_terminal))
-								rules[non_terminal] = [(F, decorated_arguments_F)]
+								if non_terminal in rules:
+									rules[non_terminal].append((F, decorated_arguments_F))
+								else:
+									rules[non_terminal] = [(F, decorated_arguments_F)]
 
-							for arg in arguments_F:
-								if not (arg, new_context, depth + 1) in list_to_be_treated:
-									list_to_be_treated = [(arg, new_context, depth + 1)] + list_to_be_treated
+								for arg in arguments_F:
+									if not (arg, new_context, depth + 1) in list_to_be_treated:
+										list_to_be_treated = [(arg, new_context, depth + 1)] + list_to_be_treated
 				collect(self, list_to_be_treated)
 
 		collect(self, [(return_type, [], 0)])
@@ -189,7 +194,7 @@ class DSL:
 		return untrimmed_CFG.trim(max_program_depth)
 
 	def DSL_to_Uniform_PCFG(self, type_request, 
-		n_gram = 0,
+		n_gram = 1,
 		upper_bound_type_size = 3, 
 		upper_bound_type_nesting = 1,
 		max_program_depth = 4):
@@ -231,30 +236,31 @@ class DSL:
 
 ###### TEST DEEPCODER
 from DSL.deepcoder import *
-deepcoder = DSL(semantics, primitive_types)
+deepcoder = DSL(semantics, primitive_types, no_repetitions)
 # print(deepcoder)
 # deepcoder.instantiate_polymorphic_types()
 
 # var = Variable(1, List(INT))
-# program = Application('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
+# program = Function('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
 # environment = {1 : [1,3,6]}
 # print(deepcoder.evaluate(program,environment))
 
-# t = Arrow(List(INT),List(INT))
+t = Arrow(List(INT),List(INT))
 
-# deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
+deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
 # print(deepcoder_CFG_t)
 
-# chrono = -time.perf_counter()
-# deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t, max_program_depth = 5)
-# chrono += time.perf_counter()
-# print("Generated the PCFG in {}s".format(chrono))
+chrono = -time.perf_counter()
+deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
+chrono += time.perf_counter()
+print("Generated the PCFG in {}s".format(chrono))
 
 # chrono = -time.perf_counter()
 # deepcoder_PCFG_t.put_random_weights(alpha = .7)
 # chrono += time.perf_counter()
 # print("Put random weights in {}s".format(chrono))
-# print(deepcoder_PCFG_t)
+
+print(deepcoder_PCFG_t)
 
 N = int(1e6)
 # N = 20

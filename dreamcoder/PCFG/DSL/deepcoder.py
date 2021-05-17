@@ -110,3 +110,27 @@ primitive_types = {
 	# 'MAP': Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
 	# 'MAP2': Arrow(t0,Arrow(List(t0),List(t1))),
 	}
+
+no_repetitions = {
+	'SORT',
+	'REVERSE',
+	'FILTER[<0]',
+	'FILTER[>0]',
+	'FILTER[%2==0]',
+	'FILTER[%2==1]',
+	'MAP[+1]',
+	'MAP[-1]',
+	'MAP[*2]',
+	'MAP[/2]',
+	'MAP[*(-1)]',
+	'MAP[**2]',
+	'MAP[*3]',
+	'MAP[/3]',
+	'MAP[*4]',
+	'MAP[/4]',
+	'SCANL1[+]',
+	'SCANL1[-]',
+	'SCANL1[*]',
+	'SCANL1[MIN]',
+	'SCANL1[MAX]',
+	}
