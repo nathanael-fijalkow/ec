@@ -33,13 +33,12 @@ class PCFG:
 		for S in rules:
 			rules[S].sort(key=lambda x: -x[2])
 		self.rules = rules
-		# print(self.rules)
 
 		self.max_probability = {}
 		self.arities = {S: {} for S in self.rules}
 		self.probability = {S: {} for S in self.rules}
 		self.initialise(self.start)
-		# print(self.max_probability)
+		self.initialise_arities_probability()
 
 		for S in set(self.rules):
 			if (not S in self.max_probability) or self.max_probability[S] == (-1,-1):
@@ -51,7 +50,7 @@ class PCFG:
 
 	def initialise(self, S):
 		'''
-		populates the dictionary max_probability
+		populates the dictionary max_probability and initialise self.arities, self.probability
 		'''
 		self.max_probability[S] = (-1,-1)
 		for F, args_F, w in self.rules[S]:
@@ -69,12 +68,11 @@ class PCFG:
 					best_program = Function(primitive = F, arguments = [self.max_probability[arg][1] for arg in args_F])
 				self.max_probability[S] = (candidate_probability, best_program)
 
-		# START: for heap search
+	def initialise_arities_probability(self):
 		for S in self.rules:
 			for F, args_F, w in self.rules[S]:
 				self.arities[S][F] = args_F
 				self.probability[S][F] = w
-		# END needed for heap search, to compute the probability of a given term
 
 	def __repr__(self):
 		s = "Print a PCFG\n"
@@ -163,15 +161,16 @@ class PCFG:
 			# print(self.rules[S])
 			self.max_probability = {}
 			self.initialise(self.start)
+			self.initialise_arities_probability()
 
 
-	# Needed for heap search (to delete later maybe?)
-	def proba_term(self, t):
-		if isinstance(t, Variable): return 1
-		F = t.primitive
-		args = t.arguments
-		weight = self.probability[F]
-		for a in args:
-			weight*=self.proba_term(a)
-		return weight
-	# END Needed for heap search (to delete later maybe?)
+	# # Needed for heap search (to delete later maybe?)
+	# def proba_term(self, S, t):
+	# 	if isinstance(t, Variable): return 1
+	# 	F = t.primitive
+	# 	args = t.arguments
+	# 	weight = self.probability[S][F]
+	# 	for a in args:
+	# 		weight*=self.proba_term(a)
+	# 	return weight
+	# # END Needed for heap search (to delete later maybe?)

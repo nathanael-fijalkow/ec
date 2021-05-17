@@ -255,31 +255,32 @@ deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 chrono += time.perf_counter()
 print("Generated the PCFG in {}s".format(chrono))
 
-# chrono = -time.perf_counter()
-# deepcoder_PCFG_t.put_random_weights(alpha = .7)
-# chrono += time.perf_counter()
-# print("Put random weights in {}s".format(chrono))
+chrono = -time.perf_counter()
+deepcoder_PCFG_t.put_random_weights(alpha = .7)
+chrono += time.perf_counter()
+print("Put random weights in {}s".format(chrono))
 
 print(deepcoder_PCFG_t)
 
 N = int(1e6)
+N = int(1e5)
 # N = 20
 
-# from Algorithms.dfs import *
-# chrono = -time.perf_counter()
-# gen = dfs(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using DFS".format(N))
-# for i in range(N):
-# 	try:
-# 		print("Enumerating program {}:".format(i))
-# 		program = next(gen)
-# 		print(deepcoder.reconstruct_from_compressed(program))
-# 		# next(gen)
-# 	except StopIteration:
-# 		print("Enumerated all programs")
-# 		break
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
+from Algorithms.dfs import *
+chrono = -time.perf_counter()
+gen = dfs(deepcoder_PCFG_t)
+print("\nStart enumerating {} programs using DFS".format(N))
+for i in range(N):
+	try:
+		#print("Enumerating program {}:".format(i))
+		program = next(gen)
+		#print(deepcoder.reconstruct_from_compressed(program))
+		# next(gen)
+	except StopIteration:
+		print("Enumerated all programs")
+		break
+chrono += time.perf_counter()
+print("Generated {} programs in {}s".format(N,chrono))
 
 # from Algorithms.bfs import *
 # chrono = -time.perf_counter()
@@ -323,46 +324,15 @@ N = int(1e6)
 # chrono += time.perf_counter()
 # print("Generated {} programs in {}s".format(N,chrono))
 
-# D = {}
-# j = 0
-# def pp(t):
-# 	if isinstance(t, Function):
-# 		print(t.primitive)
-# 		for a in t.arguments:
-# 			print(id(a))
-# 			pp(a)
-# 	else:
-# 		print(t.variable)
-# from Algorithms.heap_search import *
-# chrono = -time.perf_counter()
-# print("\nStart sampling {} programs using heap search".format(N))
-# gen = heap_search(deepcoder_PCFG_t)
-# for i in range(N):
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# program.reverse()
-# 		# print(deepcoder.reconstruct(program))
-# 	t = next(gen)
-# 	if str(t) in D: 
-# 		print("oh oh, heap search has a problem\n\n", t, "\n\n", D[str(t)], i, j)
-
-# 		print("\n\n")
-# 		D[str(t)].append(t)
-# 		# pp(t)
-# 		# print("--")
-# 		# pp(D[str(t)][0])
-# 			# j+=1
-# 			# print(hash_term(t))
-# 			# print(hash_term(D[str(t)][0]))
-# 			# print("--")
-# 			# print(hash_term(t.arguments[0]))
-# 			# print("--")
-# 			# print(hash_term(D[str(t)][0].arguments[0]))
-# 	else:			
-# 		D[str(t)] = [t]
-# 	#next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
+from Algorithms.heap_search import *
+chrono = -time.perf_counter()
+print("\nStart sampling {} programs using heap search".format(N))
+gen = heap_search(deepcoder_PCFG_t)
+#print(deepcoder_PCFG_t.max_probability)
+for i in range(N):
+	next(gen)
+chrono += time.perf_counter()
+print("Generated {} programs in {}s".format(N,chrono))
 
 # from Algorithms.sqrt_sampling import *
 # chrono = -time.perf_counter()
@@ -402,17 +372,17 @@ N = int(1e6)
 # chrono += time.perf_counter()
 # print("Generated {} programs in {}s".format(N,chrono))
 
-# from Algorithms.a_star import *
-# chrono = -time.perf_counter()
-# gen = a_star(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using A*".format(N))
-# for i in range(N):
-# 	# print("Enumerating program {}:".format(i))
-# 	# program = next(gen)
-# 	# print(deepcoder.reconstruct_from_compressed(program))
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
+from Algorithms.a_star import *
+chrono = -time.perf_counter()
+gen = a_star(deepcoder_PCFG_t)
+print("\nStart enumerating {} programs using A*".format(N))
+for i in range(N):
+	# print("Enumerating program {}:".format(i))
+	# program = next(gen)
+	# print(deepcoder.reconstruct_from_compressed(program))
+	next(gen)
+chrono += time.perf_counter()
+print("Generated {} programs in {}s".format(N,chrono))
 
 # chrono = -time.perf_counter()
 # gen = a_star_old(deepcoder_PCFG_t)

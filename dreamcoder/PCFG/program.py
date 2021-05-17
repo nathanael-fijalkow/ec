@@ -24,6 +24,7 @@ class Program:
 	'''
 	def __init__(self):
 		self.probability = 0
+		self.evaluation = {} # I/O
 	# Fix: Overload comparison operators to be able to compare programs with equal probability in the heaps
 	def __le__(self, other): return True
 	def __lt__(self, other): return True
