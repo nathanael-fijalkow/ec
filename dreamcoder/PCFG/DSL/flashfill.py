@@ -1,4 +1,5 @@
 from type_system import *
+import re
 
 primitive_types = {
   '++' : Arrow(STRING,Arrow(STRING,STRING)),
@@ -13,7 +14,7 @@ primitive_types = {
   'len' : Arrow(STRING,INT),
   'str2int' : Arrow(STRING,INT),
   'int.ite' : Arrow(BOOL,Arrow(INT,Arrow(INT,INT))),
-  'indexof' : Arrow(STRING, Arrow(STRING, Arrow(INT,INT))),
+  'indexof' : Arrow(STRING, Arrow(STRING, INT)),
 
   '=' : Arrow(INT,Arrow(INT,BOOL)),
   'prefixof' : Arrow(STRING,Arrow(STRING,BOOL)),
@@ -21,22 +22,29 @@ primitive_types = {
   'contains' : Arrow(STRING,Arrow(STRING,BOOL)),
 }
 
-TO DO !!!!
+def indexof(string1, string2, int1):
+  match = re.search(string1, string2)
+  if match:
+    match.start()
+  else:
+    -1
 
 semantics = {
   '++' : lambda string1, string2: string1 + string2,
-  'replace'  : lambda string1, string2: string1 + string2,
-  'at' : lambda string1, string2: string1 + string2,
-  'int2str' : lambda string1, string2: string1 + string2,
-  'str.ite'  : lambda string1, string2: string1 + string2,
-  'substr' : lambda string1, string2: string1 + string2,
-  '+' : lambda string1, string2: string1 + string2,
-  '-'  : lambda string1, string2: string1 + string2,
-  'len' : lambda string1, string2: string1 + string2,
-  'str2int' : lambda string1, string2: string1 + string2,
-  'int.ite'  : lambda string1, string2: string1 + string2,
-  'indexof' : lambda string1, string2: string1 + string2,
-  'prefixof' : lambda string1, string2: string1 + string2,
-  'suffixof'  : lambda string1, string2: string1 + string2,
-  'contains' : lambda string1, string2: string1 + string2,
+  'replace'  : lambda string1, string2, string3: re.sub(string1, string2, string3),
+  'at' : lambda string1, int1: string1[int1] ,
+  'int2str' : lambda int1: str(int1),
+  'str.ite'  : lambda bool1, string1, string2: string1 if bool1 else string2,
+  'substr' : lambda string1, int1, int2: string1[int1:int2],
+  '+' : lambda int1, int2: int1 + int2,
+  '-'  : lambda int1, int2: int1 - int2,
+  'len' : lambda string1: len(string1),
+  'str2int' : lambda string1: int(string1),
+  'int.ite'  : lambda bool1, int1, int2: int1 if bool1 else int2,
+  'indexof' : indexof,
+  'prefixof' : lambda string1, string2: string2.startswith(string1),
+  'suffixof'  : lambda string1, string2: string2.endswith(string1),
+  'contains' : lambda string1, string2: if string1 in string2: True else: False,
 }
+
+no_repetitions = {}

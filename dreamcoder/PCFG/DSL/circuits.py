@@ -13,3 +13,5 @@ semantics = {
 	'xor' : lambda bool1, bool2: bool1^bool2,
 	'not' : lambda bool: not bool
 }
+
+no_repetitions = {}
