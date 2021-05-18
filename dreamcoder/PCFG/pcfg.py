@@ -164,13 +164,12 @@ class PCFG:
 			self.initialise_arities_probability()
 
 
-	# # Needed for heap search (to delete later maybe?)
-	# def proba_term(self, S, t):
-	# 	if isinstance(t, Variable): return 1
-	# 	F = t.primitive
-	# 	args = t.arguments
-	# 	weight = self.probability[S][F]
-	# 	for a in args:
-	# 		weight*=self.proba_term(a)
-	# 	return weight
-	# # END Needed for heap search (to delete later maybe?)
+	def proba_term(self, S, t):
+    #'''Compute the probability of a term generated from non-terminal S'''
+		if isinstance(t, Variable): return self.probability[S][t.variable]
+		F = t.primitive
+		args = t.arguments
+		weight = self.probability[S][F]
+		for i, a in enumerate(args):
+			weight*=self.proba_term(self.arities[S][F][i], a)
+		return weight
