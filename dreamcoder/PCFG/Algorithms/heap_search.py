@@ -114,17 +114,17 @@ def hash_term_evaluation(t, dsl, environments):
     Environments is a list of environment
     '''
     if not t.evaluation:
-		if isinstance(t, Variable):
-            var = = t.variable
+        if isinstance(t, Variable):
+            var = t.variable
             for i in range(len(environments)):
                 env = environments[i] # key is i to save space; if we want to change dynamically the list environments, i must be changed for str(env) for example
                 t.evaluation[i] = env[var]
-		else:
-			F = t.primitive
+        else:
+            F = t.primitive
             args = t.arguments
             for i in range(len(environments)):
                 eval_args = [arg.evaluation[i] for arg in args]
-			    t.evaluation[i] = dsl.semantics[F](*eval_args)
+                t.evaluation[i] = dsl.semantics[F](*eval_args)
     return str(t.evaluation.values()) # hash only the outputs
 
 def hash_term(t):
