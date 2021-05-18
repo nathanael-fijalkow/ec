@@ -37,7 +37,6 @@ class heap_search_object:
                     if isinstance(G.max_probability[S][1], Variable) and G.max_probability[S][1].variable == F:
                         t = G.max_probability[S][1]
 
-
                 if hash_term(t) not in self.seen[S]:
                     heappush(self.heaps[S], (-weight, t))
                     self.seen[S].add(hash_term(t))
@@ -97,6 +96,7 @@ class heap_search_object:
                 new_arguments = [arg for arg in succ.arguments]
                 new_arguments[i] = succ_sub_term
                 new_term = Function(F, new_arguments)
+
                 weight = self.G.probability[S][F]
                 for arg in new_arguments:
                     weight*=arg.probability
@@ -107,6 +107,25 @@ class heap_search_object:
                     self.seen[S].add(hash_new_term)
         return succ
         
+
+def hash_term_evaluation(t, dsl, environments):
+    ''' 
+    Return a hash of the ouputs of t on the environments contained in environments
+    Environments is a list of environment
+    '''
+    if not t.evaluation:
+		if isinstance(t, Variable):
+            var = = t.variable
+            for i in range(len(environments)):
+                env = environments[i] # key is i to save space; if we want to change dynamically the list environments, i must be changed for str(env) for example
+                t.evaluation[i] = env[var]
+		else:
+			F = t.primitive
+            args = t.arguments
+            for i in range(len(environments)):
+                eval_args = [arg.evaluation[i] for arg in args]
+			    t.evaluation[i] = dsl.semantics[F](*eval_args)
+    return str(t.evaluation.values()) # hash only the outputs
 
 def hash_term(t):
     if isinstance(t, Variable):

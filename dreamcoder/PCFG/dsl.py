@@ -263,7 +263,7 @@ print("Put random weights in {}s".format(chrono))
 print(deepcoder_PCFG_t)
 
 N = int(1e6)
-N = int(1e5)
+#N = int(1e5)
 # N = 20
 
 from Algorithms.dfs import *
