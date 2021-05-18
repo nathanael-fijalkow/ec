@@ -24,7 +24,6 @@ class Program:
 	'''
 	def __init__(self):
 		self.probability = 0
-		self.evaluation = {} # environment : evaluation
 	# Fix: Overload comparison operators to be able to compare programs with equal probability in the heaps
 	def __le__(self, other): return True
 	def __lt__(self, other): return True
@@ -36,6 +35,7 @@ class Variable(Program):
 	def __init__(self, variable, type_var = None):
 		self.variable = variable
 		self.type_var = type_var
+		self.evaluation = {} # environment : evaluation
 
 
 	def __repr__(self):
@@ -51,6 +51,7 @@ class Function(Program):
 		self.primitive = primitive
 		self.arguments = arguments
 		self.type_program = type_program
+		self.evaluation = {} # environment : evaluation
 
 	def __repr__(self):
 		name_primitive = remove_underscore(format(self.primitive))

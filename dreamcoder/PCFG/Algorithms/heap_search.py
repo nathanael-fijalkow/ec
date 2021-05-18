@@ -2,21 +2,29 @@ from pcfg import *
 from heapq import heappush, heappop
 import copy
 import functools
-
-def heap_search(G: PCFG):
-    H = heap_search_object(G)
+#, dsl, pruning = False, environments = []
+def heap_search(G: PCFG, dsl = None, pruning = False, environments = []):
+    H = heap_search_object(G, dsl, pruning, environments)
     return H.generator()
 
 class heap_search_object:
-    def __init__(self, G: PCFG):
+    def __init__(self, G: PCFG, dsl, pruning, environments):
         self.current = '()'
         self.G = G
+
+        self.dsl = dsl
+        self.pruning = pruning
+        self.environments = environments
 
         self.start = G.start
         self.rules = G.rules
         self.symbols = [S for S in self.rules]
         self.heaps = {S: [] for S in self.symbols}
         self.seen = {S: set() for S in self.symbols}
+
+        if self.pruning:
+            self.seen_pruning = {S: set() for S in self.symbols}
+
         self.succ = {S: {} for S in self.symbols}
 
         # Initialisation heaps
@@ -38,6 +46,10 @@ class heap_search_object:
                         t = G.max_probability[S][1]
 
                 if hash_term(t) not in self.seen[S]:
+                    if self.pruning:
+                        hash_eval = hash_term_evaluation(t, dsl, environments)
+                        if hash_eval in self.seen_pruning[S]: continue
+                        self.seen_pruning[S].add(hash_eval)
                     heappush(self.heaps[S], (-weight, t))
                     self.seen[S].add(hash_term(t))
                     t.probability = weight
@@ -103,6 +115,10 @@ class heap_search_object:
                 new_term.probability = weight
                 hash_new_term = hash_term(new_term)
                 if hash_new_term not in self.seen[S]:
+                    if self.pruning:
+                        hash_eval = hash_term_evaluation(hash_new_term, dsl, environments)
+                        if hash_eval in self.seen_pruning[S]: continue
+                        self.seen_pruning[S].add(hash_eval)
                     heappush(self.heaps[S], (-weight, new_term))
                     self.seen[S].add(hash_new_term)
         return succ
@@ -113,7 +129,7 @@ def hash_term_evaluation(t, dsl, environments):
     Return a hash of the ouputs of t on the environments contained in environments
     Environments is a list of environment
     '''
-    if not t.evaluation:
+    if isinstance(t, Program) and not t.evaluation:
         if isinstance(t, Variable):
             var = t.variable
             for i in range(len(environments)):

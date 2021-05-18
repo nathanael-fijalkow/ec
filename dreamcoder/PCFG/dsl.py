@@ -194,7 +194,7 @@ class DSL:
 		return untrimmed_CFG.trim(max_program_depth)
 
 	def DSL_to_Uniform_PCFG(self, type_request, 
-		n_gram = 1,
+		n_gram = 0,
 		upper_bound_type_size = 3, 
 		upper_bound_type_nesting = 1,
 		max_program_depth = 4):
@@ -262,7 +262,7 @@ print("Put random weights in {}s".format(chrono))
 
 print(deepcoder_PCFG_t)
 
-N = int(1e6)
+N = int(1e5)
 #N = int(1e5)
 # N = 20
 
