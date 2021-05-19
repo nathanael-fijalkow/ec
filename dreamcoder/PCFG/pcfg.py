@@ -74,6 +74,7 @@ class PCFG:
 				self.arities[S][F] = args_F
 				self.probability[S][F] = w
 
+
 	def __repr__(self):
 		s = "Print a PCFG\n"
 		s += "start: {}\n".format(remove_underscore(self.start))
@@ -173,8 +174,11 @@ class PCFG:
 			self.rules[S].sort(key = lambda x: -x[2])
 			# print(self.rules[S])
 			self.max_probability = {}
-			self.initialise(self.start)
-			self.initialise_arities_probability()
+		self.initialise(self.start)
+		self.initialise_arities_probability()
+		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
+		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
+
 
 
 	def proba_term(self, S, t):

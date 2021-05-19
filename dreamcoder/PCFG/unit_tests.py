@@ -166,34 +166,31 @@ class TestSum(unittest.TestCase):
     #         self.assertAlmostEqual(p1, p2, places = 14)
             
     
-    # def test_sampling(self):
-    #     '''
-    #     test if the sampling algorithm samples according to the true probabilities
-    #     '''
-    #     K = 3_000_000 # number of programs sampled
-    #     L = 100 # we test the probabilities of the first L programs are ok
-    #     G = PCFG('start_0', rules_finite_flashfill)
-    #     G = put_random_weight(G)
-    #     G.restart()
+    def test_sampling(self):
+        '''
+        test if the sampling algorithm samples according to the true probabilities
+        '''
+        K = 300_000 # number of programs sampled
+        L = 100 # we test the probabilities of the first L programs are ok
 
-    #     H = heap_search(G) # to generate the L first programs
-    #     # gen_H = H.generator()
-        
-    #     S = sampling(G)
-    #     programs = [next(H) for _ in range(L)]
-    #     count = {str(t): 0 for t in programs}
-        
-    #     for i in range(K):
-    #         if (100*i//K) != (100*(i+1)//K):
-    #             print(100*(i+1)//K, " %")
-    #         t = next(S)
-    #         t_hashed = str(t)
-    #         if t_hashed in count:
-    #             count[t_hashed]+=1
 
-    #     for t in programs:
-    #         proba_t = probability(t, G.proba)
-    #         self.assertAlmostEqual(proba_t,count[str(t)]/K, places = 3)
+        gen_heap_search = heap_search(deepcoder_PCFG_t) # to generate the L first programs
+        gen_sampling = deepcoder_PCFG_t.sampling() # generator for sampling
+        
+        programs = [next(gen_heap_search) for _ in range(L)]
+        count = {str(t): 0 for t in programs}
+        
+        for i in range(K):
+            if (100*i//K) != (100*(i+1)//K):
+                print(100*(i+1)//K, " %")
+            t = next(gen_sampling)
+            t_hashed = str(t)
+            if t_hashed in count:
+                count[t_hashed]+=1
+
+        for t in programs:
+            proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
+            self.assertAlmostEqual(proba_t,count[str(t)]/K, places = 3)
 
     # # TODO: test sqrt(G)
         
