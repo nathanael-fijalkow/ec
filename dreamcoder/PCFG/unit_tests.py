@@ -28,7 +28,7 @@ class TestSum(unittest.TestCase):
         '''
 
         N = 20_000 # number of programs to be genetared by heap search
-        K = 200 # number of programs to be sampled from the PCFG
+        K = 3000 # number of programs to be sampled from the PCFG
 
         gen_sampling = deepcoder_PCFG_t.sampling()
         gen_heap_search = heap_search(deepcoder_PCFG_t)
@@ -52,7 +52,7 @@ class TestSum(unittest.TestCase):
         
         while len(seen_sampling) < K:
             t = next(gen_sampling)
-            print(t)
+            t = deepcoder.reconstruct_from_list(t)
             proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
             if proba_t > min_proba:
                 seen_sampling.add(str(t))
