@@ -210,7 +210,7 @@ class DSL:
 			var = remove_underscore(program.pop())
 			return Variable(var)
 		else:
-			primitive = remove_underscore(program.pop(0)) # pop from left (not efficient for now, would be better to replace by deque)
+			primitive = remove_underscore(program.pop())
 			if primitive in self.primitive_types:
 				type_primitive = self.primitive_types[primitive]
 				nb_arguments = len(type_primitive.arguments())
