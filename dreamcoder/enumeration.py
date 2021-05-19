@@ -1,6 +1,6 @@
 from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
 from dreamcoder.grammar import *
-from dreamcoder.pcfg import *
+# from dreamcoder.pcfg import *
 from dreamcoder.utilities import get_root_dir
 
 import os

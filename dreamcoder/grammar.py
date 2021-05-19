@@ -5,8 +5,6 @@ from dreamcoder.program import *
 from dreamcoder.type import *
 from dreamcoder.utilities import *
 
-from dreamcoder.pcfg import *
-
 import time
 
 
