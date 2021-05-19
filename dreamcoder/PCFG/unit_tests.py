@@ -1,19 +1,13 @@
 import unittest
-from type_system import *
-from program import *
-from cfg import * 
-from pcfg import * 
-
-import copy
-import time
-import ctypes
 import dsl
 from DSL.deepcoder import *
+
 deepcoder = dsl.DSL(semantics, primitive_types, no_repetitions)
 t = Arrow(List(INT),List(INT))
 deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
 deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 deepcoder_PCFG_t.put_random_weights(alpha = .7)
+# print(deepcoder_PCFG_t)
 
 from Algorithms.heap_search import *
 from Algorithms.a_star import *
@@ -28,12 +22,10 @@ class TestSum(unittest.TestCase):
         '''
 
         N = 20_000 # number of programs to be genetared by heap search
-        K = 3000 # number of programs to be sampled from the PCFG
+        K = 300 # number of programs to be sampled from the PCFG
 
         gen_sampling = deepcoder_PCFG_t.sampling()
         gen_heap_search = heap_search(deepcoder_PCFG_t)
-
-        # gen_H = H.generator()
         seen_sampling = set()
         seen_heaps = set()
 
@@ -41,7 +33,6 @@ class TestSum(unittest.TestCase):
         for i in range(N):
             if (100*i//N) != (100*(i+1)//N):
                 print(100*(i+1)//N, " %")
-            # t = H.next()
             t = next(gen_heap_search)
             proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
             self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
@@ -52,8 +43,8 @@ class TestSum(unittest.TestCase):
         
         while len(seen_sampling) < K:
             t = next(gen_sampling)
-            t.reverse()
-            t = deepcoder.reconstruct_from_list(t)
+            # t.reverse()
+            # t = deepcoder.reconstruct_from_list(t)
             proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
             if proba_t > min_proba:
                 seen_sampling.add(str(t))
@@ -74,7 +65,6 @@ class TestSum(unittest.TestCase):
         gen_sampling = deepcoder_PCFG_t.sampling()
         gen_a_star = a_star(deepcoder_PCFG_t)
 
-        # gen_H = H.generator()
         seen_sampling = set()
         seen_heaps = set()
 
@@ -82,13 +72,10 @@ class TestSum(unittest.TestCase):
         for i in range(N):
             if (100*i//N) != (100*(i+1)//N):
                 print(100*(i+1)//N, " %")
-            # t = H.next()
             t = next(gen_a_star)
             t = deepcoder.reconstruct_from_compressed(t)
-            print(t)
             proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
-            print(proba_t, proba_current)
-            self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
+            self.assertTrue(proba_t<=proba_current or abs(proba_current-proba_t) <= 1e-10) # check if in decreasing order
             proba_current = proba_t
             seen_heaps.add(str(t))
 
@@ -96,8 +83,8 @@ class TestSum(unittest.TestCase):
         
         while len(seen_sampling) < K:
             t = next(gen_sampling)
-            t.reverse()
-            t = deepcoder.reconstruct_from_list(t)
+            # t.reverse()
+            # t = deepcoder.reconstruct_from_list(t)
             proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
             if proba_t > min_proba:
                 seen_sampling.add(str(t))

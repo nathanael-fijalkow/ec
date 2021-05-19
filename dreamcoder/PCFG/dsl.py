@@ -216,7 +216,7 @@ class DSL:
 				nb_arguments = len(type_primitive.arguments())
 				arguments = [None]*nb_arguments
 				for i in range(nb_arguments):
-					arguments[i] = self.reconstruct_from_list(program)
+					arguments[nb_arguments-i-1] = self.reconstruct_from_list(program)
 				return Function(primitive, arguments)
 			else:
 				return Variable(primitive)
