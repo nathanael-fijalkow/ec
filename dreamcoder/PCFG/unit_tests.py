@@ -7,7 +7,6 @@ t = Arrow(List(INT),List(INT))
 deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
 deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 deepcoder_PCFG_t.put_random_weights(alpha = .7)
-print(deepcoder_PCFG_t)
 
 from Algorithms.heap_search import *
 from Algorithms.a_star import *
