@@ -1,4 +1,4 @@
-from type_system import *
+from dreamcoder.PCFG.type_system import *
 
 '''
 	PROGRAM REPRESENTATION

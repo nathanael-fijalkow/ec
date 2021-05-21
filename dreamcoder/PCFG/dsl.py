@@ -1,11 +1,10 @@
-from type_system import *
-from program import *
-from cfg import * 
-from pcfg import * 
+from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.cfg import *
+from dreamcoder.PCFG.pcfg import *
 
+from collections import deque
 import copy
 import time
-import ctypes
 
 class DSL:
 	'''
@@ -24,7 +23,7 @@ class DSL:
 
 	def __repr__(self):
 		s = "Print a DSL\n"
-		for prim in primitive_types:
+		for prim in self.primitive_types:
 			s = s + "{}: {}\n".format(remove_underscore(format(prim)), remove_underscore(format(self.primitive_types[prim])))
 		return s
 
@@ -52,7 +51,7 @@ class DSL:
 
 		set_primitive_types = set()
 		for F in self.primitive_types:
-			set_primitive_types_F,set_polymorphic_types_F = self.primitive_types[F].decompose_type()
+			set_primitive_types_F, set_polymorphic_types_F = self.primitive_types[F].decompose_type()
 			set_primitive_types = set_primitive_types | set_primitive_types_F
 		# print("primitive types")
 		# print(set_primitive_types)
@@ -78,20 +77,15 @@ class DSL:
 						new_types.add(new_type)
 						stable = False
 			set_types = set_types | new_types
-		# print("set of types")
-		# print(set_types)
+		# print("set of types", set_types)
 
 		new_primitive_types = {}
-		to_be_removed_primitive_types = []
+		# to_be_removed_primitive_types = []
 
 		for F in self.primitive_types:
 			type_F = self.primitive_types[F]
 			set_primitive_types_F,set_polymorphic_types_F = type_F.decompose_type()
 			if set_polymorphic_types_F:
-				# print("type_F")
-				# print(type_F)
-				# print("set of polymorphic types")
-				# print(set_polymorphic_types_F)
 				set_instantiated_types = set()
 				set_instantiated_types.add(type_F)
 				for poly_type in set_polymorphic_types_F:
@@ -103,17 +97,17 @@ class DSL:
 							new_type = intermediate_type.apply_unifier(unifier)
 							new_set_instantiated_types.add(new_type)
 					set_instantiated_types = new_set_instantiated_types
-				# print("final set_instantiated_types")
-				# print(set_instantiated_types)
+				# print("final set_instantiated_types", set_instantiated_types)
 
-				new_primitive_types.update({F + '_' + str(type_) : type_ for type_ in set_instantiated_types})
-				to_be_removed_primitive_types.append(F)
+				new_primitive_types.update({str(F) + '{' + str(type_) + '}' : type_ for type_ in set_instantiated_types})
+				# to_be_removed_primitive_types.append(F)
 
 		# print(new_primitive_types)
 		# print(to_be_removed_primitive_types)
-		self.primitive_types.update(new_primitive_types)
-		for old_poly_primitive in to_be_removed_primitive_types:
-			del self.primitive_types[old_poly_primitive]
+		return DSL(semantics = self.semantics, primitive_types = new_primitive_types, no_repetitions = self.no_repetitions)
+		# self.primitive_types.update(new_primitive_types)
+		# for old_poly_primitive in to_be_removed_primitive_types:
+		# 	del self.primitive_types[old_poly_primitive]
 		# print(self)
 
 	def DSL_to_CFG(self, type_request, 
@@ -126,7 +120,7 @@ class DSL:
 		Constructs a CFG from a DSL imposing bounds on size and nesting of the types
 		and on the maximum program depth
 		'''
-		self.instantiate_polymorphic_types(upper_bound_type_size, upper_bound_type_nesting)
+		instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size, upper_bound_type_nesting)
 
 		return_type = type_request.returns()
 		args = type_request.arguments()
@@ -139,55 +133,59 @@ class DSL:
 			else:
 				context_str = ""
 				for primitive in context:
-					context_str = context_str + "+" + format(primitive)
+					context_str = context_str + "++" + format(primitive)
 				return format(current_type) + context_str + "_" + str(depth)
 
-		def collect(self, list_to_be_treated):
-			if len(list_to_be_treated) > 0:
-				current_type, context, depth = list_to_be_treated.pop()
-				non_terminal = repr(current_type, context, depth)
-				# print("\ncollecting from the non-terminal: {}".format(non_terminal))
+		list_to_be_treated = deque()
+		list_to_be_treated.append((return_type, [], 0))
+		while len(list_to_be_treated) > 0:
+			current_type, context, depth = list_to_be_treated.pop()
+			non_terminal = repr(current_type, context, depth)
+			# print("\ncollecting from the non-terminal: {}".format(non_terminal))
 
-				if depth < max_program_depth and depth >= min_variable_depth:
-					for i in range(len(args)):
-						if current_type == args[i]:
-							var = "var{}".format(str(i))
-							if non_terminal in rules:
+			if depth < max_program_depth and depth >= min_variable_depth:
+				for i in range(len(args)):
+					if current_type == args[i]:
+						var = "var{}".format(str(i))
+						if non_terminal in rules:
+							if not ((var, []) in rules[non_terminal]): 
 								rules[non_terminal].append((var, []))
-							else:
-								rules[non_terminal] = [(var, [])]
+						else:
+							rules[non_terminal] = [(var, [])]
 
-				if depth < max_program_depth:
-					for F in self.primitive_types:
-						type_F = self.primitive_types[F]
-						return_F = type_F.returns()
-						if return_F == current_type:
-							if len(context) == 0 or context[0] != F or not (F in self.no_repetitions):
-								# if len(context) > 0: 
-								# 	if context[0] == F:
-								# 		print(F)
-								# 		print(str(F) in no_repetitions)
-								arguments_F = type_F.arguments() 
+			if depth == max_program_depth - 1:
+				for F in instantiated_dsl.primitive_types:
+					type_F = instantiated_dsl.primitive_types[F]
+					return_F = type_F.returns()
+					if return_F == current_type and isinstance(type_F, PrimitiveType):
+						if non_terminal in rules:
+							if not ((F, []) in rules[non_terminal]): 
+								rules[non_terminal].append((F, []))
+						else:
+							rules[non_terminal] = [(F, [])]
 
+			elif depth < max_program_depth:
+				for F in instantiated_dsl.primitive_types:
+					type_F = instantiated_dsl.primitive_types[F]
+					return_F = type_F.returns()
+					if return_F == current_type:
+						if len(context) == 0 or context[0] != F or not (F in instantiated_dsl.no_repetitions):
+							arguments_F = type_F.arguments() 
+							decorated_arguments_F = []
+							for i, arg in enumerate(arguments_F):
 								new_context = context.copy()
-								new_context = [F] + new_context
+								new_context = [(F,i)] + new_context
 								if len(new_context) > n_gram: new_context.pop()
+								decorated_arguments_F.append(repr(arg, new_context, depth + 1))
+								if not (arg, new_context, depth + 1) in list_to_be_treated:
+									list_to_be_treated.appendleft((arg, new_context, depth + 1))
 
-								decorated_arguments_F = \
-								[ repr(arg, new_context, depth + 1) \
-								for arg in arguments_F]
-
-								if non_terminal in rules:
+							if non_terminal in rules:
+								if not ((F, decorated_arguments_F) in rules[non_terminal]): 
 									rules[non_terminal].append((F, decorated_arguments_F))
-								else:
-									rules[non_terminal] = [(F, decorated_arguments_F)]
+							else:
+								rules[non_terminal] = [(F, decorated_arguments_F)]
 
-								for arg in arguments_F:
-									if not (arg, new_context, depth + 1) in list_to_be_treated:
-										list_to_be_treated = [(arg, new_context, depth + 1)] + list_to_be_treated
-				collect(self, list_to_be_treated)
-
-		collect(self, [(return_type, [], 0)])
 		# print(rules)
 		untrimmed_CFG = CFG(start = format(return_type) + "_0", rules = rules)
 		# print(untrimmed_CFG)
@@ -235,10 +233,9 @@ class DSL:
 		program_as_list.append(F)
 
 ###### TEST DEEPCODER
-from DSL.deepcoder import *
-deepcoder = DSL(semantics, primitive_types, no_repetitions)
+# from DSL.deepcoder import *
+# deepcoder = DSL(semantics, primitive_types, no_repetitions)
 # print(deepcoder)
-# deepcoder.instantiate_polymorphic_types()
 
 # var = Variable(1, List(INT))
 # program = Function('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
@@ -248,7 +245,7 @@ deepcoder = DSL(semantics, primitive_types, no_repetitions)
 # t = Arrow(List(INT),List(INT))
 
 # deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
-# # print(deepcoder_CFG_t)
+# print(deepcoder_CFG_t)
 
 # chrono = -time.perf_counter()
 # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)

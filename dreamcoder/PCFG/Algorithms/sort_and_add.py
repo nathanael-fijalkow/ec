@@ -1,5 +1,5 @@
-from pcfg import *
-from Algorithms.dfs import *
+from dreamcoder.PCFG.pcfg import *
+from dreamcoder.PCFG.Algorithms.dfs import *
 
 def sort_and_add(G : PCFG, init = 5, step = 5):
     '''

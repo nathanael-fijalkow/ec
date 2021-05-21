@@ -1,19 +1,24 @@
+# Import tools
+from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.program import *
+from dreamcoder.PCFG.cfg import *
+from dreamcoder.PCFG.pcfg import *
+from dreamcoder.PCFG.dsl import *
+
+# Import DSL
+from dreamcoder.PCFG.DSL.deepcoder import *
+
+# Import algorithms
+from dreamcoder.PCFG.Algorithms.heap_search import heap_search
+from dreamcoder.PCFG.Algorithms.a_star import a_star
+from dreamcoder.PCFG.Algorithms.threshold_search import threshold_search
+from dreamcoder.PCFG.Algorithms.dfs import dfs
+from dreamcoder.PCFG.Algorithms.bfs import bfs
+from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
+
 import pickle
 import time
 import matplotlib.pyplot as plt
-
-import dsl
-from DSL.deepcoder import *
-
-# Import algorithms
-from Algorithms.heap_search import *
-from Algorithms.a_star import *
-from Algorithms.threshold_search import *
-from Algorithms.dfs import *
-from Algorithms.bfs import *
-from Algorithms.sqrt_sampling import *
-from Algorithms.a_star import *
-
 from math import log10
 
 # first experiment: x = time, y = cumulative proba
@@ -22,7 +27,6 @@ from math import log10
 
 # Set of algorithms where we need to reconstruct the programs
 reconstruct = {dfs, bfs, threshold_search, a_star}
-
 
 def create_dataset(PCFG):
 	'''
@@ -97,7 +101,7 @@ total_number_programs = 1_000_000 #10_000_000 # 1M programs
 
 
 # PCFG
-deepcoder = dsl.DSL(semantics, primitive_types, no_repetitions)
+deepcoder = DSL(semantics, primitive_types, no_repetitions)
 t = Arrow(List(INT),List(INT))
 deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
 deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)

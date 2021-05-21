@@ -1,6 +1,6 @@
-from pcfg import *
-from program import *
-from Algorithms.sqrt_sampling import *
+from dreamcoder.PCFG.program import *
+from dreamcoder.PCFG.pcfg import *
+from dreamcoder.PCFG.Algorithms.sqrt_sampling import *
 
 from collections import deque 
 

@@ -1,9 +1,12 @@
-from pcfg import *
+from dreamcoder.PCFG.program import *
+from dreamcoder.PCFG.pcfg import *
+
 from heapq import heappush, heappop
 import copy
 import functools
-#, dsl, pruning = False, environments = []
+
 def heap_search(G: PCFG, dsl = None, pruning = False, environments = []):
+    print(pruning, environments)
     H = heap_search_object(G, dsl, pruning, environments)
     return H.generator()
 
@@ -74,7 +77,7 @@ class heap_search_object:
         while True:
             t = self.query(self.start,self.current)
             self.current = t
-            yield t
+            yield (t, t.evaluation)
     
     def query(self, S,t):
         '''
@@ -129,6 +132,7 @@ def hash_term_evaluation(t, dsl, environments):
     Return a hash of the ouputs of t on the environments contained in environments
     Environments is a list of environment
     '''
+    print("program", t)
     if isinstance(t, Program) and not t.evaluation:
         if isinstance(t, Variable):
             var = t.variable
@@ -138,6 +142,7 @@ def hash_term_evaluation(t, dsl, environments):
         else:
             F = t.primitive
             args = t.arguments
+            print("F", F, "args", args)
             for i in range(len(environments)):
                 eval_args = [arg.evaluation[i] for arg in args]
                 t.evaluation[i] = dsl.semantics[F](*eval_args)

@@ -9,7 +9,7 @@ class Type:
 	'''
 	def __eq__(self, other):
 		b = isinstance(self,PolymorphicType) and isinstance(other,PolymorphicType) and self.name == other.name
-		b = b or (isinstance(self,Primitive) and isinstance(other,Primitive) and self.type == other.type)
+		b = b or (isinstance(self,PrimitiveType) and isinstance(other,PrimitiveType) and self.type == other.type)
 		b = b or (isinstance(self,Arrow) and isinstance(other,Arrow) and self.type_in.__eq__(other.type_in) and self.type_out.__eq__(other.type_out))
 		b = b or (isinstance(self,List) and isinstance(other,List) and self.type_elt.__eq__(other.type_elt))
 		return b
@@ -30,7 +30,7 @@ class Type:
 			return []
 
 	def size(self):
-		if isinstance(self,(Primitive,PolymorphicType)):
+		if isinstance(self,(PrimitiveType,PolymorphicType)):
 			return 1
 		if isinstance(self,Arrow):
 			return self.type_in.size() + self.type_out.size()
@@ -38,7 +38,7 @@ class Type:
 			return 1 + self.type_elt.size()
 
 	def nesting(self):
-		if isinstance(self,(Primitive,PolymorphicType)):
+		if isinstance(self,(PrimitiveType,PolymorphicType)):
 			return 0
 		if isinstance(self,Arrow):
 			return max (self.type_in.nesting(), self.type_out.nesting())
@@ -66,7 +66,7 @@ class Type:
 		return self.decompose_type_rec(set_primitive_types,set_polymorphic_types)
 
 	def decompose_type_rec(self,set_primitive_types,set_polymorphic_types):
-		if isinstance(self,Primitive):
+		if isinstance(self,PrimitiveType):
 			set_primitive_types.add(self)
 		if isinstance(self,PolymorphicType):
 			set_polymorphic_types.add(self)
@@ -77,39 +77,39 @@ class Type:
 			self.type_elt.decompose_type_rec(set_primitive_types,set_polymorphic_types)
 		return set_primitive_types,set_polymorphic_types
 
-	## UNUSED
-	# def unify(self, other):
-	# 	'''
-	# 	Checks whether self can be instantiated into other,
-	# 	and returns the least unifier as a dictionary {t : type}
-	# 	mapping polymorphic types to types.
-	# 	We make the simplifying assumption that other does not contain polymorphic types,
-	# 	which makes things much simpler. 
-	# 	Example: 
-	# 	* list(t0) can be instantiated into list(int) and the unifier is {t0 : int}
-	# 	* list(t0) -> list(t1) can be instantiated into list(int) -> list(bool) 
-	# 	and the unifier is {t0 : int, t1 : bool}
-	# 	* list(t0) -> list(t0) cannot be instantiated into list(int) -> list(bool) 
-	# 	'''
-	# 	dic = {}
-	# 	if self.unify_rec(other, dic):
-	# 		return dic
-	# 	else:
-	# 		return False
+	def unify(self, other):
+		'''
+		Checks whether self can be instantiated into other
+		# and returns the least unifier as a dictionary {t : type}
+		# mapping polymorphic types to types.
 
-	# def unify_rec(self, other, dic):
-	# 	if isinstance(self,PolymorphicType):
-	# 		if self.name in dic:
-	# 			return dic[self.name] == other
-	# 		else:
-	# 			dic[self.name] = other
-	# 			return True
-	# 	if isinstance(self,Primitive):
-	# 		return isinstance(other,Primitive) and self.type == other.type
-	# 	if isinstance(self,Arrow):
-	# 		return self.type_in.unify_rec(other.type_in, dic) and self.type_out.unify_rec(other.type_out, dic)
-	# 	if isinstance(self,List):
-	# 		return isinstance(other,List) and self.type_elt.unify_rec(other.type_elt, dic)
+		IMPORTANT: We assume that other does not contain polymorphic types.
+
+		Example: 
+		* list(t0) can be instantiated into list(int) and the unifier is {t0 : int}
+		* list(t0) -> list(t1) can be instantiated into list(int) -> list(bool) 
+		and the unifier is {t0 : int, t1 : bool}
+		* list(t0) -> list(t0) cannot be instantiated into list(int) -> list(bool) 
+		'''
+		dic = {}
+		if self.unify_rec(other, dic):
+			return True
+		else:
+			return False
+
+	def unify_rec(self, other, dic):
+		if isinstance(self,PolymorphicType):
+			if self.name in dic:
+				return dic[self.name] == other
+			else:
+				dic[self.name] = other
+				return True
+		if isinstance(self,PrimitiveType):
+			return isinstance(other,PrimitiveType) and self.type == other.type
+		if isinstance(self,Arrow):
+			return isinstance(other,Arrow) and self.type_in.unify_rec(other.type_in, dic) and self.type_out.unify_rec(other.type_out, dic)
+		if isinstance(self,List):
+			return isinstance(other,List) and self.type_elt.unify_rec(other.type_elt, dic)
 
 	def apply_unifier(self, dic):
 		if isinstance(self,PolymorphicType):
@@ -117,7 +117,7 @@ class Type:
 				return dic[self.name]
 			else:
 				return self
-		if isinstance(self,Primitive):
+		if isinstance(self,PrimitiveType):
 			return self
 		if isinstance(self,Arrow):
 			new_type_in = self.type_in.apply_unifier(dic)
@@ -134,7 +134,7 @@ class PolymorphicType(Type):
 	def __repr__(self):
 		return str(self.name)
 
-class Primitive(Type):
+class PrimitiveType(Type):
 	def __init__(self, type_):
 		self.type = type_
 
@@ -161,59 +161,6 @@ class List(Type):
 		else:
 			return "list({})".format(self.type_elt)
 
-INT = Primitive('int')
-BOOL = Primitive('bool')
-STRING = Primitive('str')
-# INTLIST = Primitive('list(int)'): better use List(INT)
-
-# t1 = Arrow(Arrow(INT,INT),Arrow(List(INT),List(INT)))
-# t2 = List(Arrow(INT,Arrow(INT,INT))) # int -> (int -> int) = int -> int -> int 
-# t3 = List(Arrow(Arrow(List(INT),List(INT)), INT)) # (int -> int) -> int
-# for t in [t1,t2,t3]:
-# 	print("\nnew type:")
-# 	print(t)
-# 	print("returns:")
-# 	print(t.returns())
-# 	print("arguments:")
-# 	print(t.arguments())
-# 	print("size:")
-# 	print(t.size())
-# 	print("nesting:")
-# 	print(t.nesting())
-
-# t4 = PolymorphicType('t0')
-# t5 = List(INT)
-# t6 = List(t4)
-# t7 = PolymorphicType('t1')
-# t8 = Arrow(List(t4), List(t7))
-# t9 = Arrow(List(INT), List(BOOL))
-# t10 = Arrow(List(t4), List(t4))
-# t11 = Arrow(List(INT), List(BOOL))
-
-# print("\nDoes")
-# print(t4)
-# print("unify with")
-# print(t5)
-# print(t4.unify(t5))
-
-# print("\nDoes")
-# print(t6)
-# print("unify with")
-# print(t5)
-# print(t6.unify(t5))
-
-# print("\nDoes")
-# print(t8)
-# print("unify with")
-# print(t9)
-# print(t8.unify(t9))
-
-# print("\nDoes")
-# print(t10)
-# print("unify with")
-# print(t11)
-# print(t10.unify(t11))
-
-# type_list = [r"t{}".format(str(i)) for i in range(1,12)]
-# for t in type_list:
-# 	print(hash(t))
+INT = PrimitiveType('int')
+BOOL = PrimitiveType('bool')
+STRING = PrimitiveType('str')

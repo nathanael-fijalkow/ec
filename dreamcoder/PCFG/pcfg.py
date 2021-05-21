@@ -1,7 +1,7 @@
-from type_system import *
-from program import *
+from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.program import *
+
 import random
-import re
 import numpy as np
 import vose
 
@@ -79,10 +79,10 @@ class PCFG:
 		s = "Print a PCFG\n"
 		s += "start: {}\n".format(remove_underscore(self.start))
 		for S in self.rules:
-			s += '#\n {}\n'.format(remove_underscore(S))
+			s += '#\n {}\n'.format(S)
 			for F, args, w in self.rules[S]:
 				args_name = list(map(lambda x: remove_underscore(x), args))
-				s += '   {}: {}     {}\n'.format(remove_underscore(F), args_name, w)
+				s += '   {}: {}     {}\n'.format(remove_underscore(str(F)), args_name, w)
 		return s
 		
 	def sampling(self):

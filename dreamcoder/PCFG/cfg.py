@@ -1,5 +1,3 @@
-from type_system import *
-
 class CFG:
 	'''
 	Object that represents a context-free grammar
@@ -29,17 +27,6 @@ class CFG:
 			for f, args in self.rules[X]:
 				for a in (set(args) - reachable):
 					self.collect(a, reachable)
-
-	def unfold(self, max_program_depth = 4):
-		new_rules = {}
-		for i in range(max_program_depth):
-			for S in self.rules:
-				S2 = format(S) + "_" + str(i)
-				new_rules[S2] = []
-				for f, args in self.rules[S]:
-					if i < max_program_depth:
-						new_rules[S2].append([f + "_" + str(i), [format(a) + "_" + str(i+1) for a in args]])
-		return CFG(start = format(self.start) + "_" + str(0), rules = new_rules)
 
 	def trim(self, max_program_depth = 4):
 		'''
@@ -97,8 +84,8 @@ class CFG:
 		s = "Print a CFG\n"
 		s += "start: {}\n".format(remove_underscore(self.start))
 		for S in self.rules:
-			s += '#\n {}\n'.format(remove_underscore(S))
+			s += '#\n {}\n'.format(S)
 			for F, args in self.rules[S]:
 				args_name = list(map(lambda x: remove_underscore(x), args))
-				s += '   {}: {}\n'.format(remove_underscore(F), args_name)
+				s += '   {}: {}\n'.format(remove_underscore(str(F)), args_name)
 		return s

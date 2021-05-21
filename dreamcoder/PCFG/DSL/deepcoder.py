@@ -1,4 +1,4 @@
-from type_system import *
+from dreamcoder.PCFG.type_system import *
 
 t0 = PolymorphicType('t0')
 t1 = PolymorphicType('t1')

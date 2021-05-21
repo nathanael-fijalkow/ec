@@ -1,5 +1,5 @@
-from pcfg import *
-from program import *
+from dreamcoder.PCFG.program import *
+from dreamcoder.PCFG.pcfg import *
 
 from collections import deque 
 from heapq import heappush, heappop, heappushpop

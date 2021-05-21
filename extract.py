@@ -1,18 +1,46 @@
-from dreamcoder.grammar import *
 from dreamcoder.PCFG.type_system import *
-from dreamcoder.PCFG.dsl import *
+from dreamcoder.PCFG.program import *
+from dreamcoder.PCFG.cfg import *
 from dreamcoder.PCFG.pcfg import *
+from dreamcoder.PCFG.dsl import *
+
+from dreamcoder.grammar import *
+
+# Import algorithms
+from dreamcoder.PCFG.Algorithms.heap_search import heap_search
+from dreamcoder.PCFG.Algorithms.a_star import a_star
+from dreamcoder.PCFG.Algorithms.threshold_search import threshold_search
+from dreamcoder.PCFG.Algorithms.dfs import dfs
+from dreamcoder.PCFG.Algorithms.bfs import bfs
+from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
 import pickle
 from math import exp
 
+def evaluate(dsl, program, environment = []):
+    print("evaluating: program, environment", program, environment)
+    if isinstance(program, Application):
+        return evaluate(dsl, program.f, environment)(evaluate(dsl, program.x, environment))
+    if isinstance(program, Index):
+        return environment[program.i]
+    if isinstance(program, Abstraction):
+        return lambda x: evaluate(dsl, program.body, [x] + environment)
+    if isinstance(program, Primitive):
+        if str(program) in dsl.semantics:
+            return dsl.semantics[str(program)]
+        else:
+            return program.value
+    if isinstance(program, Invented):
+        return evaluate(dsl, program.body, environment)
+    assert(False)
+
 def remove_unifier(primitive):
-    primitive = str(primitive)
-    s = primitive.split("{")
-    if len(s) == 2:
-        return s[0] 
+    s = str(primitive)
+    s2 = s.split("{")
+    if len(s2) == 2:
+        return s2[0] 
     else:
-        return primitive
+        return s
 
 def extract_info(S):
     s = S.split("++")
@@ -48,7 +76,7 @@ def translate_type(old_type):
     if isinstance(old_type, TypeVariable):
         return PolymorphicType("t" + str(old_type.v))
     if len(old_type.arguments) == 0:
-        return Primitive(old_type.name)
+        return PrimitiveType(old_type.name)
     if old_type.name == "list":
         type_elt = translate_type(old_type.arguments[0])
         return List(type_elt)
@@ -57,68 +85,111 @@ def translate_type(old_type):
         type_out = translate_type(old_type.arguments[1])
         return Arrow(type_in = type_in, type_out = type_out)
 
+
+# Set of algorithms where we need to reconstruct the programs
+reconstruct = {dfs, bfs, threshold_search, a_star}
+timeout = 50  # in seconds
+total_number_programs = 1_000_000 #10_000_000 # 1M programs
+
+def run_algorithm(dsl, examples, PCFG, algorithm, param):
+    '''
+    Run the algorithm until either timeout or 3M programs, and for each program record probability and time of output
+    '''
+    print("Running: %s" % algorithm.__name__)
+    # result = []
+    # seen = set()
+    result = {} # str(prog) : N, chrono, proba
+    N = 0
+    chrono = 0
+    param["environments"] = [input_ for (input_, output) in examples]
+    gen = algorithm(PCFG, **param)
+    found = False
+    while (chrono < timeout and N < total_number_programs):
+        chrono -= time.perf_counter()
+        (program, evaluation) = next(gen)
+        print("program, evaluation", program, evaluation)
+        # if algorithm in reconstruct:
+        #     program = dsl.reconstruct_from_compressed(program)
+        if all([evaluation[i] == output for i,(_,output) in enumerate(examples)]):
+            found = True
+        chrono += time.perf_counter()
+
+        if found:
+            return chrono
+
+    print("Not found")
+    return timeout
+
 with open('tmp/all_grammars.pickle', 'rb') as f:
     grammar, tasks = pickle.load(f)
 
     # print(grammar)
 
-    primitive_types = {}
+    dsl_primitive_types = {}
     probability = {}
-    semantics = {}
 
     s = sum(exp(l) for l,t,p in grammar.productions)
     for log_probability, type_, primitive in grammar.productions:
-        # print(primitive, translate_type(type_), exp(log_probability)) 
-        primitive_types[primitive] = translate_type(type_)
-        probability[primitive] = exp(log_probability) / s
-        semantics[primitive] = None
+        print(primitive, translate_type(type_), exp(log_probability)) 
+        dsl_primitive_types[primitive] = translate_type(type_)
+        probability[primitive] = exp(log_probability) / s        
 
-    dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
-    # print(dsl)
+    from dreamcoder.PCFG.DSL.list import semantics
+
+    dsl = DSL(semantics = semantics, primitive_types = dsl_primitive_types, no_repetitions = ())
 
     # print(tasks)
-    for i,task in enumerate(tasks):
-        print(i)
-        # print(task.name)
-        type_request = translate_type(task.request)
-        # print(type_request)
-        arguments = type_request.arguments()
-        nb_arguments = len(arguments)
-        # print("arguments", arguments)
-        # print(task.examples)
-        # print(tasks[task])
-        contextual_grammar = tasks[task]
-        # print(contextual_grammar)
-        list_primitives = contextual_grammar.primitives
-        # print("list_primitives", list_primitives)
+    for i, task in enumerate(tasks):
+        if i <= 0:
+            print(i)
+            print(task.name)
+            # print(tasks[task])
 
-        Q = {}
+            type_request = translate_type(task.request)
+            print("type request", type_request)
+            arguments = type_request.arguments()
+            nb_arguments = len(arguments)
+            # print("arguments", arguments)
+            print("examples", task.examples)
+            contextual_grammar = tasks[task]
+            # print(contextual_grammar)
+            list_primitives = contextual_grammar.primitives
+            for p in list_primitives:
+                if not p in dsl_primitive_types:
+                    print("p ", p)
+                    assert(False)
+            # print("list_primitives", list_primitives)
 
-        # Fill in probabilities from the start symbol to primitives (no variable)
-        grammar = contextual_grammar.noParent
-        for log_probability, type_, next_primitive in grammar.productions:
-            Q["start", 0, remove_unifier(next_primitive)] = exp(log_probability)
+            Q = {}
 
-        # print(Q)
+            # Fill in probabilities from the start symbol to primitives (no variable)
+            grammar = contextual_grammar.noParent
+            for log_probability, type_, next_primitive in grammar.productions:
+                Q["start", 0, remove_unifier(next_primitive)] = exp(log_probability)
 
-        # Fill in probabilities from primitives to primitives
-        for primitive in list_primitives:
-            primitive_argument_types = primitive_types[primitive].arguments()
-            for i in range(len(contextual_grammar.library[primitive])):
-                grammar = contextual_grammar.library[primitive][i]
-                for log_probability, type_, next_primitive in grammar.productions:
-                    Q[remove_unifier(primitive), i, remove_unifier(next_primitive)] = exp(log_probability) 
+            # Fill in probabilities from primitives to primitives
+            for primitive in list_primitives:
+                primitive_argument_types = dsl_primitive_types[primitive].arguments()
+                for i in range(len(contextual_grammar.library[primitive])):
+                    grammar = contextual_grammar.library[primitive][i]
+                    for log_probability, type_, next_primitive in grammar.productions:
+                        Q[remove_unifier(primitive), i, remove_unifier(next_primitive)] = exp(log_probability) 
 
-                compatible_variables = \
-                [j for j in range(nb_arguments) \
-                if primitive_argument_types[i].unify(arguments[j])]
-                for j in compatible_variables:
-                    var = "var{}".format(str(j))
-                    Q[remove_unifier(primitive), i, var] = grammar.logVariable / len(compatible_variables) 
+                    compatible_variables = \
+                    [j for j in range(nb_arguments) \
+                    if primitive_argument_types[i].unify(arguments[j])]
+                    for j in compatible_variables:
+                        var = "var{}".format(str(j))
+                        Q[remove_unifier(primitive), i, var] = grammar.logVariable / len(compatible_variables) 
 
-        # print(Q)
-        pcfg = construct_PCFG(DSL = dsl, type_request = type_request, Q = Q)
-        pair = dsl, pcfg
+            pcfg = construct_PCFG(DSL = dsl, type_request = type_request, Q = Q)
+            # info = dsl, pcfg, lambda primitive : evaluate(dsl, primitive)
 
-        with open('dreamcoder/PCFG/DSL/list_%s.bin' % int(i), 'wb') as f:
-            pickle.dump(pcfg, f)
+            param = {}
+            param["dsl"] = dsl
+            param["pruning"] = True
+            print(run_algorithm(dsl, task.examples, pcfg, heap_search, param))
+
+            # print(pcfg)
+            # with open('tmp/list_%s.bin' % int(i), 'wb') as f:
+            #    pickle.dump(info, f)

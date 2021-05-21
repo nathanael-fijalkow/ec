@@ -1,4 +1,4 @@
-from pcfg import *
+from dreamcoder.PCFG.pcfg import *
 
 from math import sqrt, prod
 from collections import deque 
