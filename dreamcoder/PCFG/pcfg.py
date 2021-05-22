@@ -47,6 +47,14 @@ class PCFG:
 		self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
 		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
 
+	def __getstate__(self):
+		state = dict(self.__dict__)
+		del state['vose_samplers']
+		return state
+	def __setstate__(self, d):
+		self.__dict__ = d
+		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
+
 
 	def initialise(self, S):
 		'''

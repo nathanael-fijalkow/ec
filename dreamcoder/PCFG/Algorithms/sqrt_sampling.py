@@ -1,6 +1,13 @@
 from dreamcoder.PCFG.pcfg import *
 
-from math import sqrt, prod
+from math import sqrt
+try:
+	from math import prod
+except:
+	def prod(x):
+		p = 1
+		for y in x: p = p*y
+		return y
 from collections import deque 
 
 def sqrt_sampling(G: PCFG):
