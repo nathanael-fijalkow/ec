@@ -17,23 +17,6 @@ from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 import pickle
 from math import exp
 
-def evaluate(dsl, program, environment = []):
-    print("evaluating: program, environment", program, environment)
-    if isinstance(program, Application):
-        return evaluate(dsl, program.f, environment)(evaluate(dsl, program.x, environment))
-    if isinstance(program, Index):
-        return environment[program.i]
-    if isinstance(program, Abstraction):
-        return lambda x: evaluate(dsl, program.body, [x] + environment)
-    if isinstance(program, Primitive):
-        if str(program) in dsl.semantics:
-            return dsl.semantics[str(program)]
-        else:
-            return program.value
-    if isinstance(program, Invented):
-        return evaluate(dsl, program.body, environment)
-    assert(False)
-
 def remove_unifier(primitive):
     s = str(primitive)
     s2 = s.split("{")
@@ -130,7 +113,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
     s = sum(exp(l) for l,t,p in grammar.productions)
     for log_probability, type_, primitive in grammar.productions:
-        print(primitive, translate_type(type_), exp(log_probability)) 
+        # print(primitive, translate_type(type_), exp(log_probability)) 
         dsl_primitive_types[primitive] = translate_type(type_)
         probability[primitive] = exp(log_probability) / s        
 
@@ -140,17 +123,17 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
     # print(tasks)
     for i, task in enumerate(tasks):
-        if i <= 0:
+        if i <= 5:
             print(i)
             print(task.name)
             # print(tasks[task])
 
             type_request = translate_type(task.request)
-            print("type request", type_request)
+            # print("type request", type_request)
             arguments = type_request.arguments()
             nb_arguments = len(arguments)
             # print("arguments", arguments)
-            print("examples", task.examples)
+            # print("examples", task.examples)
             contextual_grammar = tasks[task]
             # print(contextual_grammar)
             list_primitives = contextual_grammar.primitives
@@ -170,26 +153,26 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             # Fill in probabilities from primitives to primitives
             for primitive in list_primitives:
                 primitive_argument_types = dsl_primitive_types[primitive].arguments()
-                for i in range(len(contextual_grammar.library[primitive])):
-                    grammar = contextual_grammar.library[primitive][i]
+                for j in range(len(contextual_grammar.library[primitive])):
+                    grammar = contextual_grammar.library[primitive][j]
                     for log_probability, type_, next_primitive in grammar.productions:
-                        Q[remove_unifier(primitive), i, remove_unifier(next_primitive)] = exp(log_probability) 
+                        Q[remove_unifier(primitive), j, remove_unifier(next_primitive)] = exp(log_probability) 
 
                     compatible_variables = \
-                    [j for j in range(nb_arguments) \
-                    if primitive_argument_types[i].unify(arguments[j])]
-                    for j in compatible_variables:
-                        var = "var{}".format(str(j))
-                        Q[remove_unifier(primitive), i, var] = grammar.logVariable / len(compatible_variables) 
+                    [k for k in range(nb_arguments) \
+                    if primitive_argument_types[j].unify(arguments[k])]
+                    for k in compatible_variables:
+                        var = "var{}".format(str(k))
+                        Q[remove_unifier(primitive), j, var] = grammar.logVariable / len(compatible_variables) 
 
             pcfg = construct_PCFG(DSL = dsl, type_request = type_request, Q = Q)
-            # info = dsl, pcfg, lambda primitive : evaluate(dsl, primitive)
+            info = dsl, pcfg, task.examples
 
-            param = {}
-            param["dsl"] = dsl
-            param["pruning"] = True
-            print(run_algorithm(dsl, task.examples, pcfg, heap_search, param))
+#            param = {}
+#            param["dsl"] = dsl
+#            param["pruning"] = True
+#            print(run_algorithm(dsl, task.examples, pcfg, heap_search, param))
 
             # print(pcfg)
-            # with open('tmp/list_%s.bin' % int(i), 'wb') as f:
-            #    pickle.dump(info, f)
+            with open('tmp/list_%s.pickle' % int(i), 'wb') as f:
+                pickle.dump(info, f)

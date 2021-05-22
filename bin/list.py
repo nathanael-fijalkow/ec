@@ -4,10 +4,12 @@ try:
 except ModuleNotFoundError:
     import bin.binutil  # alt import if called as module
 
-from dreamcoder.domains.list.main import main, list_options
+from dreamcoder.domains.list.main import main, list_options, LearnedFeatureExtractor
 from dreamcoder.dreamcoder import commandlineArguments
 from dreamcoder.utilities import numberOfCPUs
 
+_LearnedFeatureExtractor = LearnedFeatureExtractor
+class LearnedFeatureExtractor(_LearnedFeatureExtractor): pass
 
 if __name__ == '__main__':
     args = commandlineArguments(
