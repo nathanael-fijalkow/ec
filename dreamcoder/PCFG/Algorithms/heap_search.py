@@ -73,7 +73,7 @@ class heap_search_object:
         for F, args, w in self.rules[S]:
             for S2 in args:
                 if S2 not in seen:
-                    self.init_heaps(S2,seen)
+                    self.init_topological_order(S2,seen)
         self.topological_order_s.append(S)    
 
     # def init_heaps(self, S,seen):
@@ -152,6 +152,8 @@ def hash_term_evaluation(t, dsl, environments):
             var = t.variable
             for i in range(len(environments)):
                 env = environments[i] # key is i to save space; if we want to change dynamically the list environments, i must be changed for str(env) for example
+                print('###')
+                print(env, var)
                 t.evaluation[i] = env[var]
         else:
             F = t.primitive
