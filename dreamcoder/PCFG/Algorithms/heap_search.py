@@ -30,9 +30,13 @@ class heap_search_object:
 
         self.succ = {S: {} for S in self.symbols}
 
+        self.topological_order_s = []
+        seen = set()
+        self.init_topological_order(G.start, seen)
+
         # Initialisation heaps
         ## 1. put f(max(S1),max(S2), ...) for any S -> f(S1, S2, ...) 
-        for S in self.symbols:
+        for S in self.topological_order_s:
             for F, args, w in self.rules[S]:
                 #computing the weight of the max program from S,F
                 weight = w
@@ -59,17 +63,26 @@ class heap_search_object:
                     t.probability = weight
 
         # 2. call query(S,'()') for all non-terminal symbols S, from leaves to root
-        seen = set()
-        self.init_heaps(G.start, seen)
+        for S in self.topological_order_s:
+            self.query(S, '()')
+        # seen = set()
+        # self.init_heaps(G.start, seen)
 
-
-    def init_heaps(self, S,seen):
+    def init_topological_order(self, S, seen):
         seen.add(S)
         for F, args, w in self.rules[S]:
             for S2 in args:
                 if S2 not in seen:
                     self.init_heaps(S2,seen)
-        self.query(S, '()')
+        self.topological_order_s.append(S)    
+
+    # def init_heaps(self, S,seen):
+    #     seen.add(S)
+    #     for F, args, w in self.rules[S]:
+    #         for S2 in args:
+    #             if S2 not in seen:
+    #                 self.init_heaps(S2,seen)
+    #     self.query(S, '()')
 
     def generator(self):
         '''
@@ -126,7 +139,7 @@ class heap_search_object:
                     heappush(self.heaps[S], (-weight, new_term))
                     self.seen[S].add(hash_new_term)
         return succ
-        
+
 
 def hash_term_evaluation(t, dsl, environments):
     ''' 
