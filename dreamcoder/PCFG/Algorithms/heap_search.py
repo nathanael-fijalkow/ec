@@ -50,6 +50,7 @@ class heap_search_object:
 
                 if hash_term(t) not in self.seen[S]:
                     if self.pruning:
+                        print("pruning mode: check whether evaluation exists")
                         hash_eval = hash_term_evaluation(t, dsl, environments)
                         if hash_eval in self.seen_pruning[S]: continue
                         self.seen_pruning[S].add(hash_eval)
@@ -132,7 +133,7 @@ def hash_term_evaluation(t, dsl, environments):
     Return a hash of the ouputs of t on the environments contained in environments
     Environments is a list of environment
     '''
-    print("program", t)
+    print("computing hash of the program", t)
     if isinstance(t, Program) and not t.evaluation:
         if isinstance(t, Variable):
             var = t.variable
