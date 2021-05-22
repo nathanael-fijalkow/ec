@@ -1,10 +1,11 @@
 from dreamcoder.PCFG.program import *
 from dreamcoder.PCFG.pcfg import *
 from dreamcoder.PCFG.Algorithms.sqrt_sampling import *
+from dreamcoder.PCFG.Algorithms.parallel import parallel_workers
 
 from collections import deque 
 
-def hybrid(G : PCFG, DFS_depth = 3, width = 20, batch_size = 100000):
+def hybrid(G : PCFG, DFS_depth = 3, width = 20, batch_size = 100000, CPUs=1, timeout=5):
     '''
     A generator that enumerates all programs using a hybrid BFS + SQRT sampling.
     '''
@@ -55,12 +56,31 @@ def hybrid(G : PCFG, DFS_depth = 3, width = 20, batch_size = 100000):
     # print("We now have a list of {} programs with repetitions".format(len(list_programs)))
     # print("We now have a list of {} programs with repetitions using a total of {} non-terminals".format(len(list_programs), len(set_non_terminals)))
 
-    while True:
-        # Idea: do we want to re-use sampled programs in non-terminals where they fit?
-        for (partial_program, non_terminals, probability) in list_programs:
-            new_program = partial_program.copy()
-            for S in non_terminals:
-                new_program += SQRT.sample_program(S)
+    if CPUs == 1: # no parallelism
+        while True:
+            # Idea: do we want to re-use sampled programs in non-terminals where they fit?
+            for (partial_program, non_terminals, probability) in list_programs:
+                new_program = partial_program.copy()
+                for S in non_terminals:
+                    new_program += SQRT.sample_program(S)
+                yield new_program
+
+    else:
+        # TODO: workers need to have the timeout properly set
+        # TODO: workers need to check whether the sampled program is correct;
+        #       otherwise, you end up with way too much communication between processes
+        yield from parallel_workers(CPUs,
+                                    [(lp,timeout) for lp in list_programs],
+                                    parallel_callback)
+
+def parallel_callback(list_program, timeout):
+    start_time = time.time()
+    
+    (partial_program, non_terminals, probability) = list_program
+    while time.time() < time.time() + timeout:
+        new_program = partial_program.copy()
+        for S in non_terminals:
+            new_program += SQRT.sample_program(S)
             yield new_program
 
 def list_from_compressed(program, program_as_list = []):
