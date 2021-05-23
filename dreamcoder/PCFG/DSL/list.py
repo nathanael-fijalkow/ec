@@ -1,5 +1,7 @@
 from dreamcoder.PCFG.type_system import *
 
+from functools import reduce
+
 t0 = PolymorphicType('t0')
 
 def _flatten(l): return [x for xs in l for x in xs]
@@ -7,6 +9,7 @@ def _flatten(l): return [x for xs in l for x in xs]
 def _range(n):
     if n < 100: return list(range(n))
     raise ValueError()
+
 def _if(c): return lambda t: lambda f: t if c else f
 
 
@@ -228,4 +231,16 @@ semantics = {
         "eq?" : _eq,
         "+" : _addition,
         "-" : _subtraction,
+        "length" : len,
+        "0" : 0,
+        "1" : 1,
+        "2" : 2,
+        "3" : 3,
+        "4" : 4,
+        "5" : 5,
+        "range" : _range,
+        "map" : _map,
+        "unfold" : _unfold,
+        "index" : _index,
+        "fold" : _fold,
         }

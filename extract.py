@@ -14,46 +14,53 @@ from dreamcoder.PCFG.Algorithms.dfs import dfs
 from dreamcoder.PCFG.Algorithms.bfs import bfs
 from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
+from collections import deque
 import pickle
 from math import exp
 
-def remove_unifier(primitive):
-    s = str(primitive)
-    s2 = s.split("{")
-    if len(s2) == 2:
-        return s2[0] 
-    else:
-        return s
-
-def extract_info(S):
-    s = S.split("++")
-    if len(s) == 1:
-        s = s[0]
-    else:
-        s = s[1]
-    s = s.split("_")
-    if int(s[1]) == 0:
-        return "start", 0
-    s = s[0].split(",")
-    if s[0][1] == "'":
-        return s[0][2:-1], int(s[1][:-1])
-    else:
-        return s[0][1:], int(s[1][:-1])
-
-def construct_PCFG(DSL, type_request, Q,
+def construct_PCFG(DSL, 
+    type_request,
+    Q,
     upper_bound_type_size = 2, 
     upper_bound_type_nesting = 1,
-    max_program_depth = 3):
-    CFG = DSL.DSL_to_CFG(type_request, 1, upper_bound_type_size, upper_bound_type_nesting, max_program_depth)
-    # print("CFG", CFG)
+    max_program_depth = 3,
+    min_variable_depth = 2):
+    CFG = DSL.DSL_to_CFG(type_request, 
+        upper_bound_type_size, 
+        upper_bound_type_nesting, 
+        max_program_depth, 
+        min_variable_depth,
+        n_gram = 1)
+    print(CFG)
     augmented_rules = {}
     for S in CFG.rules:
-        primitive, argument_number = extract_info(S)
-        s = sum(Q[remove_unifier(primitive), argument_number, remove_unifier(F)] for F, _ in CFG.rules[S])
+        _, previous, _ = S
+        if previous:
+            primitive, argument_number = previous
+        else:
+            primitive, argument_number = None, 0
+        s = sum(Q[primitive, argument_number, F] for F, _ in CFG.rules[S])
         augmented_rules[S] = \
-        [(F, args_F, Q[remove_unifier(primitive), argument_number, remove_unifier(F)] / s) \
+        [(F, args_F, Q[primitive, argument_number, F] / s) \
         for (F, args_F) in CFG.rules[S]]
     return PCFG(start = CFG.start, rules = augmented_rules)
+
+def translate_program(old_program):
+    if isinstance(old_program, Primitive):
+        # print("Primitive", old_program.name)
+        return BasicPrimitive(old_program.name)
+    if isinstance(old_program, Index):
+        # print("Index", old_program.i)
+        return Variable(old_program.i)
+    if isinstance(old_program, Application):
+        # print("Application", old_program.f, old_program.x)
+        return Function(translate_program(old_program.f), translate_program(old_program.x))
+    if isinstance(old_program, Abstraction):
+        # print("Abstraction", old_program.body)
+        return Lambda(translate_program(old_program.body))
+    if isinstance(old_program, Invented):
+        return translate_program(old_program.body)
+    assert(False)
 
 def translate_type(old_type):
     if isinstance(old_type, TypeVariable):
@@ -69,61 +76,28 @@ def translate_type(old_type):
         return Arrow(type_in = type_in, type_out = type_out)
 
 
-# Set of algorithms where we need to reconstruct the programs
-reconstruct = {dfs, bfs, threshold_search, a_star}
-timeout = 50  # in seconds
-total_number_programs = 1_000_000 #10_000_000 # 1M programs
-
-def run_algorithm(dsl, examples, PCFG, algorithm, param):
-    '''
-    Run the algorithm until either timeout or 3M programs, and for each program record probability and time of output
-    '''
-    print("Running: %s" % algorithm.__name__)
-    # result = []
-    # seen = set()
-    result = {} # str(prog) : N, chrono, proba
-    N = 0
-    chrono = 0
-    param["environments"] = [input_ for (input_, output) in examples]
-    gen = algorithm(PCFG, **param)
-    found = False
-    while (chrono < timeout and N < total_number_programs):
-        chrono -= time.perf_counter()
-        (program, evaluation) = next(gen)
-        print("program, evaluation", program, evaluation)
-        # if algorithm in reconstruct:
-        #     program = dsl.reconstruct_from_compressed(program)
-        if all([evaluation[i] == output for i,(_,output) in enumerate(examples)]):
-            found = True
-        chrono += time.perf_counter()
-
-        if found:
-            return chrono
-
-    print("Not found")
-    return timeout
-
 with open('tmp/all_grammars.pickle', 'rb') as f:
     grammar, tasks = pickle.load(f)
 
     # print(grammar)
 
-    dsl_primitive_types = {}
+    primitive_types = {}
     probability = {}
-
-    s = sum(exp(l) for l,t,p in grammar.productions)
-    for log_probability, type_, primitive in grammar.productions:
-        # print(primitive, translate_type(type_), exp(log_probability)) 
-        dsl_primitive_types[primitive] = translate_type(type_)
-        probability[primitive] = exp(log_probability) / s        
 
     from dreamcoder.PCFG.DSL.list import semantics
 
-    dsl = DSL(semantics = semantics, primitive_types = dsl_primitive_types, no_repetitions = ())
+    s = sum(exp(l) for l,t,p in grammar.productions)
+    for log_probability, type_, primitive in grammar.productions:
+        # print(translate_program(primitive), translate_type(type_), exp(log_probability)) 
+        new_primitive = translate_program(primitive)
+        primitive_types[new_primitive] = translate_type(type_)
+        probability[new_primitive] = exp(log_probability) / s        
+
+    dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
 
     # print(tasks)
     for i, task in enumerate(tasks):
-        if i <= 5:
+        if i <= 0:
             print(i)
             print(task.name)
             # print(tasks[task])
@@ -133,14 +107,18 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             arguments = type_request.arguments()
             nb_arguments = len(arguments)
             # print("arguments", arguments)
-            # print("examples", task.examples)
+            examples = task.examples
+            inp = deque()
+            for j in range(len(examples)):
+                inp.extend(list(examples[j][0]))
+                examples[j] = copy.deepcopy(inp), list(examples[j][1])
+                inp.clear()
+                # examples[j] = list(examples[j][0]), list(examples[j][1])
+            # print("examples", examples)
+
             contextual_grammar = tasks[task]
             # print(contextual_grammar)
-            list_primitives = contextual_grammar.primitives
-            for p in list_primitives:
-                if not p in dsl_primitive_types:
-                    print("p ", p)
-                    assert(False)
+            list_old_primitives = contextual_grammar.primitives
             # print("list_primitives", list_primitives)
 
             Q = {}
@@ -148,30 +126,40 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             # Fill in probabilities from the start symbol to primitives (no variable)
             grammar = contextual_grammar.noParent
             for log_probability, type_, next_primitive in grammar.productions:
-                Q["start", 0, remove_unifier(next_primitive)] = exp(log_probability)
+                Q[None, 0, translate_program(next_primitive)] = exp(log_probability)
+            for k in range(nb_arguments):
+                Q[None, 0, Variable(k)] = 0
+
+            # print(Q)
 
             # Fill in probabilities from primitives to primitives
-            for primitive in list_primitives:
-                primitive_argument_types = dsl_primitive_types[primitive].arguments()
-                for j in range(len(contextual_grammar.library[primitive])):
-                    grammar = contextual_grammar.library[primitive][j]
+            for old_primitive in list_old_primitives:
+                new_primitive = translate_program(old_primitive)
+                primitive_argument_types = primitive_types[new_primitive].arguments()
+                for j in range(len(contextual_grammar.library[old_primitive])):
+                    grammar = contextual_grammar.library[old_primitive][j]
                     for log_probability, type_, next_primitive in grammar.productions:
-                        Q[remove_unifier(primitive), j, remove_unifier(next_primitive)] = exp(log_probability) 
+                        Q[new_primitive, j, translate_program(next_primitive)] = exp(log_probability) 
 
                     compatible_variables = \
                     [k for k in range(nb_arguments) \
                     if primitive_argument_types[j].unify(arguments[k])]
-                    for k in compatible_variables:
-                        var = "var{}".format(str(k))
-                        Q[remove_unifier(primitive), j, var] = grammar.logVariable / len(compatible_variables) 
 
-            pcfg = construct_PCFG(DSL = dsl, type_request = type_request, Q = Q)
+                    for k in range(nb_arguments):
+                        var = Variable(k)
+                        if k in compatible_variables:
+                            Q[new_primitive, j, var] = grammar.logVariable / len(compatible_variables) 
+                        else:
+                            Q[new_primitive, j, var] = 0 
+
+            pcfg = construct_PCFG(DSL = dsl, 
+                type_request = type_request,
+                Q = Q, 
+                upper_bound_type_size = 2,
+                upper_bound_type_nesting = 1,
+                min_variable_depth = 1,
+                max_program_depth = 3)
             info = dsl, pcfg, task.examples
-
-#            param = {}
-#            param["dsl"] = dsl
-#            param["pruning"] = True
-#            print(run_algorithm(dsl, task.examples, pcfg, heap_search, param))
 
             # print(pcfg)
             with open('tmp/list_%s.pickle' % int(i), 'wb') as f:

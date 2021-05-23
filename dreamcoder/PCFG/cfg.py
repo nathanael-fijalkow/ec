@@ -1,3 +1,5 @@
+from dreamcoder.PCFG.type_system import *
+
 class CFG:
 	'''
 	Object that represents a context-free grammar
@@ -5,7 +7,7 @@ class CFG:
 	start: a non-terminal
 
 	rules: a dictionary of type {S: l}
-	with S a non-terminal and l a list of pairs (F,l') with F a function symbol 
+	with S a non-terminal and l a list of pairs (F,l') with F a program 
 	and l' a list of non-terminals representing the derivation S -> F(S1,S2,..) 
 	with l' = [S1,S2,...]
 	'''
@@ -37,22 +39,18 @@ class CFG:
 
 		to_be_removed = set()
 		for S2 in self.rules:
-			l = S2.split('_')
-			S,i = l[0],int(l[1])
-			if i + min_program_depth[S2] > max_program_depth:
+			if S2[2] + min_program_depth[S2] > max_program_depth:
 				to_be_removed.add(S2)
 		# print(to_be_removed)
 		for S2 in to_be_removed:
 			del self.rules[S2]
 
 		for S2 in self.rules:
-			l = S2.split('_')
-			S,i = l[0],int(l[1])
 			new_list = []
 			for F, args_F in self.rules[S2]:
 				keep = True
 				for arg in args_F:
-					if i + min_program_depth[arg] > max_program_depth:
+					if S2[2] + min_program_depth[arg] > max_program_depth:
 						keep = False
 				if keep:
 					new_list.append((F,args_F))
@@ -82,10 +80,9 @@ class CFG:
 
 	def __repr__(self):
 		s = "Print a CFG\n"
-		s += "start: {}\n".format(remove_underscore(self.start))
+		s += "start: {}\n".format(self.start)
 		for S in self.rules:
 			s += '#\n {}\n'.format(S)
-			for F, args in self.rules[S]:
-				args_name = list(map(lambda x: remove_underscore(x), args))
-				s += '   {}: {}\n'.format(remove_underscore(str(F)), args_name)
+			for F, args_F in self.rules[S]:
+				s += '   {}: {}\n'.format(F, args_F)
 		return s

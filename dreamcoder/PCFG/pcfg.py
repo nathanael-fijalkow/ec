@@ -70,11 +70,12 @@ class PCFG:
 						break
 				candidate_probability *= self.max_probability[arg][0]
 			if candidate_probability > self.max_probability[S][0]:
-				if len(args_F) == 0:
-					best_program = Variable(variable = F)
+				if isinstance(F, Variable):
+					best_program = F
 				else:
-					best_program = Function(primitive = F, arguments = [self.max_probability[arg][1] for arg in args_F])
+					best_program = MultiFunction(function = F, arguments = [self.max_probability[arg][1] for arg in args_F])
 				self.max_probability[S] = (candidate_probability, best_program)
+		# print(self.max_probability)
 
 	def initialise_arities_probability(self):
 		for S in self.rules:
@@ -82,15 +83,13 @@ class PCFG:
 				self.arities[S][F] = args_F
 				self.probability[S][F] = w
 
-
 	def __repr__(self):
 		s = "Print a PCFG\n"
-		s += "start: {}\n".format(remove_underscore(self.start))
+		s += "start: {}\n".format(self.start)
 		for S in self.rules:
 			s += '#\n {}\n'.format(S)
-			for F, args, w in self.rules[S]:
-				args_name = list(map(lambda x: remove_underscore(x), args))
-				s += '   {}: {}     {}\n'.format(remove_underscore(str(F)), args_name, w)
+			for F, args_F, w in self.rules[S]:
+				s += '   {}: {}     {}\n'.format(F, args_F, w)
 		return s
 		
 	def sampling(self):
@@ -100,7 +99,7 @@ class PCFG:
 		while True:
 			yield self.sample_program(self.start)
 
-	# Three versions. This is one the fastest.
+	# Three versions. This one is the fastest.
 	# Sample as type Program
 	def sample_program(self, S):
 		F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
@@ -111,7 +110,7 @@ class PCFG:
 			arguments = []
 			for arg in args_F:
 				arguments.append(self.sample_program(arg))
-			return Function(F,arguments)
+			return MultiFunction(F,arguments)
 
 	# Sample as list
 	# def sample_program(self, S):
@@ -133,7 +132,7 @@ class PCFG:
 	# 		sub_programs = []
 	# 		for arg in args_F:
 	# 			sub_programs.append(self.sample_program(arg))
-	# 		return Function(F,sub_programs)
+	# 		return MultiFunction(F,sub_programs)
 
 	# Explicitly handles recursion
 	# def sample_program(self, partial_program, non_terminals):

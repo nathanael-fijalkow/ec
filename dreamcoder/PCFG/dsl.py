@@ -1,4 +1,5 @@
 from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.program import *
 from dreamcoder.PCFG.cfg import *
 from dreamcoder.PCFG.pcfg import *
 
@@ -23,68 +24,42 @@ class DSL:
 
 	def __repr__(self):
 		s = "Print a DSL\n"
-		for prim in self.primitive_types:
-			s = s + "{}: {}\n".format(remove_underscore(format(prim)), remove_underscore(format(self.primitive_types[prim])))
+		for primitive in self.primitive_types:
+			s = s + "{}: {}\n".format(primitive, self.primitive_types[primitive])
 		return s
 
 	def evaluate(self, program, environment):
 		'''
-		Evaluates a program in some environment
-		environment is a dictionary {var : value}
+		Evaluates a program in the dictionary environment : {variable : value} 
 		'''
-		if program.is_variable():
-			try:
-				var = program.variable
-				return environment[var]
-			except: print("Uses the variable %s not present in the environment" % var)
-		else:
-			F = program.primitive
-			args = program.arguments
-			try:
-				eval_args = [self.evaluate(arg, environment) for arg in args]
-				return self.semantics[F](*eval_args)
-			except: print("The semantics of %s is not defined" % F)
+		if isinstance(program, Variable):
+			return environment[program.variable]
+		if isinstance(program, Function):
+			evaluated_arguments = {self.evaluate(arg, environment) for arg in program.arguments}
+			return self.evaluate(program.function, environment)(evaluated_arguments)
+		if isinstance(program, Lambda):
+			return lambda x: self.evaluate(program.body, [x] + environment)
+		if isinstance(program, BasicPrimitive):
+			return self.semantics[program.primitive]
+		assert(False)
 
 	def instantiate_polymorphic_types(self,
 		upper_bound_type_size = 3, 
 		upper_bound_type_nesting = 1):
 
-		set_primitive_types = set()
+		set_basic_types = set()
 		for F in self.primitive_types:
-			set_primitive_types_F, set_polymorphic_types_F = self.primitive_types[F].decompose_type()
-			set_primitive_types = set_primitive_types | set_primitive_types_F
-		# print("primitive types")
-		# print(set_primitive_types)
+			set_basic_types_F, set_polymorphic_types_F = self.primitive_types[F].decompose_type()
+			set_basic_types = set_basic_types | set_basic_types_F
+		# print("basic types", set_basic_types)
 
-		set_types = set_primitive_types
-		stable = False
-		while not stable:
-			new_types = set()
-			stable = True
-			for type_ in set_types:
-				new_type = List(type_)
-				if not new_type in set_types \
-				and new_type.size() <= upper_bound_type_size \
-				and new_type.nesting() <= upper_bound_type_nesting:
-					new_types.add(new_type)
-					stable = False
-
-				for type_2 in set_types:
-					new_type = Arrow(type_,type_2)
-					if not new_type in set_types \
-					and new_type.size() <= upper_bound_type_size \
-					and new_type.nesting() <= upper_bound_type_nesting:
-						new_types.add(new_type)
-						stable = False
-			set_types = set_types | new_types
-		# print("set of types", set_types)
+		set_types = generate_polymorphic_types(set_basic_types, upper_bound_type_size, upper_bound_type_nesting)
 
 		new_primitive_types = {}
-		# to_be_removed_primitive_types = []
 
 		for F in self.primitive_types:
 			type_F = self.primitive_types[F]
-			set_primitive_types_F,set_polymorphic_types_F = type_F.decompose_type()
+			set_basic_types_F,set_polymorphic_types_F = type_F.decompose_type()
 			if set_polymorphic_types_F:
 				set_instantiated_types = set()
 				set_instantiated_types.add(type_F)
@@ -99,23 +74,16 @@ class DSL:
 					set_instantiated_types = new_set_instantiated_types
 				# print("final set_instantiated_types", set_instantiated_types)
 
-				new_primitive_types.update({str(F) + '{' + str(type_) + '}' : type_ for type_ in set_instantiated_types})
-				# to_be_removed_primitive_types.append(F)
+				new_primitive_types.update({(F, type_) : type_ for type_ in set_instantiated_types})
 
-		# print(new_primitive_types)
-		# print(to_be_removed_primitive_types)
 		return DSL(semantics = self.semantics, primitive_types = new_primitive_types, no_repetitions = self.no_repetitions)
-		# self.primitive_types.update(new_primitive_types)
-		# for old_poly_primitive in to_be_removed_primitive_types:
-		# 	del self.primitive_types[old_poly_primitive]
-		# print(self)
 
 	def DSL_to_CFG(self, type_request, 
-		n_gram = 1,
 		upper_bound_type_size = 2, 
 		upper_bound_type_nesting = 1, 
 		max_program_depth = 4,
-		min_variable_depth = 2):
+		min_variable_depth = 2,
+		n_gram = 1):
 		'''
 		Constructs a CFG from a DSL imposing bounds on size and nesting of the types
 		and on the maximum program depth
@@ -128,13 +96,10 @@ class DSL:
 		rules = {}
 
 		def repr(current_type, context, depth):
-			if len(context) == 0:
-				return format(current_type) + "_" + str(depth)
+			if depth == 0:
+				return current_type, None, depth
 			else:
-				context_str = ""
-				for primitive in context:
-					context_str = context_str + "++" + format(primitive)
-				return format(current_type) + context_str + "_" + str(depth)
+				return current_type, context[0], depth
 
 		list_to_be_treated = deque()
 		list_to_be_treated.append((return_type, [], 0))
@@ -146,7 +111,7 @@ class DSL:
 			if depth < max_program_depth and depth >= min_variable_depth:
 				for i in range(len(args)):
 					if current_type == args[i]:
-						var = "var{}".format(str(i))
+						var = Variable(i)	
 						if non_terminal in rules:
 							if not ((var, []) in rules[non_terminal]): 
 								rules[non_terminal].append((var, []))
@@ -154,8 +119,7 @@ class DSL:
 							rules[non_terminal] = [(var, [])]
 
 			if depth == max_program_depth - 1:
-				for F in instantiated_dsl.primitive_types:
-					type_F = instantiated_dsl.primitive_types[F]
+				for (F, type_F) in instantiated_dsl.primitive_types:
 					return_F = type_F.returns()
 					if return_F == current_type and isinstance(type_F, PrimitiveType):
 						if non_terminal in rules:
@@ -165,8 +129,7 @@ class DSL:
 							rules[non_terminal] = [(F, [])]
 
 			elif depth < max_program_depth:
-				for F in instantiated_dsl.primitive_types:
-					type_F = instantiated_dsl.primitive_types[F]
+				for (F, type_F) in instantiated_dsl.primitive_types:
 					return_F = type_F.returns()
 					if return_F == current_type:
 						if len(context) == 0 or context[0] != F or not (F in instantiated_dsl.no_repetitions):
@@ -187,16 +150,22 @@ class DSL:
 								rules[non_terminal] = [(F, decorated_arguments_F)]
 
 		# print(rules)
-		untrimmed_CFG = CFG(start = format(return_type) + "_0", rules = rules)
+		untrimmed_CFG = CFG(start = (return_type, None, 0), rules = rules)
 		# print(untrimmed_CFG)
 		return untrimmed_CFG.trim(max_program_depth)
 
 	def DSL_to_Uniform_PCFG(self, type_request, 
-		n_gram = 0,
 		upper_bound_type_size = 3, 
 		upper_bound_type_nesting = 1,
-		max_program_depth = 4):
-		CFG = self.DSL_to_CFG(type_request, n_gram, upper_bound_type_size, upper_bound_type_nesting, max_program_depth)
+		max_program_depth = 4,
+		min_variable_depth = 2,
+		n_gram = 0):
+		CFG = self.DSL_to_CFG(type_request, 
+			upper_bound_type_size, 
+			upper_bound_type_nesting, 
+			max_program_depth, 
+			min_variable_depth, 
+			n_gram)
 		augmented_rules = {}
 		for S in CFG.rules:
 			p = len(CFG.rules[S])
@@ -218,7 +187,6 @@ class DSL:
 				return Function(primitive, arguments)
 			else:
 				return Variable(primitive)
-		# return partial_program
 
 	def reconstruct_from_compressed(self, program):
 		program_as_list = []
@@ -231,180 +199,3 @@ class DSL:
 		if sub_program:
 			self.list_from_compressed(sub_program, program_as_list)
 		program_as_list.append(F)
-
-###### TEST DEEPCODER
-# from DSL.deepcoder import *
-# deepcoder = DSL(semantics, primitive_types, no_repetitions)
-# print(deepcoder)
-
-# var = Variable(1, List(INT))
-# program = Function('SCANL1,+', [var], Arrow(List(INT),List(INT)), ['var'])
-# environment = {1 : [1,3,6]}
-# print(deepcoder.evaluate(program,environment))
-
-# t = Arrow(List(INT),List(INT))
-
-# deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
-# print(deepcoder_CFG_t)
-
-# chrono = -time.perf_counter()
-# deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
-# chrono += time.perf_counter()
-# print("Generated the PCFG in {}s".format(chrono))
-
-# chrono = -time.perf_counter()
-# deepcoder_PCFG_t.put_random_weights(alpha = .7)
-# chrono += time.perf_counter()
-# print("Put random weights in {}s".format(chrono))
-
-# print(deepcoder_PCFG_t)
-
-# N = int(1e5)
-# #N = int(1e5)
-# # N = 20
-
-# from Algorithms.dfs import *
-# chrono = -time.perf_counter()
-# gen = dfs(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using DFS".format(N))
-# for i in range(N):
-# 	try:
-# 		#print("Enumerating program {}:".format(i))
-# 		program = next(gen)
-# 		#print(deepcoder.reconstruct_from_compressed(program))
-# 		# next(gen)
-# 	except StopIteration:
-# 		print("Enumerated all programs")
-# 		break
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.bfs import *
-# chrono = -time.perf_counter()
-# gen = bfs(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using beam search".format(N))
-# for i in range(N):
-# 	try:
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# print(deepcoder.reconstruct_from_compressed(program))
-# 		next(gen)
-# 	except StopIteration:
-# 		print("Enumerated all programs")
-# 		break
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.sort_and_add import *
-# chrono = -time.perf_counter()
-# gen = sort_and_add(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using Sort and Add".format(N))
-# for i in range(N):
-# 	# print("Enumerating program {}:".format(i))
-# 	# program = next(gen)
-# 	# program.reverse()
-# 	# print(deepcoder.reconstruct(program))
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.threshold_search import *
-# chrono = -time.perf_counter()
-# gen = threshold_search(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using Threshold Search".format(N))
-# for i in range(N):
-# 	# print("Enumerating program {}:".format(i))
-# 	# program = next(gen)
-# 	# program.reverse()
-# 	# print(deepcoder.reconstruct(program))
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.heap_search import *
-# chrono = -time.perf_counter()
-# print("\nStart sampling {} programs using heap search".format(N))
-# gen = heap_search(deepcoder_PCFG_t)
-# #print(deepcoder_PCFG_t.max_probability)
-# for i in range(N):
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.sqrt_sampling import *
-# chrono = -time.perf_counter()
-# print("\nStart sampling {} programs using SQRT sampling".format(N))
-# gen = sqrt_sampling(deepcoder_PCFG_t)
-# for i in range(N):
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# program.reverse()
-# 		# print(deepcoder.reconstruct_from_list(program))		
-# 		next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.hybrid import *
-# chrono = -time.perf_counter()
-# print("\nStart sampling {} programs using hybrid sampling".format(N))
-# gen = hybrid(deepcoder_PCFG_t)
-# for i in range(N):
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# program.reverse()
-# 		# print(deepcoder.reconstruct_from_list(program))
-# 		next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# chrono = -time.perf_counter()
-# print("\nStart sampling {} programs using batch SQRT sampling".format(N))
-# gen = batch_sqrt_sampling(deepcoder_PCFG_t, batch_size = 1)
-# for i in range(N):
-# 		# print("Enumerating program {}:".format(i))
-# 		# program = next(gen)
-# 		# program.reverse()
-# 		# print(deepcoder.reconstruct(program))
-# 		next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# from Algorithms.a_star import *
-# chrono = -time.perf_counter()
-# gen = a_star(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using A*".format(N))
-# for i in range(N):
-# 	# print("Enumerating program {}:".format(i))
-# 	# program = next(gen)
-# 	# print(deepcoder.reconstruct_from_compressed(program))
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-# chrono = -time.perf_counter()
-# gen = a_star_old(deepcoder_PCFG_t)
-# print("\nStart enumerating {} programs using old A*".format(N))
-# for i in range(N):
-# 	# print("Enumerating program {}:".format(i))
-# 	# program = next(gen)
-# 	# program.reverse()
-# 	# print(deepcoder.reconstruct_from_list(program))
-# 	next(gen)
-# chrono += time.perf_counter()
-# print("Generated {} programs in {}s".format(N,chrono))
-
-###### TEST CIRCUITS
-# from DSL.circuits import *
-# circuits = DSL(semantics, primitive_types)
-# print(circuits)
-
-# t = Arrow(BOOL,Arrow(BOOL,Arrow(BOOL,BOOL)))
-# print(circuits.DSL_to_CFG(t))
-
-# circuits_PCFG_t = circuits.DSL_to_Uniform_PCFG(t, max_program_depth = 5)
-# print(circuits_PCFG_t)
-
-# gen = circuits_PCFG_t.sampling()
-# for i in range(100):
-# 	print("program {}:".format(i))
-# 	print(next(gen))

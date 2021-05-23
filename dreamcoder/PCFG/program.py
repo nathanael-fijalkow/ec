@@ -1,66 +1,71 @@
 from dreamcoder.PCFG.type_system import *
 
-'''
-	PROGRAM REPRESENTATION
-	* Explicit representation: using the class below
-	* (Top-down) list representation: list of primitives and variables 
-	from top to bottom and left to right
-	* (Top-down) compressed representation: (primitive, sub_program) 
-	where sub_program is a subprogramme or None
-
-	Example: 
-	* Function(primitive = F, arguments = [Variable(variable = a), Variable(variable = b)])
-	* [F, a, b]
-	* [F, [a, [b, None]]]
-
-	Remark: list and compressed representation are essentially the same thing,
-	the compressed variant is useful to avoid copies hence representing many programs 
-	with small memory
-'''
-
 class Program:
 	'''
-	Object that represents a program
+	Object that represents a program: a lambda term with basic primitives
 	'''
-	def __init__(self):
-		self.probability = 0
-	# Fix: Overload comparison operators to be able to compare programs with equal probability in the heaps
-	def __le__(self, other): return True
-	def __lt__(self, other): return True
-	def __gt__(self, other): return False
-	def __ge__(self, other): return True
-	# END Overload comparison operators to be able to compare programs with equal probability in the heaps
+	probability = 0
+	evaluation = {}
+		# dictionary {number of the environment : value}
+
+	def __eq__(self, other):
+		b = isinstance(self,Variable) and isinstance(other,Variable) and self.variable == other.variable
+		b = b or (isinstance(self,Function) and isinstance(other,Function) and self.function == other.function and self.argument == other.argument)
+		b = b or (isinstance(self,Lambda) and isinstance(other,Lambda) and self.body.__eq__(other.body))
+		b = b or (isinstance(self,BasicPrimitive) and isinstance(other,BasicPrimitive) and self.primitive.__eq__(other.primitive))
+		return b
+
+	def __hash__(self):
+		return hash(str(self))
 
 class Variable(Program):
-	def __init__(self, variable, type_var = None):
+	def __init__(self, variable):
 		self.variable = variable
-		self.type_var = type_var
-		self.evaluation = {} # environment : evaluation
-
+		self.evaluation.clear()
 
 	def __repr__(self):
-		l = self.variable.split('_')
-		name = l[0]
-		if self.type_var:
-			return "{}: {}".format(name, self.type_var)
-		else:
-			return name
+		return "var" + str(self.variable)
 
 class Function(Program):
-	def __init__(self, primitive, arguments, type_program = None):
-		self.primitive = primitive
-		self.arguments = arguments
-		self.type_program = type_program
-		self.evaluation = {} # environment : evaluation
+	def __init__(self, function, argument):
+		self.function = function
+		self.argument = argument
+		self.evaluation.clear()
 
 	def __repr__(self):
-		name_primitive = remove_underscore(format(self.primitive))
-		s = name_primitive + " ("
-		name_arg = ""
+		return format(self.function) + " (" + format(self.argument) + ")"
+
+# Some syntactic sugar: a multi function is a function with multiple arguments
+# f(x,y) = (f x) y
+class MultiFunction(Program):
+	def __init__(self, function, arguments):
+		self.function = function
+		self.arguments = arguments
+		self.evaluation.clear()
+
+	def __repr__(self):
+		s = format(self.function) + " ("
 		for arg in self.arguments[:-1]:
-			name_arg = remove_underscore(format(arg))
-			s += name_arg + ', '
+			s += format(arg) + ', '
+		name_arg = ""
 		if len(self.arguments)>0:
-			name_arg = remove_underscore(format(self.arguments[-1]))
+			name_arg = format(self.arguments[-1])
 		s += name_arg + ')'
 		return s
+
+class Lambda(Program):
+	def __init__(self, body):
+		self.body = body
+		self.evaluation.clear()
+
+	def __repr__(self):
+		s = "(lambda: " + format(self.body) + ")"
+		return s
+
+class BasicPrimitive(Program):
+	def __init__(self, primitive):
+		self.primitive = primitive
+		self.evaluation.clear()
+
+	def __repr__(self):
+		return format(self.primitive)
