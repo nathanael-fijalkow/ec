@@ -14,7 +14,10 @@ def heap_search(G: PCFG, dsl, environments):
 
 class heap_search_object:
     dsl = None
+    # Stores the environments
     environments = []
+    # Stores the evaluation of all programs seen
+    evaluations = {}
 
     def __init__(self, G: PCFG, dsl, environments):
         self.current = '()'
@@ -27,16 +30,15 @@ class heap_search_object:
         self.rules = G.rules
         self.symbols = [S for S in self.rules]
 
+        # One heap per non-terminal symbol
         self.heaps = {S: [] for S in self.symbols}
 
-        # Local: to avoid putting the same program twice in the same heap
-        self.hash_table_local = {S: set() for S in self.symbols}
-        # Global: to avoid evaluating again a program
-        self.hash_table_global = set()
+        # To avoid putting the same program twice in the same heap
+        self.hash_table_program = {S: set() for S in self.symbols}
         # Evaluation: to avoid having two programs with same values in the same heap
         self.hash_table_evaluation = {S: set() for S in self.symbols}
-        TO DO: UPDATE THE REST WITH THIS
 
+        # Stores the successor of a program
         self.succ = {S: {} for S in self.symbols}
 
         self.topological_order_s = []
@@ -44,18 +46,18 @@ class heap_search_object:
         self.init_topological_order(G.start, seen)
 
         print(dsl)
-
+        print(dsl.primitive_types)
         # print(G.max_probability)
 
         # Initialisation heaps
         ## 1. add F(max(S1),max(S2), ...) to Heap(S) for all S -> F(S1, S2, ...) 
         for S in self.topological_order_s:
-            # print("S", S)
+            print("S", S)
 
             for F, args_F, w in self.rules[S]:
                 # computing the weight of the max program from S using F
 
-                # print("F", F, F.__class__.__name__)
+                print("F", F, F.__class__.__name__)
 
                 if isinstance(F, Variable):
                     # print("Variable", F)
@@ -64,16 +66,23 @@ class heap_search_object:
                     # print("BasicPrimitive or ComposedPrimitive", F)
                     program = MultiFunction(F, [G.max_probability[arg][1] for arg in args_F])
 
-                # print("program found", program)
+                print("program found", program)
 
                 hash_program = compute_hash_program(program)
+                # We first check whether the program is already in the heap
                 if hash_program not in self.hash_table_program[S]:
-                    # print("new program for this non-terminal")
+                    print("new program for this non-terminal")
                     self.hash_table_program[S].add(hash_program)
-                    hash_evaluation = self.compute_hash_evaluation(program)
-                    if hash_evaluation not in self.hash_table_evaluation: 
-                        # print("new values")
-                        self.hash_table_evaluation.add(hash_evaluation)
+                    # We second check whether the program has already been seen 
+                    if hash_program not in self.evaluations:
+                        hash_evaluation = self.compute_hash_evaluation(program)
+                        self.evaluations[hash_program] = hash_evaluation 
+                    else:
+                        hash_evaluation = self.evaluations[hash_program]
+                    # We third check whether a program with the same values is already in the heap
+                    if hash_evaluation not in self.hash_table_evaluation[S]: 
+                        print("new values for this non-terminal")
+                        self.hash_table_evaluation[S].add(hash_evaluation)
                         weight = w
                         for arg in args_F:
                             weight *= G.max_probability[arg][0]
@@ -84,6 +93,7 @@ class heap_search_object:
             print("\nheaps[S]", S, self.heaps[S], "\n")
 
         print("Initialisation phase 1 over")
+        assert(False)
 
         # 2. call query(S,'()') for all non-terminal symbols S, from leaves to root
         for S in self.topological_order_s:
@@ -105,9 +115,9 @@ class heap_search_object:
         '''
         while True:
             print("current:", self.current)
-            t = self.query(self.start, self.current)
-            self.current = t
-            yield t
+            program = self.query(self.start, self.current)
+            self.current = program
+            yield program
     
     def query(self, S, program):
         '''
@@ -153,9 +163,13 @@ class heap_search_object:
                     hash_new_program = compute_hash_program(new_program)
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
-                        hash_evaluation = self.compute_hash_evaluation(new_program)
-                        if hash_evaluation not in self.hash_table_evaluation:
-                            self.hash_table_evaluation.add(hash_evaluation)
+                        if hash_program not in self.evaluations:
+                            hash_evaluation = self.compute_hash_evaluation(program)
+                            self.evaluations[hash_program] = hash_evaluation 
+                        else:
+                            hash_evaluation = self.evaluation[hash_program]
+                        if hash_evaluation not in self.hash_table_evaluation[S]:
+                            self.hash_table_evaluation[S].add(hash_evaluation)
                             weight = self.G.probability[S][F]
                             for arg in new_arguments:
                                 weight *= arg.probability
@@ -171,10 +185,12 @@ class heap_search_object:
         '''
         if not program.evaluation:
             for i in range(len(self.environments)):
-                env = copy.deepcopy(self.environments[i][0])
-                # print("evaluating in environment", env)
-                program.evaluation[i] = self.evaluate_memoized(program, env, i)
-        # print("evaluation:", program.evaluation)
+                if i <= 0:
+                    env = copy.deepcopy(self.environments[i][0])
+                    print("environment before", env)
+                    program.evaluation[i] = self.evaluate_memoized(program, env, i)
+                    print("environment after", env)
+        print("evaluation:", program.evaluation)
         return str(program.evaluation.values()) # hash only the outputs
 
     def evaluate_memoized(self, program, environment, i):
@@ -187,48 +203,69 @@ class heap_search_object:
             return program.evaluation[i]
         try:
             if isinstance(program, Variable):
-                # print("Variable", program)
-                # print("Environment", environment)
+                print("\nVariable", program, environment)
+                result = environment[program.variable]
+                print("result of the evaluation", program, environment, result)
                 return environment[program.variable]
             if isinstance(program, MultiFunction):
-                # print("MultiFunction", program)
-                # print("Environment", environment)
+                print("\nMultiFunction", program, environment)
                 if len(program.arguments) == 0:
-                    return self.evaluate_memoized(program.function, environment, i)
+                    result = self.evaluate_memoized(program.function, environment, i)
+                    print("result of the evaluation", program, environment, result)
+                    return result
                 else:
-                    environment_copy = copy.deepcopy(environment)
-                    evaluated_arguments = []
+                    evaluated_arguments = deque()
                     for arg in program.arguments:
-                        evaluated_arguments.append(self.evaluate_memoized(arg, environment_copy, i))
-                        environment_copy.clear()
-                        environment_copy = copy.deepcopy(environment)
-                    evaluated_function = self.evaluate_memoized(program.function, environment_copy, i)
-                    f = evaluated_function
+                        evaluated_arguments.appendleft(self.evaluate_memoized(arg, environment, i))
+                    print("evaluated_arguments (in reversed order)", program, evaluated_arguments, environment)
                     for eval_arg in evaluated_arguments:
-                        f = f(eval_arg)
-                    return f
+                        environment.appendleft(eval_arg)
+                    print("environment after evaluating arguments", program, environment)
+                    result = self.evaluate_memoized(program.function, environment, i)
+                    print("result of the evaluation", program, environment, result)
+                    return result
             if isinstance(program, Function):
-                # print("Function", program)
-                # print("Environment", environment)
-                environment_copy = copy.deepcopy(environment)
+                print("\nFunction", program, environment)
                 evaluated_argument = self.evaluate_memoized(program.argument, environment, i)
-                evaluated_function = self.evaluate_memoized(program.function, environment_copy, i)
-                return evaluated_function(evaluated_argument)
+                environment.appendleft(evaluated_argument)
+                print("environment after evaluating argument", program, environment)
+                result = self.evaluate_memoized(program.function, environment, i)
+                print("result of the evaluation", program, environment, result)
+                return result
             if isinstance(program, Lambda):
-                # print("Lambda", program)
-                # print("Environment", environment)
-                return lambda x: self.evaluate_memoized(program.body, appendleftreturn(environment, x), i)
+                print("\nLambda", program, environment)
+                result = self.evaluate_memoized(program.body, environment, i)
+                print("result of the evaluation", program, environment, result)
+                environment.popleft()
+                return result
             if isinstance(program, BasicPrimitive):
-                # print("BasicPrimitive", program)
-                return self.dsl.semantics[program.primitive]
-        except (IndexError, ValueError, TypeError):
+                print("\nBasicPrimitive", program, environment)
+                type_primitive = self.dsl.primitive_types[program]
+                nb_arguments = len(type_primitive.arguments())
+                if nb_arguments > 0:
+                    result = self.dsl.semantics[program.primitive]
+                    for j in range(nb_arguments):
+                        result = result(environment.popleft())
+                    print("result of the evaluation", program, environment, result)
+                    return result
+                else:
+                    result = self.dsl.semantics[program.primitive]
+                    print("result of the evaluation", program, environment, result)
+                    return result
+        except IndexError:
+            print("ERROR IndexError: program, environment", program, environment)
             return None
-        # print(program.__class__.__name__)
+        except ValueError:
+            print("ERROR ValueError: program, environment", program, environment)
+            return None
+        except TypeError:
+            print("ERROR TypeError: program, environment", program, environment)
+        print(program.__class__.__name__)
         assert(False)
 
 def compute_hash_program(program):
     if isinstance(program, Variable):
-        return str(id(program))
+        return str(program.variable)
     if isinstance(program, MultiFunction):
         return str(id(program.function)) + str([id(arg) for arg in program.arguments])
     if isinstance(program, Function):

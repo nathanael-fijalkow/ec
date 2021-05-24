@@ -11,7 +11,7 @@ class PCFG:
 
 	rules: a dictionary of type {S: L}
 	with S a non-terminal and L a list of triplets (F, l, w)
-	with F a function symbol, l a list of non-terminals, and w a weight
+	with F a program, l a list of non-terminals, and w a weight
 	representing the derivation S -> F(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
 	IMPORTANT: we assume that the derivations are sorted in non-decreasing order of weights,
@@ -64,6 +64,8 @@ class PCFG:
 		for F, args_F, w in self.rules[S]:
 			candidate_probability = w
 			for arg in args_F:
+				if arg not in self.rules:
+					break
 				if arg not in self.max_probability:
 					self.initialise(arg)
 					if self.max_probability[arg] == (-1,-1):

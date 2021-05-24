@@ -38,7 +38,20 @@ class Type:
 		if isinstance(self,Arrow):
 			return max (self.type_in.nesting(), self.type_out.nesting())
 		if isinstance(self,List):
-			return 1 + self.type_elt.nesting()
+			return 2 + self.type_elt.nesting()
+
+	def size_and_nesting(self):
+		if isinstance(self,(PrimitiveType,PolymorphicType)):
+			return (1,0)
+		if isinstance(self,Arrow):
+			s1, n1 = self.type_in.size_and_nesting()
+			s2, n2 = self.type_out.size_and_nesting()
+			return s1 + s2, max (n1, n2)
+		if isinstance(self,List) and isinstance(self.type_elt,(PrimitiveType,PolymorphicType)):
+			s, n = self.type_elt.size_and_nesting()
+			return s + 1, n + 1
+		return 100, 100
+
 
 	def find_polymorphic_types(self):
 		set_types = set()
@@ -160,31 +173,31 @@ INT = PrimitiveType('int')
 BOOL = PrimitiveType('bool')
 STRING = PrimitiveType('str')
 
-def generate_polymorphic_types(set_basic_types,
-	upper_bound_type_size = 3, 
-	upper_bound_type_nesting = 1):
+# def generate_polymorphic_types(set_basic_types,
+# 	upper_bound_type_size = 3, 
+# 	upper_bound_type_nesting = 1):
 
-	# Generates all types of bounded size and nesting from the primitive types
-	set_types = set_basic_types
-	stable = False
-	while not stable:
-		new_types = set()
-		stable = True
-		for type_ in set_types:
-			new_type = List(type_)
-			if not new_type in set_types \
-			and new_type.size() <= upper_bound_type_size \
-			and new_type.nesting() <= upper_bound_type_nesting:
-				new_types.add(new_type)
-				stable = False
+# 	# Generates all types of bounded size and nesting from the primitive types
+# 	set_types = set_basic_types
+# 	stable = False
+# 	while not stable:
+# 		new_types = set()
+# 		stable = True
+# 		for type_ in set_types:
+# 			for type_2 in set_types:
+# 				new_type = Arrow(type_,type_2)
+# 				if not new_type in set_types \
+# 				and new_type.size() <= upper_bound_type_size \
+# 				and new_type.nesting() <= upper_bound_type_nesting:
+# 					new_types.add(new_type)
+# 					stable = False
+# 		set_types = set_types | new_types
 
-			for type_2 in set_types:
-				new_type = Arrow(type_,type_2)
-				if not new_type in set_types \
-				and new_type.size() <= upper_bound_type_size \
-				and new_type.nesting() <= upper_bound_type_nesting:
-					new_types.add(new_type)
-					stable = False
-		set_types = set_types | new_types
-	# print("set of types", set_types)
-	return set_types
+# 	new_types.clear()
+# 	for type_ in set_basic_types:
+# 		new_type = List(type_)
+# 		new_types.add(new_type)
+# 	set_types = set_types | new_types
+
+# 	# print("set of types", set_types)
+# 	return set_types

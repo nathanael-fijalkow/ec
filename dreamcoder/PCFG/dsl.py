@@ -53,7 +53,11 @@ class DSL:
 			set_basic_types = set_basic_types | set_basic_types_F
 		# print("basic types", set_basic_types)
 
-		set_types = generate_polymorphic_types(set_basic_types, upper_bound_type_size, upper_bound_type_nesting)
+		set_types = set(set_basic_types)
+		for type_ in set_basic_types:
+			new_type = List(type_)
+			set_types.add(new_type)
+		# print("set_types", set_types)
 
 		new_primitive_types = {}
 
@@ -70,11 +74,16 @@ class DSL:
 							unifier = {str(poly_type): type_}
 							intermediate_type = copy.deepcopy(instantiated_type)
 							new_type = intermediate_type.apply_unifier(unifier)
-							new_set_instantiated_types.add(new_type)
+							size, nesting = new_type.size_and_nesting()
+							if size <= upper_bound_type_size \
+							and nesting <= upper_bound_type_nesting:
+								new_set_instantiated_types.add(new_type)
 					set_instantiated_types = new_set_instantiated_types
 				# print("final set_instantiated_types", set_instantiated_types)
-
 				new_primitive_types.update({(F, type_) : type_ for type_ in set_instantiated_types})
+			else:
+				new_primitive_types[(F, type_F)] = type_F
+		# print(new_primitive_types)
 
 		return DSL(semantics = self.semantics, primitive_types = new_primitive_types, no_repetitions = self.no_repetitions)
 
@@ -106,7 +115,7 @@ class DSL:
 		while len(list_to_be_treated) > 0:
 			current_type, context, depth = list_to_be_treated.pop()
 			non_terminal = repr(current_type, context, depth)
-			# print("\ncollecting from the non-terminal: {}".format(non_terminal))
+			# print("\ncollecting from the non-terminal ", non_terminal)
 
 			if depth < max_program_depth and depth >= min_variable_depth:
 				for i in range(len(args)):
@@ -114,19 +123,19 @@ class DSL:
 						var = Variable(i)	
 						if non_terminal in rules:
 							if not ((var, []) in rules[non_terminal]): 
-								rules[non_terminal].append((var, []))
+								rules[non_terminal].append(((var, current_type), []))
 						else:
-							rules[non_terminal] = [(var, [])]
+							rules[non_terminal] = [((var, current_type), [])]
 
 			if depth == max_program_depth - 1:
 				for (F, type_F) in instantiated_dsl.primitive_types:
 					return_F = type_F.returns()
-					if return_F == current_type and isinstance(type_F, PrimitiveType):
+					if return_F == current_type and len(type_F.arguments()) == 0:
 						if non_terminal in rules:
-							if not ((F, []) in rules[non_terminal]): 
-								rules[non_terminal].append((F, []))
+							if not (((F, type_F), []) in rules[non_terminal]): 
+								rules[non_terminal].append(((F, type_F), []))
 						else:
-							rules[non_terminal] = [(F, [])]
+							rules[non_terminal] = [((F, type_F), [])]
 
 			elif depth < max_program_depth:
 				for (F, type_F) in instantiated_dsl.primitive_types:
@@ -144,10 +153,10 @@ class DSL:
 									list_to_be_treated.appendleft((arg, new_context, depth + 1))
 
 							if non_terminal in rules:
-								if not ((F, decorated_arguments_F) in rules[non_terminal]): 
-									rules[non_terminal].append((F, decorated_arguments_F))
+								if not (((F, type_F), decorated_arguments_F) in rules[non_terminal]): 
+									rules[non_terminal].append(((F, type_F), decorated_arguments_F))
 							else:
-								rules[non_terminal] = [(F, decorated_arguments_F)]
+								rules[non_terminal] = [((F, type_F), decorated_arguments_F)]
 
 		# print(rules)
 		untrimmed_CFG = CFG(start = (return_type, None, 0), rules = rules)

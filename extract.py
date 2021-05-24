@@ -31,7 +31,7 @@ def construct_PCFG(DSL,
         max_program_depth, 
         min_variable_depth,
         n_gram = 1)
-    print(CFG)
+    # print(CFG)
     augmented_rules = {}
     for S in CFG.rules:
         _, previous, _ = S
@@ -39,10 +39,14 @@ def construct_PCFG(DSL,
             primitive, argument_number = previous
         else:
             primitive, argument_number = None, 0
-        s = sum(Q[primitive, argument_number, F] for F, _ in CFG.rules[S])
-        augmented_rules[S] = \
-        [(F, args_F, Q[primitive, argument_number, F] / s) \
-        for (F, args_F) in CFG.rules[S]]
+        for F, _ in CFG.rules[S]:
+            if (primitive, argument_number, F[0]) not in Q:
+                Q[primitive, argument_number, F[0]] = 0
+        s = sum(Q[primitive, argument_number, F[0]] for F, _ in CFG.rules[S])
+        if s > 0:
+            augmented_rules[S] = \
+            [(F, args_F, Q[primitive, argument_number, F[0]] / s) \
+            for (F, args_F) in CFG.rules[S]]
     return PCFG(start = CFG.start, rules = augmented_rules)
 
 def translate_program(old_program):
@@ -94,7 +98,8 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
         probability[new_primitive] = exp(log_probability) / s        
 
     dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
-
+    print("DSL", dsl)
+    
     # print(tasks)
     for i, task in enumerate(tasks):
         if i <= 0:
@@ -155,12 +160,12 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             pcfg = construct_PCFG(DSL = dsl, 
                 type_request = type_request,
                 Q = Q, 
-                upper_bound_type_size = 2,
-                upper_bound_type_nesting = 1,
+                upper_bound_type_size = 5,
+                upper_bound_type_nesting = 3,
                 min_variable_depth = 1,
-                max_program_depth = 3)
+                max_program_depth = 5)
             info = dsl, pcfg, task.examples
 
-            # print(pcfg)
+            print(pcfg)
             with open('tmp/list_%s.pickle' % int(i), 'wb') as f:
                 pickle.dump(info, f)

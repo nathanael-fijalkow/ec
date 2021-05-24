@@ -36,7 +36,6 @@ class Function(Program):
 		return format(self.function) + " (" + format(self.argument) + ")"
 
 # Some syntactic sugar: a multi function is a function with multiple arguments
-# f(x,y) = (f x) y
 class MultiFunction(Program):
 	def __init__(self, function, arguments):
 		self.function = function
@@ -59,7 +58,7 @@ class Lambda(Program):
 		self.evaluation.clear()
 
 	def __repr__(self):
-		s = "(lambda: " + format(self.body) + ")"
+		s = "(lambda " + format(self.body) + ")"
 		return s
 
 class BasicPrimitive(Program):
