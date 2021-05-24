@@ -1,8 +1,10 @@
 from dreamcoder.PCFG.type_system import *
 
+import math
 from functools import reduce
 
 t0 = PolymorphicType('t0')
+t1 = PolymorphicType('t1')
 
 def _flatten(l): return [x for xs in l for x in xs]
 
@@ -11,7 +13,6 @@ def _range(n):
     raise ValueError()
 
 def _if(c): return lambda t: lambda f: t if c else f
-
 
 def _and(x): return lambda y: x and y
 
@@ -229,6 +230,7 @@ semantics = {
         "gt?" : _gt,
         "if" : _if,
         "eq?" : _eq,
+        "*" : _multiplication,
         "+" : _addition,
         "-" : _subtraction,
         "length" : len,
@@ -243,4 +245,36 @@ semantics = {
         "unfold" : _unfold,
         "index" : _index,
         "fold" : _fold,
+        "mod" : _mod,
+        "is-prime" : _isPrime,
+        "is-square" : _isSquare,
+        }
+
+primitive_types = {
+        "empty" : List(t0),
+        "cons" : Arrow(t0,Arrow(List(t0),List(t0))),
+        "car" : Arrow(List(t0), t0),
+        "cdr" : Arrow(List(t0), List(t0)),
+        "empty?" : Arrow(List(t0), BOOL),
+        "gt?" : Arrow(INT, Arrow(INT, BOOL)),
+        "if" : Arrow(BOOL, Arrow(t0, Arrow(t0, t0))),
+        "eq?" : Arrow(INT, Arrow(INT, BOOL)),
+        "*" : Arrow(INT, Arrow(INT, INT)),
+        "+" : Arrow(INT, Arrow(INT, INT)),
+        "-" : Arrow(INT, Arrow(INT, INT)),
+        "length" : Arrow(List(t0), INT),
+        "0" : INT,
+        "1" : INT,
+        "2" : INT,
+        "3" : INT,
+        "4" : INT,
+        "5" : INT,
+        "range" : Arrow(INT, List(INT)),
+        "map" : Arrow(Arrow(t0, t1), Arrow(List(t0), List(t1))),
+        "unfold" : Arrow(t0, Arrow(Arrow(t0,BOOL), Arrow(Arrow(t0,t1), Arrow(Arrow(t0,t0), List(t1))))),
+        "index" : Arrow(INT, Arrow(List(t0), t0)),
+        "fold" : Arrow(List(t0), Arrow(t1, Arrow(Arrow(t0, Arrow(t1, t1)), t1))),
+        "mod" : Arrow(INT, Arrow(INT, INT)),
+        "is-prime" : Arrow(INT, BOOL),
+        "is-square" : Arrow(INT, BOOL),
         }

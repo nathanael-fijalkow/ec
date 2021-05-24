@@ -31,7 +31,6 @@ def construct_PCFG(DSL,
         max_program_depth, 
         min_variable_depth,
         n_gram = 1)
-    # print(CFG)
     augmented_rules = {}
     for S in CFG.rules:
         _, previous, _ = S
@@ -81,25 +80,12 @@ def translate_type(old_type):
 
 
 with open('tmp/all_grammars.pickle', 'rb') as f:
-    grammar, tasks = pickle.load(f)
-
-    # print(grammar)
+    _, tasks = pickle.load(f)
 
     primitive_types = {}
-    probability = {}
 
     from dreamcoder.PCFG.DSL.list import semantics
-
-    s = sum(exp(l) for l,t,p in grammar.productions)
-    for log_probability, type_, primitive in grammar.productions:
-        # print(translate_program(primitive), translate_type(type_), exp(log_probability)) 
-        new_primitive = translate_program(primitive)
-        primitive_types[new_primitive] = translate_type(type_)
-        probability[new_primitive] = exp(log_probability) / s        
-
-    dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
-    print("DSL", dsl)
-    
+   
     # print(tasks)
     for i, task in enumerate(tasks):
         if i <= 0:
@@ -123,19 +109,19 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
             contextual_grammar = tasks[task]
             # print(contextual_grammar)
-            list_old_primitives = contextual_grammar.primitives
-            # print("list_primitives", list_primitives)
 
             Q = {}
 
             # Fill in probabilities from the start symbol to primitives (no variable)
             grammar = contextual_grammar.noParent
             for log_probability, type_, next_primitive in grammar.productions:
-                Q[None, 0, translate_program(next_primitive)] = exp(log_probability)
+                next_primitive = translate_program(next_primitive)
+                primitive_types[next_primitive] = translate_type(type_)
+                Q[None, 0, next_primitive] = exp(log_probability)
             for k in range(nb_arguments):
                 Q[None, 0, Variable(k)] = 0
 
-            # print(Q)
+            list_old_primitives = contextual_grammar.primitives
 
             # Fill in probabilities from primitives to primitives
             for old_primitive in list_old_primitives:
@@ -157,6 +143,9 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                         else:
                             Q[new_primitive, j, var] = 0 
 
+            dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
+            # print(dsl)
+
             pcfg = construct_PCFG(DSL = dsl, 
                 type_request = type_request,
                 Q = Q, 
@@ -164,8 +153,11 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 upper_bound_type_nesting = 3,
                 min_variable_depth = 1,
                 max_program_depth = 5)
-            info = dsl, pcfg, task.examples
+            # print(pcfg)
 
-            print(pcfg)
+            info = dsl, pcfg, examples
+
             with open('tmp/list_%s.pickle' % int(i), 'wb') as f:
                 pickle.dump(info, f)
+
+            primitive_types.clear()

@@ -28,7 +28,7 @@ class PCFG:
 	with a S a non-terminal, p = max_{P generated from S} probability(P)
 	and P = argmax probability(p)
 	'''
-	def __init__(self, start: str, rules: dict):
+	def __init__(self, start: Program, rules: dict):
 		self.start = start
 		for S in rules:
 			rules[S].sort(key=lambda x: -x[2])
@@ -51,6 +51,7 @@ class PCFG:
 		state = dict(self.__dict__)
 		del state['vose_samplers']
 		return state
+
 	def __setstate__(self, d):
 		self.__dict__ = d
 		self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
@@ -61,7 +62,7 @@ class PCFG:
 		populates the dictionary max_probability and initialise self.arities, self.probability
 		'''
 		self.max_probability[S] = (-1,-1)
-		for F, args_F, w in self.rules[S]:
+		for (F,_), args_F, w in self.rules[S]:
 			candidate_probability = w
 			for arg in args_F:
 				if arg not in self.rules:
@@ -73,15 +74,14 @@ class PCFG:
 				candidate_probability *= self.max_probability[arg][0]
 			if candidate_probability > self.max_probability[S][0]:
 				if isinstance(F, Variable):
-					best_program = F
+					best_program = Variable(F.variable)
 				else:
 					best_program = MultiFunction(function = F, arguments = [self.max_probability[arg][1] for arg in args_F])
 				self.max_probability[S] = (candidate_probability, best_program)
-		# print(self.max_probability)
 
 	def initialise_arities_probability(self):
 		for S in self.rules:
-			for F, args_F, w in self.rules[S]:
+			for (F,_), args_F, w in self.rules[S]:
 				self.arities[S][F] = args_F
 				self.probability[S][F] = w
 
@@ -90,8 +90,8 @@ class PCFG:
 		s += "start: {}\n".format(self.start)
 		for S in self.rules:
 			s += '#\n {}\n'.format(S)
-			for F, args_F, w in self.rules[S]:
-				s += '   {}: {}     {}\n'.format(F, args_F, w)
+			for (F, type_F), args_F, w in self.rules[S]:
+				s += '   {} - {}: {}     {}\n'.format(F, type_F, args_F, w)
 		return s
 		
 	def sampling(self):
