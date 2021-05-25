@@ -1,17 +1,5 @@
 from dreamcoder.PCFG.type_system import *
-
-# cons lists 
-# list = None | (value, list)
-def index(cons_list, i):
-    try:
-        (value, next_const_list) = cons_list
-        if i == 0: 
-            return value
-        else:
-            return index(next_const_list, i-1)
-    except:
-        print("Empty!")
-        return None
+from dreamcoder.PCFG.cons_list import *
 
 class Program:
     '''
@@ -19,7 +7,8 @@ class Program:
     '''
     probability = 0
     evaluation = {}
-    # dictionary {number of the environment : value}
+    # dictionary { number of environment : value }
+
     # environment: a cons list 
     # list = None | (value, list)
 

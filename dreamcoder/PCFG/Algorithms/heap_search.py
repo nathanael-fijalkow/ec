@@ -21,7 +21,7 @@ class heap_search_object:
     evaluations = {}
 
     def __init__(self, G: PCFG, dsl, environments):
-        self.current = '()'
+        self.current = None
 
         self.dsl = dsl
         self.environments = environments
@@ -47,9 +47,6 @@ class heap_search_object:
         self.init_topological_order(G.start, seen)
 
         print(dsl)
-        # print(G.max_probability)
-        for S in self.rules:
-            print(S, G.max_probability[S])
 
         # Initialisation heaps
         ## 1. add F(max(S1),max(S2), ...) to Heap(S) for all S -> F(S1, S2, ...) 
@@ -57,31 +54,31 @@ class heap_search_object:
             # print("###########\nS", S)
 
             for (F, _), args_F, w in self.rules[S]:
-                # computing the weight of the max program from S using F
-
                 # print("####\nF", F)
 
                 if isinstance(F, Variable):
                     # print("Variable", F)
-                    program = Variable(F.variable)
+                    if isinstance(G.max_probability[S][1], Variable) and G.max_probability[S][1] == F:
+                        program = G.max_probability[S][1]
+                    else:
+                        program = F
+
                 else:
                     # print("BasicPrimitive or ComposedPrimitive", F)
-                    program = MultiFunction(F, [G.max_probability[arg][1] for arg in args_F])
+                    if isinstance(G.max_probability[S][1], MultiFunction) and G.max_probability[S][1].function == F:
+                        program = G.max_probability[S][1]
+                    else:
+                        program = MultiFunction(F, [G.max_probability[arg][1] for arg in args_F])
+
 
                 hash_program = compute_hash_program(program)
                 # We first check whether the program is already in the heap
                 if hash_program not in self.hash_table_program[S]:
-                    # print("new program for this non-terminal")
                     self.hash_table_program[S].add(hash_program)
-                    # We second check whether the program has already been seen 
-                    if hash_program not in self.evaluations:
-                        hash_evaluation = self.compute_hash_evaluation(program)
-                        self.evaluations[hash_program] = hash_evaluation 
-                    else:
-                        hash_evaluation = self.evaluations[hash_program]
+                    # We second check whether the values have already been seen 
+                    hash_evaluation = self.compute_hash_evaluation(program, hash_program)
                     # We third check whether a program with the same values is already in the heap
                     if hash_evaluation not in self.hash_table_evaluation[S]: 
-                        # print("new values for this non-terminal")
                         self.hash_table_evaluation[S].add(hash_evaluation)
                         weight = w
                         for arg in args_F:
@@ -90,16 +87,15 @@ class heap_search_object:
                         # print("adding to the heap", program)
                         heappush(self.heaps[S], (-weight, program))
 
-            print("\nheaps[", S, "] = ", self.heaps[S], "\n")
+            # print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
         print("######################\nInitialisation phase 1 over\n######################\n")
 
-        # 2. call query(S,'()') for all non-terminal symbols S, from leaves to root
+        # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
         for S in self.topological_order_s:
-            self.query(S, '()')
+            self.query(S, None)
 
         print("######################\nInitialisation phase 2 over\n######################\n")
-        assert(False)
 
     def init_topological_order(self, S, seen):
         seen.add(S)
@@ -111,7 +107,7 @@ class heap_search_object:
 
     def generator(self):
         '''
-        generator which outputs the next most probable program
+        generator which outputs the next most probabilityble program
         '''
         while True:
             print("current:", self.current)
@@ -121,75 +117,110 @@ class heap_search_object:
     
     def query(self, S, program):
         '''
-        computing the successor of program as a derivation starting from S
+        computing the successor of program from S
         '''
-        print("\nquery:", S, program)
-      
+        print("\nquery:", S, program, program.__class__.__name__)
+
         hash_program = compute_hash_program(program)
 
-        print("heaps[S]", self.heaps[S])
+        # print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
-        # If we have already computed the successor of program starting from S, we return its stored value
+        # if we have already computed the successor of program from S, we return its stored value
         if hash_program in self.succ[S]:
             print("exists already", self.succ[S][hash_program])
             return self.succ[S][hash_program]
 
-        # Else the successor is the next element in the heap
+        # otherwise the successor is the next element in the heap
         try:
             print("to be found in the heap")
-            proba, succ = heappop(self.heaps[S])
-            print("found", proba, succ)
-        except:
-            succ =  -1 # the heap is empty <=> no successor
+            probability, succ = heappop(self.heaps[S])
+            print("found", probability, succ, succ.__class__.__name__)
+        except :
+            succ =  None # the heap is empty: there are no successors from S
 
         self.succ[S][hash_program] = succ # we store the succesor
 
         # now we need to add all potential successors of succ in heaps[S]
+        print("start updating the structure")
         if isinstance(succ, Variable): 
             return succ # if succ is a variable, there is no successor so we stop here
+
         if isinstance(succ, MultiFunction):
             F = succ.function
 
             for i in range(len(succ.arguments)):
+                print("change argument ", i)
                 S2 = self.G.arities[S][F][i] # non-terminal symbol used to derive the i-th argument
-                succ_sub_term = self.query(S2, succ.arguments[i]) # succ_sub_term
+                print("checking the successor of program", program, succ, i, S2)
+                succ_sub_program = self.query(S2, succ.arguments[i]) # succ_sub_program
 
-                # Should not be necessary to check that it's a program?
-                if isinstance(succ_sub_term, Program):
+                if isinstance(succ_sub_program, Program):
                     new_arguments = [arg for arg in succ.arguments]
-                    new_arguments[i] = succ_sub_term
+                    new_arguments[i] = succ_sub_program
                     new_program = MultiFunction(F, new_arguments)
 
                     hash_new_program = compute_hash_program(new_program)
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
-                        if hash_program not in self.evaluations:
-                            hash_evaluation = self.compute_hash_evaluation(program)
-                            self.evaluations[hash_program] = hash_evaluation 
-                        else:
-                            hash_evaluation = self.evaluation[hash_program]
-                        if hash_evaluation not in self.hash_table_evaluation[S]:
-                            self.hash_table_evaluation[S].add(hash_evaluation)
+                        hash_new_evaluation = self.compute_hash_evaluation(new_program, hash_new_program)
+                        if hash_new_evaluation not in self.hash_table_evaluation[S]:
+                            self.hash_table_evaluation[S].add(hash_new_evaluation)
                             weight = self.G.probability[S][F]
                             for arg in new_arguments:
                                 weight *= arg.probability
                             new_program.probability = weight
+                            if not new_program.evaluation:
+                                print("this program was not evaluated", new_program, new_program.evaluation)
+                                assert(False)
                             heappush(self.heaps[S], (-weight, new_program))
+
+        if isinstance(succ, Function):
+            F = succ.function
+            S2 = self.G.arities[S][F][0] 
+            print("checking the successor of program", program, succ, 0, S2)
+            succ_sub_program = self.query(S2, succ.argument) # succ_sub_program
+
+            if isinstance(succ_sub_program, Program):
+                new_program = Function(F, succ_sub_program)
+                hash_new_program = compute_hash_program(new_program)
+                if hash_new_program not in self.hash_table_program[S]:
+                    self.hash_table_program[S].add(hash_new_program)
+                    hash_new_evaluation = self.compute_hash_evaluation(new_program, hash_new_program)
+                    if hash_new_evaluation not in self.hash_table_evaluation[S]:
+                        self.hash_table_evaluation[S].add(hash_new_evaluation)
+                        new_program.probability = self.G.probability[S][F] * succ_sub_program.probability
+                        if not new_program.evaluation:
+                            print("this program was not evaluated", new_program, new_program.evaluation)
+                            assert(False)
+                        heappush(self.heaps[S], (-new_program.probability, new_program))
+
+        if isinstance(succ, Lambda):
+            print("well that was unexpected")
+            assert(False)
 
         return succ
 
-    def compute_hash_evaluation(self, program):
+    def compute_hash_evaluation(self, program, hash_program):
         ''' 
         Return a hash of the outputs of program on the environments contained in environments
         Environments is a deque of environments
         '''
-        if not program.evaluation:
+        print("compute and set evaluation and its hash", program, hash_program)
+
+        if hash_program in self.evaluations:
+            evaluation = self.evaluations[hash_program]
+            print("old evaluation: ", evaluation)
+            program.evaluation.update(evaluation)
+            return str(evaluation)
+        else:
+            self.evaluations[hash_program] = {}
             for i in range(len(self.environments)):
-                if i <= 0:
-                    env = copy.deepcopy(self.environments[i][0])
-                    program.evaluation[i] = program.eval(self.dsl, env, i)
-        # print("evaluation:", program.evaluation)
-        return str(program.evaluation.values()) # hash only the outputs
+                # env = copy.deepcopy(self.environments[i][0])
+                v = program.eval(self.dsl, self.environments[i][0], i)
+                program.evaluation[i] = v
+                self.evaluations[hash_program][i] = v
+            print("new evaluation: ", program.evaluation) 
+            return str(program.evaluation)
 
 def compute_hash_program(program):
     if isinstance(program, Variable):
@@ -202,6 +233,4 @@ def compute_hash_program(program):
         return str(id(program.body))
     if isinstance(program, BasicPrimitive):
         return str(program.primitive)
-    if program == "()":
-        return ""
-    assert(False)
+    return ""
