@@ -78,6 +78,14 @@ def translate_type(old_type):
         type_out = translate_type(old_type.arguments[1])
         return Arrow(type_in = type_in, type_out = type_out)
 
+# environment: a cons list 
+# list = None | (value, list)
+
+def tuple2constlist(t, i = 0):
+    if i < len(t):
+        return (t[i], tuple2constlist(t, i+1))
+    else:
+        return None
 
 with open('tmp/all_grammars.pickle', 'rb') as f:
     _, tasks = pickle.load(f)
@@ -99,11 +107,8 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             nb_arguments = len(arguments)
             # print("arguments", arguments)
             examples = task.examples
-            inp = deque()
             for j in range(len(examples)):
-                inp.extend(list(examples[j][0]))
-                examples[j] = copy.deepcopy(inp), list(examples[j][1])
-                inp.clear()
+                examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
                 # examples[j] = list(examples[j][0]), list(examples[j][1])
             # print("examples", examples)
 

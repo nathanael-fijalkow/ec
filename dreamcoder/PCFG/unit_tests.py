@@ -13,6 +13,18 @@ from Algorithms.a_star import *
 from Algorithms.threshold_search import *
 from Algorithms.dfs import *
 
+# TO ADD:
+        # p0 = Lambda(Function(Function(BasicPrimitive("+"), Variable(0)), BasicPrimitive("1")))
+        # p1 = Function(Lambda(Function(Function(BasicPrimitive("map"), p0), Variable(0))), Variable(0))
+        # env = ([2,4], None)
+        # print(p1.eval(dsl, p1, env, 0))
+
+        # p0 = Lambda(Function(Function(BasicPrimitive("+"), Variable(0)), Variable(1)))
+        # p1 = Function(Function(\
+        #     Lambda(Lambda(Function(Function(BasicPrimitive("map"), p0), Variable(1)))), \
+        #     Variable(0)), Variable(1))
+        # env = ([2,4,24], (5, None))
+        # print(p1.eval(dsl, env, 0))
 
 class TestSum(unittest.TestCase):
 

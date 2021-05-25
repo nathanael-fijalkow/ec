@@ -1,12 +1,27 @@
 from dreamcoder.PCFG.type_system import *
 
+# cons lists 
+# list = None | (value, list)
+def index(cons_list, i):
+    try:
+        (value, next_const_list) = cons_list
+        if i == 0: 
+            return value
+        else:
+            return index(next_const_list, i-1)
+    except:
+        print("Empty!")
+        return None
+
 class Program:
     '''
     Object that represents a program: a lambda term with basic primitives
     '''
     probability = 0
     evaluation = {}
-        # dictionary {number of the environment : value}
+    # dictionary {number of the environment : value}
+    # environment: a cons list 
+    # list = None | (value, list)
 
     def __eq__(self, other):
         b = isinstance(self,Variable) and isinstance(other,Variable) and self.variable == other.variable
@@ -30,16 +45,9 @@ class Variable(Program):
         if i in self.evaluation:
             return self.evaluation[i]
         try:
-            return environment[self.variable]
-        except IndexError:
-            print("ERROR IndexError: program, environment", self, environment)
+            return index(environment,self.variable)
+        except (IndexError, ValueError):
             return None
-        except ValueError:
-            print("ERROR ValueError: program, environment", self, environment)
-            return None
-        except TypeError:
-            print("ERROR TypeError: program, environment", self, environment)
-            return(None)
 
 class Function(Program):
     def __init__(self, function, argument):
@@ -56,15 +64,8 @@ class Function(Program):
         try:
             evaluated_argument = self.argument.eval(dsl, environment, i)
             return self.function.eval(dsl, environment, i)(evaluated_argument)
-        except IndexError:
-            print("ERROR IndexError: program, environment", self, environment)
+        except (IndexError, ValueError):
             return None
-        except ValueError:
-            print("ERROR ValueError: program, environment", self, environment)
-            return None
-        except TypeError:
-            print("ERROR TypeError: program, environment", self, environment)
-            return(None)
 
 # Some syntactic sugar: a multi function is a function with multiple arguments
 class MultiFunction(Program):
@@ -101,15 +102,8 @@ class MultiFunction(Program):
                     result = result(evaluated_arg)
                 # result = self.evaluate_memoized(program.function, environment, i)(*evaluated_arguments)
                 return result
-        except IndexError:
-            print("ERROR IndexError: program, environment", self, environment)
+        except (IndexError, ValueError):
             return None
-        except ValueError:
-            print("ERROR ValueError: program, environment", self, environment)
-            return None
-        except TypeError:
-            print("ERROR TypeError: program, environment", self, environment)
-            return(None)
 
 class Lambda(Program):
     def __init__(self, body):
@@ -124,16 +118,9 @@ class Lambda(Program):
         if i in self.evaluation:
             return self.evaluation[i]
         try:
-            return lambda x: self.body.eval(dsl, appendleftreturn(environment, x), i)
-        except IndexError:
-            print("ERROR IndexError: program, environment", self, environment)
+            return lambda x: self.body.eval(dsl, (x, environment), i)
+        except (IndexError, ValueError):
             return None
-        except ValueError:
-            print("ERROR ValueError: program, environment", self, environment)
-            return None
-        except TypeError:
-            print("ERROR TypeError: program, environment", self, environment)
-            return(None)
 
 class BasicPrimitive(Program):
     def __init__(self, primitive):
@@ -148,16 +135,5 @@ class BasicPrimitive(Program):
             return self.evaluation[i]
         try:
             return dsl.semantics[self.primitive]
-        except IndexError:
-            print("ERROR IndexError: program, environment", self, environment)
+        except (IndexError, ValueError):
             return None
-        except ValueError:
-            print("ERROR ValueError: program, environment", self, environment)
-            return None
-        except TypeError:
-            print("ERROR TypeError: program, environment", self, environment)
-            return(None)
-
-def appendleftreturn(q, x):
-    q.appendleft(x)
-    return q
