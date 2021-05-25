@@ -1,16 +1,14 @@
 from dreamcoder.PCFG.type_system import *
 from dreamcoder.PCFG.cons_list import *
+    # dictionary { number of environment : value }
+
+    # environment: a cons list 
+    # list = None | (value, list)
 
 class Program:
     '''
     Object that represents a program: a lambda term with basic primitives
     '''
-    probability = 0
-    evaluation = {}
-    # dictionary { number of environment : value }
-
-    # environment: a cons list 
-    # list = None | (value, list)
 
     def __eq__(self, other):
         b = isinstance(self,Variable) and isinstance(other,Variable) and self.variable == other.variable
@@ -19,13 +17,19 @@ class Program:
         b = b or (isinstance(self,BasicPrimitive) and isinstance(other,BasicPrimitive) and self.primitive.__eq__(other.primitive))
         return b
 
+    def __gt__(self, other): True
+    def __lt__(self, other): False
+    def __ge__(self, other): True
+    def __le__(self, other): False
+
     def __hash__(self):
         return hash(str(self))
 
 class Variable(Program):
     def __init__(self, variable):
         self.variable = variable
-        self.evaluation.clear()
+        self.probability = 0
+        self.evaluation = {}
 
     def __repr__(self):
         return "var" + str(self.variable)
@@ -34,15 +38,16 @@ class Variable(Program):
         if i in self.evaluation:
             return self.evaluation[i]
         try:
-            return index(environment,self.variable)
-        except (IndexError, ValueError):
+            return index(environment, self.variable)
+        except (IndexError, ValueError, TypeError):
             return None
 
 class Function(Program):
     def __init__(self, function, argument):
         self.function = function
         self.argument = argument
-        self.evaluation.clear()
+        self.probability = 0
+        self.evaluation = {}
 
     def __repr__(self):
         return format(self.function) + " (" + format(self.argument) + ")"
@@ -53,7 +58,7 @@ class Function(Program):
         try:
             evaluated_argument = self.argument.eval(dsl, environment, i)
             return self.function.eval(dsl, environment, i)(evaluated_argument)
-        except (IndexError, ValueError):
+        except (IndexError, ValueError, TypeError):
             return None
 
 # Some syntactic sugar: a multi function is a function with multiple arguments
@@ -61,7 +66,8 @@ class MultiFunction(Program):
     def __init__(self, function, arguments):
         self.function = function
         self.arguments = arguments
-        self.evaluation.clear()
+        self.probability = 0
+        self.evaluation = {}
 
     def __repr__(self):
         if len(self.arguments) == 0:
@@ -91,13 +97,14 @@ class MultiFunction(Program):
                     result = result(evaluated_arg)
                 # result = self.evaluate_memoized(program.function, environment, i)(*evaluated_arguments)
                 return result
-        except (IndexError, ValueError):
+        except (IndexError, ValueError, TypeError):
             return None
 
 class Lambda(Program):
     def __init__(self, body):
         self.body = body
-        self.evaluation.clear()
+        self.probability = 0
+        self.evaluation = {}
 
     def __repr__(self):
         s = "(lambda " + format(self.body) + ")"
@@ -108,13 +115,14 @@ class Lambda(Program):
             return self.evaluation[i]
         try:
             return lambda x: self.body.eval(dsl, (x, environment), i)
-        except (IndexError, ValueError):
+        except (IndexError, ValueError, TypeError):
             return None
 
 class BasicPrimitive(Program):
     def __init__(self, primitive):
         self.primitive = primitive
-        self.evaluation.clear()
+        self.probability = 0
+        self.evaluation = {}
 
     def __repr__(self):
         return format(self.primitive)
@@ -124,5 +132,5 @@ class BasicPrimitive(Program):
             return self.evaluation[i]
         try:
             return dsl.semantics[self.primitive]
-        except (IndexError, ValueError):
+        except (IndexError, ValueError, TypeError):
             return None

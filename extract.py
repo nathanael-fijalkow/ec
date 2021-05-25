@@ -31,7 +31,9 @@ def construct_PCFG(DSL,
         upper_bound_type_nesting, 
         max_program_depth, 
         min_variable_depth,
-        n_gram = 1)
+        n_gram = 1)    
+    # print(CFG)
+
     augmented_rules = {}
     for S in CFG.rules:
         _, previous, _ = S
@@ -39,28 +41,26 @@ def construct_PCFG(DSL,
             primitive, argument_number = previous
         else:
             primitive, argument_number = None, 0
+
         for F, _ in CFG.rules[S]:
             if (primitive, argument_number, F[0]) not in Q:
                 Q[primitive, argument_number, F[0]] = 0
-        s = sum(Q[primitive, argument_number, F[0]] for F, _ in CFG.rules[S])
-        if s > 0:
-            augmented_rules[S] = \
-            [(F, args_F, Q[primitive, argument_number, F[0]] / s) \
-            for (F, args_F) in CFG.rules[S]]
+                # print("not initialised", F[0])
+
+        augmented_rules[S] = \
+        [(F, args_F, Q[primitive, argument_number, F[0]]) \
+        for (F, args_F) in CFG.rules[S]]
+
     return PCFG(start = CFG.start, rules = augmented_rules)
 
 def translate_program(old_program):
     if isinstance(old_program, Primitive):
-        # print("Primitive", old_program.name)
         return BasicPrimitive(old_program.name)
     if isinstance(old_program, Index):
-        # print("Index", old_program.i)
         return Variable(old_program.i)
     if isinstance(old_program, Application):
-        # print("Application", old_program.f, old_program.x)
         return Function(translate_program(old_program.f), translate_program(old_program.x))
     if isinstance(old_program, Abstraction):
-        # print("Abstraction", old_program.body)
         return Lambda(translate_program(old_program.body))
     if isinstance(old_program, Invented):
         return translate_program(old_program.body)
@@ -88,7 +88,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
    
     # print(tasks)
     for i, task in enumerate(tasks):
-        if i <= 0:
+        if i == 16:
             print(i)
             print(task.name)
             # print(tasks[task])
@@ -102,7 +102,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             for j in range(len(examples)):
                 examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
                 # examples[j] = list(examples[j][0]), list(examples[j][1])
-            print("examples", examples)
+            # print("examples", examples)
 
             contextual_grammar = tasks[task]
             # print(contextual_grammar)
@@ -146,10 +146,10 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             pcfg = construct_PCFG(DSL = dsl, 
                 type_request = type_request,
                 Q = Q, 
-                upper_bound_type_size = 5,
+                upper_bound_type_size = 10,
                 upper_bound_type_nesting = 3,
                 min_variable_depth = 1,
-                max_program_depth = 5)
+                max_program_depth = 4)
             # print(pcfg)
 
             info = dsl, pcfg, examples

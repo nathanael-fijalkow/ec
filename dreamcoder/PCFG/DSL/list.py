@@ -88,7 +88,7 @@ def _a1(x): return x + 1
 def _d1(x): return x - 1
 
 
-def _mod(x): return lambda y: x % y
+def _mod(x): return lambda y: x % y if y != 0 else None
 
 
 def _not(x): return not x
@@ -178,20 +178,14 @@ def _find(x):
             return -1
     return _inner
 
-def _unfold(x): return lambda p: lambda h: lambda n: __unfold(p, f, n, x)
+def _unfold(x): return lambda p: lambda f: lambda n: __unfold(p, f, n, x)
 
-
-def __unfold(p, f, n, x, recursion_limit=50):
+def __unfold(p, f, n, x, recursion_limit=20):
     if recursion_limit <= 0:
-        raise RecursionDepthExceeded()
+        raise ValueError
     if p(x):
         return []
     return [f(x)] + __unfold(p, f, n, n(x), recursion_limit - 1)
-
-
-class RecursionDepthExceeded(Exception):
-    pass
-
 
 def _fix(argument):
     def inner(body):

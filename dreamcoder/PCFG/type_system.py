@@ -24,6 +24,29 @@ class Type:
 		else:
 			return []
 
+	def ends_with(self, other):
+		'''
+		Checks whether other is a suffix of self and returns the list of arguments
+
+		Example: 
+		self = Arrow(INT, Arrow(INT, INT))
+		other = Arrow(INT, INT)
+		ends_with(self, other) = [INT]
+
+		self = Arrow(Arrow(INT, INT), Arrow(INT, INT))
+		other = INT
+		ends_with(self, other) = [Arrow(INT, INT), INT]
+		'''
+		return self.ends_with_rec(other, [])
+
+	def ends_with_rec(self, other, arguments_list):
+		if self == other:
+			return arguments_list
+		if isinstance(self, Arrow):
+			arguments_list.append(self.type_in)
+			return self.type_out.ends_with_rec(other, arguments_list)
+		return None
+
 	def size(self):
 		if isinstance(self,(PrimitiveType,PolymorphicType)):
 			return 1
@@ -69,6 +92,9 @@ class Type:
 		return set_types
 
 	def decompose_type(self):
+		'''
+		Finds the set of basic types and polymorphic types 
+		'''
 		set_basic_types = set()
 		set_polymorphic_types = set()
 		return self.decompose_type_rec(set_basic_types,set_polymorphic_types)
