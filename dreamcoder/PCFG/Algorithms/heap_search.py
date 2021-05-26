@@ -53,7 +53,12 @@ class heap_search_object:
                         program = G.max_probability[S][1]
                     else:
                         program = F
-
+                elif isinstance(F, Function):
+                    print("HERE")
+                    if isinstance(G.max_probability[S][1], Function) and G.max_probability[S][1] == F:
+                        program = G.max_probability[S][1]
+                    else:
+                        program = F                    
                 else:
                     # print("BasicPrimitive or ComposedPrimitive", F)
                     if isinstance(G.max_probability[S][1], MultiFunction) and G.max_probability[S][1].function == F:
@@ -81,9 +86,10 @@ class heap_search_object:
         # print("######################\nInitialisation phase 1 over\n######################\n")
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
+        print("HAHAHA")
         for S in reversed(self.rules):
             self.query(S, None)
-
+        print("HOUHOU")
         # print("######################\nInitialisation phase 2 over\n######################\n")
 
     def generator(self):
