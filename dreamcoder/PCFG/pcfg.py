@@ -105,29 +105,19 @@ class PCFG:
         '''
  
         for S in reversed(self.rules):
-            best_probability = 0
-            best_program = -1
+            best_program = Variable(-1)
+            best_program.probability = 0
             for F, args_F, w in self.rules[S]:
-                prob = 1
-                prog = -1
                 if isinstance(F[0], Variable):
-                    prob = w
                     prog = F[0]
+                    prog.probability = w
                 else:
-                    prob = w * prod([self.max_probability[arg][0] for arg in args_F])
-                    prog = MultiFunction(F[0], [self.max_probability[arg][1] for arg in args_F])
-                self.max_probability[(S,F)] = (prob, prog)
-                if prob > best_probability:
-                    best_probability = prob
+                    prog = MultiFunction(F[0], [self.max_probability[arg] for arg in args_F])
+                    prog.probability = w * prod([self.max_probability[arg].probability for arg in args_F])
+                self.max_probability[(S,F)] = prog
+                if prog.probability > best_program.probability:
                     best_program = prog
-            self.max_probability[S] = (best_probability, best_program)
-
-        # for S in self.rules:
-        #     for F,_,_ in self.rules[S]:
-        #         if S[0] == Arrow(INT, BOOL) and S[2] <= 1:
-        #             print(S, F, self.max_probability[(S,F)]) 
-
-        # print(self.max_probability[(List(BOOL), None, 0)])
+            self.max_probability[S] = best_program
 
     def initialise_arities_probability(self):
         for S in self.rules:
@@ -182,25 +172,6 @@ class PCFG:
     #           high = mid-1
     #   res = mid+1 if cumulative[mid] < threshold else mid
     #   return res
-
-    def put_random_weights(self, alpha = .7):
-        '''
-        return a grammar with the same structure but with random weights on the transitions
-        alpha = 1 is equivalent to uniform
-        alpha < 1 gives an exponential decrease in the weights of order alpha**k for the k-th weight
-        '''
-        new_rules = {}
-        for S in self.rules:
-            out_degree = len(self.rules[S])
-            weights = [random.random()*(alpha**i) for i in range(out_degree)] 
-            # weights with alpha-exponential decrease
-            s = sum(weights)
-            weights = [w / s for w in weights] # normalization
-            random_permutation = list(np.random.permutation([i for i in range(out_degree)]))
-            new_rules[S] = []
-            for i, (F, args_F, w) in enumerate(self.rules[S]):
-                new_rules[S].append((F, args_F, weights[random_permutation[i]]))
-        return PCFG(start = self.start, rules = new_rules, max_program_depth = self.max_program_depth)
 
     # def proba_term(self, S, t):
     # #'''Compute the probability of a term generated from non-terminal S'''

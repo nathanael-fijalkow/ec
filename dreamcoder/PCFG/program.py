@@ -57,25 +57,6 @@ class Variable(Program):
         except (IndexError, ValueError, TypeError):
             return None
 
-# class Function(Program):
-#     def __init__(self, function, argument):
-#         self.function = function
-#         self.argument = argument
-#         self.probability = 0
-#         self.evaluation = {}
-
-#     def __repr__(self):
-#         return format(self.function) + " (" + format(self.argument) + ")"
-
-#     def eval(self, dsl, environment, i):
-#         if i in self.evaluation:
-#             return self.evaluation[i]
-#         try:
-#             evaluated_argument = self.argument.eval(dsl, environment, i)
-#             return self.function.eval(dsl, environment, i)(evaluated_argument)
-#         except (IndexError, ValueError, TypeError):
-#             return None
-
 class MultiFunction(Program):
     def __init__(self, function, arguments):
         self.function = function
@@ -110,7 +91,6 @@ class MultiFunction(Program):
                 result = self.function.eval(dsl, environment, i)
                 for evaluated_arg in evaluated_arguments:
                     result = result(evaluated_arg)
-                # result = self.evaluate_memoized(program.function, environment, i)(*evaluated_arguments)
                 return result
         except (IndexError, ValueError, TypeError):
             return None

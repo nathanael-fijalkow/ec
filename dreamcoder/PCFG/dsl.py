@@ -200,10 +200,10 @@ class DSL:
 
     def reconstruct_from_list(self, program):
         if len(program) == 1:
-            var = remove_underscore(program.pop())
+            var = program.pop()
             return Variable(var)
         else:
-            primitive = remove_underscore(program.pop())
+            primitive = program.pop()
             if primitive in self.primitive_types:
                 type_primitive = self.primitive_types[primitive]
                 nb_arguments = len(type_primitive.arguments())

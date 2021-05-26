@@ -14,6 +14,7 @@ from dreamcoder.PCFG.Algorithms.dfs import dfs
 from dreamcoder.PCFG.Algorithms.bfs import bfs
 from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
+from collections import deque
 import pickle
 from math import exp
 
@@ -32,11 +33,12 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
     N = 0
     chrono = 0
     param["environments"] = examples
-    gen = algorithm(PCFG, **param)
+    # gen = algorithm(PCFG, **param)
     found = False
     # print(dsl)
     # print(PCFG)
     print("examples", examples)
+    assert(False)
     nb_programs = 0
     while (chrono < timeout and N < total_number_programs):
         chrono -= time.perf_counter()
@@ -82,7 +84,10 @@ deepcoder = DSL(semantics, primitive_types, no_repetitions)
 t = Arrow(List(INT),List(INT))
 # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
-gen = heap_search(deepcoder_PCFG_t, deepcoder, {})
+environments = deque()
+environments.append((([1,2,3,8], None), [8]))
+environments.append((([4,2,3,9,6,4], None), [6]))
+gen = heap_search(deepcoder_PCFG_t, deepcoder, environments)
 
 nb_programs = 0
 while (nb_programs <= 10):
