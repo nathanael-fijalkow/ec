@@ -51,7 +51,9 @@ class Variable(Program):
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
+            # print("already evaluated")
             return self.evaluation[i]
+        # print("not yet evaluated")
         try:
             return index(environment, self.variable)
         except (IndexError, ValueError, TypeError):
@@ -80,7 +82,9 @@ class MultiFunction(Program):
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
+            # print("already evaluated")
             return self.evaluation[i]
+        # print("not yet evaluated")
         try:
             if len(self.arguments) == 0:
                 return self.function.eval(dsl, environment, i)
@@ -125,12 +129,7 @@ class BasicPrimitive(Program):
         return format(self.primitive)
 
     def eval(self, dsl, environment, i):
-        if i in self.evaluation:
-            return self.evaluation[i]
-        try:
-            return dsl.semantics[self.primitive]
-        except (IndexError, ValueError, TypeError):
-            return None
+        return dsl.semantics[self.primitive]
 
 class New(Program):
     def __init__(self, body):

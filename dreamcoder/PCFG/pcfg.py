@@ -151,14 +151,14 @@ class PCFG:
             yield self.sample_program(self.start)
 
     def sample_program(self, S):
-        F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
-        if len(args_F) == 0:
-            return Variable(F)
+        (F,_), args_F, w = self.rules[S][self.vose_samplers[S].sample()]
+        if isinstance(F, Variable):
+            return F
         else:
             arguments = []
             for arg in args_F:
                 arguments.append(self.sample_program(arg))
-            return MultiFunction(F,arguments)
+            return MultiFunction(F, arguments)
 
     ## UNUSED
     # def sample_rule(self, cumulative):
