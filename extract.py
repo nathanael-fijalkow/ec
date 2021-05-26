@@ -88,7 +88,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
    
     # print(tasks)
     for i, task in enumerate(tasks):
-        if i == 16:
+        if True:
             print(i)
             print(task.name)
             # print(tasks[task])
@@ -99,9 +99,12 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             nb_arguments = len(arguments)
             # print("arguments", arguments)
             examples = task.examples
+            # print(examples)
             for j in range(len(examples)):
-                examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
-                # examples[j] = list(examples[j][0]), list(examples[j][1])
+                if isinstance(examples[j][1], list):
+                    examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
+                else:
+                    examples[j] = tuple2constlist(examples[j][0]), examples[j][1]
             # print("examples", examples)
 
             contextual_grammar = tasks[task]
@@ -152,7 +155,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 max_program_depth = 4)
             # print(pcfg)
 
-            info = dsl, pcfg, examples
+            info = task.name, dsl, pcfg, examples
 
             with open('tmp/list_%s.pickle' % int(i), 'wb') as f:
                 pickle.dump(info, f)
