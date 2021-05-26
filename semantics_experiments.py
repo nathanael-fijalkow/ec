@@ -19,8 +19,8 @@ from math import exp
 
 # Set of algorithms where we need to reconstruct the programs
 reconstruct = {dfs, bfs, threshold_search, a_star}
-evaluate = {heap_search}
-timeout = 10  # in seconds
+evaluate = {}
+timeout = 120  # in seconds
 total_number_programs = 1_000_000 #10_000_000 # 1M programs
 
 def run_algorithm(dsl, examples, PCFG, algorithm, param):
@@ -44,13 +44,17 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
         if algorithm in reconstruct:
             program = dsl.reconstruct_from_compressed(program)
         if algorithm in evaluate:
-            if program != -1 and all([program.evaluation[i] == output for i,(_,output) in enumerate(examples)]):
+            if all([program.evaluation[i] == output for i,(_,output) in enumerate(examples)]):
                 found = True
         else:
             if all([program.eval(dsl, input_, i) == output for i,(input_,output) in enumerate(examples)]):
                 found = True
         chrono += time.perf_counter()
- 
+
+        # print(program)
+        # if not isinstance(program, Program):
+        #     print("None", nb_programs) 
+
         nb_programs += 1
 
         if nb_programs % 1_000 == 0:

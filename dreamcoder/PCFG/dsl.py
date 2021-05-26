@@ -28,21 +28,6 @@ class DSL:
             s = s + "{}: {}\n".format(primitive, self.primitive_types[primitive])
         return s
 
-    def evaluate(self, program, environment):
-        '''
-        Evaluates a program in the dictionary environment : {variable : value} 
-        '''
-        if isinstance(program, Variable):
-            return environment[program.variable]
-        if isinstance(program, Function):
-            evaluated_arguments = {self.evaluate(arg, environment) for arg in program.arguments}
-            return self.evaluate(program.function, environment)(evaluated_arguments)
-        if isinstance(program, Lambda):
-            return lambda x: self.evaluate(program.body, [x] + environment)
-        if isinstance(program, BasicPrimitive):
-            return self.semantics[program.primitive]
-        assert(False)
-
     def instantiate_polymorphic_types(self,
         upper_bound_type_size = 3, 
         upper_bound_type_nesting = 1):
@@ -104,10 +89,6 @@ class DSL:
         and on the maximum program depth
         '''
         instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size, upper_bound_type_nesting)
-
-        # for (F, type_F) in instantiated_dsl.primitive_types:
-        #   if F == BasicPrimitive("map"):
-        #       print("type_F", type_F)
 
         return_type = type_request.returns()
         args = type_request.arguments()
@@ -201,7 +182,7 @@ class DSL:
                 arguments = [None]*nb_arguments
                 for i in range(nb_arguments):
                     arguments[nb_arguments-i-1] = self.reconstruct_from_list(program)
-                return Function(primitive, arguments)
+                return MultiFunction(primitive, arguments)
             else:
                 return Variable(primitive)
 

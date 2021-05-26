@@ -11,10 +11,23 @@ class Program:
     '''
 
     def __eq__(self, other):
-        b = isinstance(self,Variable) and isinstance(other,Variable) and self.variable == other.variable
-        b = b or (isinstance(self,Function) and isinstance(other,Function) and self.function == other.function and self.argument == other.argument)
-        b = b or (isinstance(self,Lambda) and isinstance(other,Lambda) and self.body.__eq__(other.body))
-        b = b or (isinstance(self,BasicPrimitive) and isinstance(other,BasicPrimitive) and self.primitive.__eq__(other.primitive))
+        b = isinstance(self,Variable) \
+        and isinstance(other,Variable) \
+        and self.variable == other.variable
+        b = b or (isinstance(self,MultiFunction) \
+            and isinstance(other,MultiFunction) \
+            and self.function.__eq__(other.function) \
+            and all([x.__eq__(y) for x,y in zip(self.arguments, other.arguments)]))
+        # b = b or (isinstance(self,Function) and isinstance(other,Function) and self.function == other.function and self.argument == other.argument)
+        b = b or (isinstance(self,Lambda) \
+            and isinstance(other,Lambda) \
+            and self.body.__eq__(other.body))
+        b = b or (isinstance(self,BasicPrimitive) \
+            and isinstance(other,BasicPrimitive) \
+            and self.primitive.__eq__(other.primitive))
+        b = b or (isinstance(self,New) \
+            and isinstance(other,New) \
+            and self.body.__eq__(other.body))
         return b
 
     def __gt__(self, other): True
@@ -28,6 +41,7 @@ class Program:
 class Variable(Program):
     def __init__(self, variable):
         self.variable = variable
+
         self.probability = 0
         self.evaluation = {}
 
@@ -42,30 +56,30 @@ class Variable(Program):
         except (IndexError, ValueError, TypeError):
             return None
 
-class Function(Program):
-    def __init__(self, function, argument):
-        self.function = function
-        self.argument = argument
-        self.probability = 0
-        self.evaluation = {}
+# class Function(Program):
+#     def __init__(self, function, argument):
+#         self.function = function
+#         self.argument = argument
+#         self.probability = 0
+#         self.evaluation = {}
 
-    def __repr__(self):
-        return format(self.function) + " (" + format(self.argument) + ")"
+#     def __repr__(self):
+#         return format(self.function) + " (" + format(self.argument) + ")"
 
-    def eval(self, dsl, environment, i):
-        if i in self.evaluation:
-            return self.evaluation[i]
-        try:
-            evaluated_argument = self.argument.eval(dsl, environment, i)
-            return self.function.eval(dsl, environment, i)(evaluated_argument)
-        except (IndexError, ValueError, TypeError):
-            return None
+#     def eval(self, dsl, environment, i):
+#         if i in self.evaluation:
+#             return self.evaluation[i]
+#         try:
+#             evaluated_argument = self.argument.eval(dsl, environment, i)
+#             return self.function.eval(dsl, environment, i)(evaluated_argument)
+#         except (IndexError, ValueError, TypeError):
+#             return None
 
-# Some syntactic sugar: a multi function is a function with multiple arguments
 class MultiFunction(Program):
     def __init__(self, function, arguments):
         self.function = function
         self.arguments = arguments
+
         self.probability = 0
         self.evaluation = {}
 
@@ -103,6 +117,7 @@ class MultiFunction(Program):
 class Lambda(Program):
     def __init__(self, body):
         self.body = body
+
         self.probability = 0
         self.evaluation = {}
 
@@ -121,6 +136,7 @@ class Lambda(Program):
 class BasicPrimitive(Program):
     def __init__(self, primitive):
         self.primitive = primitive
+
         self.probability = 0
         self.evaluation = {}
 
@@ -132,5 +148,23 @@ class BasicPrimitive(Program):
             return self.evaluation[i]
         try:
             return dsl.semantics[self.primitive]
+        except (IndexError, ValueError, TypeError):
+            return None
+
+class New(Program):
+    def __init__(self, body):
+        self.body = body
+
+        self.probability = 0
+        self.evaluation = {}
+
+    def __repr__(self):
+        return format(self.body)
+
+    def eval(self, dsl, environment, i):
+        if i in self.evaluation:
+            return self.evaluation[i]
+        try:
+            return self.body.eval(dsl, environment, i)
         except (IndexError, ValueError, TypeError):
             return None

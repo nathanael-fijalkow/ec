@@ -4,6 +4,7 @@ from dreamcoder.PCFG.program import *
 import random
 import numpy as np
 import vose
+from math import prod
 
 class PCFG:
     '''
@@ -34,12 +35,7 @@ class PCFG:
         self.trim(max_program_depth)
 
         self.max_probability = {}
-        self.initialise_max_probability(self.start)
-
-        for S in set(self.rules):
-            if S not in self.max_probability or self.max_probability[S] == (-1,-1):
-                del self.rules[S]
-                # print("not reachable", S)
+        self.compute_max_probability(self.start)
 
         self.arities = {S: {} for S in self.rules}
         self.probability = {S: {} for S in self.rules}
@@ -101,28 +97,38 @@ class PCFG:
 
         return min_program_depth
 
-    def initialise_max_probability(self, S):
+    def compute_max_probability(self, S):
         '''
         populates the dictionary max_probability
         '''
-        self.max_probability[S] = (-1,-1)
-        for (F,_), args_F, w in self.rules[S]:
-            candidate_probability = w
-            for arg in args_F:
-                if arg not in self.rules:
-                    break
-                if arg not in self.max_probability:
-                    self.initialise_max_probability(arg)
-                    if self.max_probability[arg] == (-1,-1):
-                        break
-                candidate_probability *= self.max_probability[arg][0]
-            if candidate_probability > self.max_probability[S][0]:
-                if isinstance(F, Variable):
-                    best_program = F
-                else:
-                    best_program = MultiFunction(function = F, arguments = [self.max_probability[arg][1] for arg in args_F])
-                self.max_probability[S] = (candidate_probability, best_program)
 
+        for S in reversed(self.rules):
+            best_probability = -1
+            best_program = -1
+            for F, args_F, w in self.rules[S]:
+                prob = -1
+                prog = -1
+                if isinstance(F[0], Variable):
+                    prob = w
+                    prog = F[0]
+                else:
+                    if all([arg in self.max_probability for arg in args_F]):
+                        prob = w * prod([self.max_probability[arg][0] for arg in args_F])
+                        prog = MultiFunction(F[0], [self.max_probability[arg][1] for arg in args_F])
+                self.max_probability[(S, F)] = (prob, prog)
+                if prob > best_probability:
+                    best_probability = prob
+                    best_program = prog
+            self.max_probability[S] = (prob, prog)
+
+        for S in set(self.rules):
+            if S not in self.max_probability or self.max_probability[S] == (-1,-1):
+                del self.rules[S]
+                print("not reachable", S)
+
+        for S in self.rules:
+            self.rules[S] = [(F, args_F, w) for (F, args_F, w) in self.rules[S] if (S,F) in self.max_probability]
+ 
     def initialise_arities_probability(self):
         for S in self.rules:
             for (F,_), args_F, w in self.rules[S]:

@@ -59,11 +59,11 @@ def translate_program(old_program):
     if isinstance(old_program, Index):
         return Variable(old_program.i)
     if isinstance(old_program, Application):
-        return Function(translate_program(old_program.f), translate_program(old_program.x))
+        return MultiFunction(translate_program(old_program.f), [translate_program(old_program.x)])
     if isinstance(old_program, Abstraction):
         return Lambda(translate_program(old_program.body))
     if isinstance(old_program, Invented):
-        return translate_program(old_program.body)
+        return New(translate_program(old_program.body))
     assert(False)
 
 def translate_type(old_type):
@@ -150,7 +150,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 upper_bound_type_nesting = 3,
                 min_variable_depth = 1,
                 max_program_depth = 4)
-            # print(pcfg)
+            print(pcfg)
 
             info = dsl, pcfg, examples
 
