@@ -38,7 +38,7 @@ class heap_search_object:
         # Stores the successor of a program
         self.succ = {S: {} for S in self.symbols}
 
-        p = New(Lambda(MultiFunction(MultiFunction(BasicPrimitive("gt?"), [Variable(0)]), [BasicPrimitive(0)])))
+        # p = New(Lambda(MultiFunction(MultiFunction(BasicPrimitive("gt?"), [Variable(0)]), [BasicPrimitive(0)])))
 
         # print(self.dsl)
         print(self.G)
@@ -66,7 +66,7 @@ class heap_search_object:
                         # print("adding to the heap", program)
                         heappush(self.heaps[S], (-program.probability, program))
 
-        # assert(False)
+        assert(False)
 
         print("######################\nInitialisation phase 1 over\n######################\n")
 
@@ -80,7 +80,7 @@ class heap_search_object:
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
 
         self.dontcare = True
-        
+
         for S in reversed(self.rules):
             self.query(S, None)
 
@@ -106,7 +106,7 @@ class heap_search_object:
             print("current:", self.current)
             program = self.query(self.start, self.current)
             self.current = program
-            print("to be yielded:", self.current)            
+            print("yield:", self.current)            
             yield program
     
     def query(self, S, program):

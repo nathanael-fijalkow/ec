@@ -66,11 +66,26 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
     print("Not found")
     return timeout, nb_programs
 
-for i in range(20):
-    if i == 16:
-        with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
-            dsl, pcfg, examples = pickle.load(f)
+# for i in range(20):
+#     if i == 16:
+#         with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
+#             dsl, pcfg, examples = pickle.load(f)
 
-            param = {}
-            param["dsl"] = dsl
-            print(run_algorithm(dsl, examples, pcfg, heap_search, param))
+#             param = {}
+#             param["dsl"] = dsl
+#             print(run_algorithm(dsl, examples, pcfg, heap_search, param))
+
+# Import DSL
+from dreamcoder.PCFG.DSL.deepcoder import *
+
+deepcoder = DSL(semantics, primitive_types, no_repetitions)
+t = Arrow(List(INT),List(INT))
+# deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
+deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
+gen = heap_search(deepcoder_PCFG_t, deepcoder, {})
+
+nb_programs = 0
+while (nb_programs <= 10):
+    program = next(gen)
+    print(program)
+    nb_programs += 1

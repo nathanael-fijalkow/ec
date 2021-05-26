@@ -96,10 +96,11 @@ class DSL:
         rules = {}
 
         def repr(current_type, context, depth):
-            if depth == 0:
+            if len(context) == 0:
                 return current_type, None, depth
-            else:
+            if n_gram == 1:
                 return current_type, context[0], depth
+            return current_type, context, depth
 
         list_to_be_treated = deque()
         list_to_be_treated.append((return_type, [], 0))
@@ -131,7 +132,8 @@ class DSL:
             elif depth < max_program_depth:
                 for (F, type_F) in instantiated_dsl.primitive_types:
                     arguments_F = type_F.ends_with(current_type)
-                    if arguments_F != None and (depth == 0 or context[0] != F or not (F in instantiated_dsl.no_repetitions)):
+                    if arguments_F != None \
+                    and (len(context) == 0 or context[0] != F or F not in instantiated_dsl.no_repetitions):
                         decorated_arguments_F = []
                         for i, arg in enumerate(arguments_F):
                             new_context = context.copy()
@@ -168,7 +170,33 @@ class DSL:
         for S in CFG.rules:
             p = len(CFG.rules[S])
             augmented_rules[S] = [(F, args_F, 1 / p) for (F, args_F) in CFG.rules[S]]
-        return PCFG(start = CFG.start, rules = augmented_rules)
+        return PCFG(start = CFG.start, rules = augmented_rules, max_program_depth = max_program_depth)
+
+    def DSL_to_Random_PCFG(self, type_request, 
+        upper_bound_type_size = 3, 
+        upper_bound_type_nesting = 1,
+        max_program_depth = 4,
+        min_variable_depth = 1,
+        n_gram = 0,
+        alpha = 0.7):
+        CFG = self.DSL_to_CFG(type_request, 
+            upper_bound_type_size, 
+            upper_bound_type_nesting, 
+            max_program_depth, 
+            min_variable_depth, 
+            n_gram)
+        new_rules = {}
+        for S in CFG.rules:
+            out_degree = len(CFG.rules[S])
+            weights = [random.random()*(alpha**i) for i in range(out_degree)] 
+            # weights with alpha-exponential decrease
+            s = sum(weights)
+            weights = [w / s for w in weights] # normalization
+            random_permutation = list(np.random.permutation([i for i in range(out_degree)]))
+            new_rules[S] = []
+            for i, (F, args_F) in enumerate(CFG.rules[S]):
+                new_rules[S].append((F, args_F, weights[random_permutation[i]]))
+        return PCFG(start = CFG.start, rules = new_rules, max_program_depth = max_program_depth)
 
     def reconstruct_from_list(self, program):
         if len(program) == 1:
