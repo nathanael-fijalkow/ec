@@ -82,7 +82,7 @@ class DSL:
         upper_bound_type_size = 2, 
         upper_bound_type_nesting = 1, 
         max_program_depth = 4,
-        min_variable_depth = 2,
+        min_variable_depth = 1,
         n_gram = 1):
         '''
         Constructs a CFG from a DSL imposing bounds on size and nesting of the types
@@ -156,7 +156,7 @@ class DSL:
         upper_bound_type_size = 3, 
         upper_bound_type_nesting = 1,
         max_program_depth = 4,
-        min_variable_depth = 2,
+        min_variable_depth = 1,
         n_gram = 0):
         CFG = self.DSL_to_CFG(type_request, 
             upper_bound_type_size, 

@@ -17,6 +17,7 @@ class Program:
         b = b or (isinstance(self,MultiFunction) \
             and isinstance(other,MultiFunction) \
             and self.function.__eq__(other.function) \
+            and len(self.arguments) == len(other.arguments) \
             and all([x.__eq__(y) for x,y in zip(self.arguments, other.arguments)]))
         # b = b or (isinstance(self,Function) and isinstance(other,Function) and self.function == other.function and self.argument == other.argument)
         b = b or (isinstance(self,Lambda) \

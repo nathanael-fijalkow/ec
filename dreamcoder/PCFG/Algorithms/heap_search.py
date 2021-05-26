@@ -38,17 +38,20 @@ class heap_search_object:
         # Stores the successor of a program
         self.succ = {S: {} for S in self.symbols}
 
-        print(self.dsl)
+        p = New(Lambda(MultiFunction(MultiFunction(BasicPrimitive("gt?"), [Variable(0)]), [BasicPrimitive(0)])))
+
+        # print(self.dsl)
+        print(self.G)
 
         # Initialisation heaps
         ## 1. add F(max(S1),max(S2), ...) to Heap(S) for all S -> F(S1, S2, ...) 
         for S in reversed(self.rules):
             # print("###########\nS", S)
-            for F, args_F, w in self.rules[S]:
+            for F, args_F, _ in self.rules[S]:
                 # print("####\nF", F)
                 program = self.G.max_probability[(S,F)][1]
-                # if S[2] == 0:
-                #     print("program", program)
+                # if S[2] <= 1 and F[0] == p:
+                #     print(S, F, program)
                 hash_program = compute_hash_program(program)
                 # We first check whether the program is already in the heap
                 if hash_program not in self.hash_table_program[S]:
@@ -57,22 +60,37 @@ class heap_search_object:
                     # We second check whether a program with the same values is already in the heap
                     if hash_evaluation not in self.hash_table_evaluation[S]: 
                         self.hash_table_evaluation[S].add(hash_evaluation)
-                        weight = w
-                        for arg in args_F:
-                            weight *= G.max_probability[arg][0]
-                        program.probability = weight
+                        program.probability = self.G.max_probability[(S,F)][0]
+                        if S[2] <= 1 and F[0] == p:
+                            print("adding to the heap", S, F, program)
                         # print("adding to the heap", program)
-                        heappush(self.heaps[S], (-weight, program))
+                        heappush(self.heaps[S], (-program.probability, program))
+
+        # assert(False)
 
         print("######################\nInitialisation phase 1 over\n######################\n")
 
         for S in self.rules:
-            if S[2] == 0:
+            if S == (Arrow(INT, BOOL), (BasicPrimitive("map"), 0), 1):
+                print("\nheaps[", S, "] = ", self.heaps[S], "\n")
+            if S == (List(BOOL), None, 0):
                 print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
+        # assert(False)
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
+
+        self.dontcare = True
+        
         for S in reversed(self.rules):
             self.query(S, None)
+
+        self.dontcare = False
+
+        for S in self.rules:
+            if S == (Arrow(INT, BOOL), (BasicPrimitive("map"), 0), 1):
+                print("\nheaps[", S, "] = ", self.heaps[S], "\n")
+            if S == (List(BOOL), None, 0):
+                print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
         print("######################\nInitialisation phase 2 over\n######################\n")
 
@@ -95,7 +113,7 @@ class heap_search_object:
         '''
         computing the successor of program from S
         '''
-        # print("\nquery:", S, program, program.__class__.__name__)
+        if not self.dontcare: print("\nquery:", S, program, program.__class__.__name__)
 
         hash_program = compute_hash_program(program)
 
@@ -103,12 +121,13 @@ class heap_search_object:
 
         # if we have already computed the successor of program from S, we return its stored value
         if hash_program in self.succ[S]:
+            if not self.dontcare: print("already computed the successor of S, it's ", S, program, self.succ[S][hash_program])
             return self.succ[S][hash_program]
 
         # otherwise the successor is the next element in the heap
         try:
             probability, succ = heappop(self.heaps[S])
-            # print("found succ", succ)
+            if not self.dontcare: print("found succ in the heap", S, program, succ)
         except:
             succ = -1 # the heap is empty: there are no successors from S
 
@@ -121,15 +140,13 @@ class heap_search_object:
         if isinstance(succ, MultiFunction):
             F = succ.function
 
-            if S[2] == 0 and F == BasicPrimitive("map"):
-                print("succ", succ, succ.__class__.__name__)
+            if not self.dontcare: print("succ is a MultiFunction", S, succ)
 
             for i in range(len(succ.arguments)):
                 S2 = self.G.arities[S][F][i] # non-terminal symbol used to derive the i-th argument
                 succ_sub_program = self.query(S2, succ.arguments[i]) # succ_sub_program
 
-                if S[2] == 0 and F == BasicPrimitive("map"):
-                    print("succ_sub_program", succ_sub_program, succ_sub_program.__class__.__name__)
+                if not self.dontcare: print("succ_sub_program", succ_sub_program, succ_sub_program.__class__.__name__)
 
                 if isinstance(succ_sub_program, Program):
                     new_arguments = [arg for arg in succ.arguments]
@@ -147,9 +164,6 @@ class heap_search_object:
                                 weight *= arg.probability
                             new_program.probability = weight
                             heappush(self.heaps[S], (-weight, new_program))
-
-            if S[2] == 0 and F == BasicPrimitive("map"):
-                assert(False)
 
         # if isinstance(succ, Function):
         #     F = succ.function

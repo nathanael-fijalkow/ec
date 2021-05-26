@@ -150,7 +150,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 upper_bound_type_nesting = 3,
                 min_variable_depth = 1,
                 max_program_depth = 4)
-            print(pcfg)
+            # print(pcfg)
 
             info = dsl, pcfg, examples
 
