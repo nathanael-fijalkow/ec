@@ -36,7 +36,7 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
     found = False
     # print(dsl)
     # print(PCFG)
-    print("examples", examples)
+    # print("examples", examples)
     nb_programs = 0
     while (chrono < timeout and N < total_number_programs):
         chrono -= time.perf_counter()
@@ -57,6 +57,8 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
             print("nb_programs tested", nb_programs)
 
         if found:
+            print("Found in {}s after {} programs".format(chrono, nb_programs))
+            print("The solution found: ", program)
             return program, chrono, nb_programs
 
     print("Not found")
@@ -64,15 +66,15 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
 
 
 result = []
-for i in range(218):
+for i in range(200,218):
     with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
         name, dsl, pcfg, examples = pickle.load(f)
 
         param = {}
         param["dsl"] = dsl
-        print("Solving: ", name)
+        print("Solving task number {} called {}".format(i, name))
         program, chrono, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
-        result.append(name, program, chrono, nb_programs)        
+        result.append((name, chrono, nb_programs))        
 
     with open('tmp/results.pickle', 'wb') as f:
         pickle.dump(result, f)

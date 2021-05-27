@@ -43,7 +43,7 @@ class Variable(Program):
     def __init__(self, variable):
         self.variable = variable
 
-        self.probability = 0
+        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
@@ -64,7 +64,7 @@ class MultiFunction(Program):
         self.function = function
         self.arguments = arguments
 
-        self.probability = 0
+        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
@@ -103,7 +103,7 @@ class Lambda(Program):
     def __init__(self, body):
         self.body = body
 
-        self.probability = 0
+        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
@@ -122,7 +122,7 @@ class BasicPrimitive(Program):
     def __init__(self, primitive):
         self.primitive = primitive
 
-        self.probability = 0
+        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
@@ -135,7 +135,7 @@ class New(Program):
     def __init__(self, body):
         self.body = body
 
-        self.probability = 0
+        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):

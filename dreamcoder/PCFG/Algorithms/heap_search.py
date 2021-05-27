@@ -134,7 +134,7 @@ class heap_search_object:
         '''
         if not program.evaluation:
             for i in range(len(self.environments)):
-                print("evaluating program in env", program, self.environments[i][0])
+                # print("evaluating program in env", program, self.environments[i][0])
                 program.evaluation[i] = program.eval(self.dsl, self.environments[i][0], i)
             # print("new evaluation for program: ", program, program.evaluation) 
 

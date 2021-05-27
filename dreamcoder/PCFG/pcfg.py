@@ -150,16 +150,6 @@ class PCFG:
         while True:
             yield self.sample_program(self.start)
 
-    # def sample_program(self, S):
-    #     (F,_), args_F, w = self.rules[S][self.vose_samplers[S].sample()]
-    #     if isinstance(F, Variable):
-    #         return F
-    #     else:
-    #         arguments = []
-    #         for arg in args_F:
-    #             arguments.append(self.sample_program(arg))
-    #         return MultiFunction(F, arguments)
-
     def sample_program(self, S):
         F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
         if len(args_F) == 0:
@@ -184,12 +174,19 @@ class PCFG:
     #   res = mid+1 if cumulative[mid] < threshold else mid
     #   return res
 
-    # def proba_term(self, S, t):
-    # #'''Compute the probability of a term generated from non-terminal S'''
-    #     if isinstance(t, Variable): return self.probability[S][t.variable]
-    #     F = t.primitive
-    #     args = t.arguments
-    #     weight = self.probability[S][F]
-    #     for i, a in enumerate(args):
-    #         weight*=self.proba_term(self.arities[S][F][i], a)
-    #     return weight
+    def probability_program(self, S, program):
+    '''
+    Compute the probability of a program generated from non-terminal S
+    '''
+        if program.probability:
+            return program.probability
+        elif isinstance(program, Variable): 
+            program.probability = self.probability[S][program.variable]
+        elif isinstance(program, MultiFunction):
+            F = program.function
+            args = program.arguments
+            probability = self.probability[S][F]
+            for i, arg in enumerate(args):
+                probability *= self.probability_program(self.arities[S][F][i], arg)
+            program.probability = probability
+        return program.probability

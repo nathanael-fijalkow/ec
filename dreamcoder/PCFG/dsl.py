@@ -42,6 +42,8 @@ class DSL:
         for type_ in set_basic_types:
             new_type = List(type_)
             set_types.add(new_type)
+            new_type = List(new_type)
+            set_types.add(new_type)
 
         for type_ in set_basic_types:
             for type_2 in set_basic_types:
