@@ -116,13 +116,13 @@ def experiment_enumeration_time(result):
 timeout = 50  # in seconds
 seed = 5
 random.seed(seed)
-total_number_programs = 100_000
+total_number_programs = 100_0
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 threshold_probability = 0.95 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
 
 title = "Cumulative probability versus time on DeepCoder"
-recompute_from_scratch = False
+recompute_from_scratch = True
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
@@ -186,7 +186,7 @@ dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 list_algorithms = [(heap_search, 'heap search', {}), (a_star, 'A*', {})]
 
-recompute_from_scratch = False
+recompute_from_scratch = True
 
 if recompute_from_scratch:
 	for algo, algo_name, param in list_algorithms:
@@ -319,7 +319,7 @@ total_number_programs = 100_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 threshold_probability = 0.95 
-recompute_from_scratch = False
+recompute_from_scratch = True
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]
