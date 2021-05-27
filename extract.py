@@ -90,8 +90,9 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
     from dreamcoder.PCFG.DSL.list import semantics
    
     # print(tasks)
+    range_task = range(218)
     for i, task in enumerate(tasks):
-        if i <= 20:
+        if i in range_task:
             print(i)
             print(task.name)
             # print(tasks[task])

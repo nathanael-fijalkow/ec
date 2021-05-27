@@ -2,23 +2,19 @@ from dreamcoder.grammar import *
 
 from dreamcoder.PCFG.program import *
 from dreamcoder.PCFG.pcfg import *
-from dreamcoder.PCFG.dsl import *
 
 from collections import deque
 from heapq import heappush, heappop
 import copy
 import functools
 
-def heap_search(G: PCFG, dsl, environments):
-    H = heap_search_object(G, dsl, environments)
+def heap_search(G: PCFG):
+    H = heap_search_object(G)
     return H.generator()
 
 class heap_search_object:
-    def __init__(self, G: PCFG, dsl, environments):
+    def __init__(self, G: PCFG):
         self.current = None
-
-        self.dsl = dsl
-        self.environments = environments
 
         self.G = G
         self.start = G.start
@@ -34,7 +30,6 @@ class heap_search_object:
         # Stores the successor of a program
         self.succ = {S: {} for S in self.symbols}
 
-        # print(self.dsl)
         # print(self.G)
 
         # Initialisation heaps
@@ -48,7 +43,8 @@ class heap_search_object:
                 # We first check whether the program is already in the heap
                 if hash_program not in self.hash_table_program[S]:
                     self.hash_table_program[S].add(hash_program)
-                    self.compute_evaluation (program)
+                    # We only evaluate when yielding the program
+                    # self.compute_evaluation(program)
                     # print("adding to the heap", program)
                     heappush(self.heaps[S], (-program.probability, program))
 
@@ -72,6 +68,7 @@ class heap_search_object:
             # print("current:", self.current)
             program = self.query(self.start, self.current)
             self.current = program
+            # self.compute_evaluation(self.current)
             # print("yield:", self.current)            
             yield program
     
@@ -118,7 +115,8 @@ class heap_search_object:
                     hash_new_program = compute_hash_program(new_program)
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
-                        self.compute_evaluation(new_program)
+                        # We only evaluate when yielding the program
+                        # self.compute_evaluation(new_program)
                         weight = self.G.probability[S][F]
                         for arg in new_arguments:
                             weight *= arg.probability
@@ -126,17 +124,6 @@ class heap_search_object:
                         heappush(self.heaps[S], (-weight, new_program))
 
         return succ
-
-    def compute_evaluation(self, program):
-        ''' 
-        Evaluates the program on the environments contained in environments
-        Environments is a deque of environments
-        '''
-        if not program.evaluation:
-            for i in range(len(self.environments)):
-                # print("evaluating program in env", program, self.environments[i][0])
-                program.evaluation[i] = program.eval(self.dsl, self.environments[i][0], i)
-            # print("new evaluation for program: ", program, program.evaluation) 
 
 def compute_hash_program(program):
     if isinstance(program, Variable):

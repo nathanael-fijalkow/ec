@@ -193,27 +193,31 @@ class DSL:
                 new_rules[S].append((F, args_F, weights[random_permutation[i]]))
         return PCFG(start = CFG.start, rules = new_rules, max_program_depth = max_program_depth)
 
-    def reconstruct_from_list(self, program):
-        if len(program) == 1:
-            var = program.pop()
-            return Variable(var)
+    def reconstruct_from_list(self, program_as_list, target_type):
+        # print("program_as_list, target_type", program_as_list, target_type)
+        if len(program_as_list) == 1:
+            return program_as_list.pop()[0]
         else:
-            primitive = program.pop()
+            F = program_as_list.pop()
+            primitive = F[0]
             if primitive in self.primitive_types:
                 type_primitive = self.primitive_types[primitive]
-                nb_arguments = len(type_primitive.arguments())
-                arguments = [None]*nb_arguments
-                for i in range(nb_arguments):
-                    arguments[nb_arguments-i-1] = self.reconstruct_from_list(program)
-                return MultiFunction(primitive, arguments)
+                type_F = F[1]
+                list_arguments = type_F.ends_with(target_type)
+                arguments = [None] * len(list_arguments)
+                for i in range(len(list_arguments)):
+                    arguments[len(list_arguments)-i-1] = \
+                    self.reconstruct_from_list(program_as_list, list_arguments[len(list_arguments)-i-1])
+                return MultiFunction(F, arguments)
             else:
-                return Variable(primitive)
+                return F[0]
 
-    def reconstruct_from_compressed(self, program):
+    def reconstruct_from_compressed(self, program, target_type):
         program_as_list = []
         self.list_from_compressed(program, program_as_list)
         program_as_list.reverse()
-        return self.reconstruct_from_list(program_as_list)
+        # print(program_as_list)
+        return self.reconstruct_from_list(program_as_list, target_type)
 
     def list_from_compressed(self, program, program_as_list = []):
         (F, sub_program) = program

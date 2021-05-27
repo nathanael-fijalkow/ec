@@ -41,14 +41,16 @@ class Program:
 
 class Variable(Program):
     def __init__(self, variable):
-        # self.variable is a pair (x, type) where x is a natural number,
+        # self.variable is a pair (x, type) where x is a natural number
+        # and type is a type
+        assert(isinstance(variable,tuple))
         self.variable = variable
 
         self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
-        return "var" + str(self.variable[0])
+        return "var" + format(self.variable[0])
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
@@ -71,24 +73,13 @@ class MultiFunction(Program):
         self.evaluation = {}
 
     def __repr__(self):
-        s = format(self.function[0]) + " "
-        for arg in self.arguments:
-            s += " " + format(arg)
-        s += ')'
-        return s
-
-    # def __repr__(self):
-    #     if len(self.arguments) == 0:
-    #         return format(self.function)
-    #     else:
-    #         s = format(self.function) + " ("
-    #         for arg in self.arguments[:-1]:
-    #             s += format(arg) + ', '
-    #         name_arg = ""
-    #         if len(self.arguments)>0:
-    #             name_arg = format(self.arguments[-1])
-    #         s += name_arg + ')'
-    #         return s
+        if len(self.arguments) == 0:
+            return format(self.function[0])
+        else:
+            s = "(" + format(self.function[0])
+            for arg in self.arguments:
+                s += " " + format(arg)
+            return s + ")"
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:

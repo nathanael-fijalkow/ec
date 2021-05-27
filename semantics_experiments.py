@@ -20,36 +20,37 @@ from math import exp
 
 # Set of algorithms where we need to reconstruct the programs
 reconstruct = {dfs, bfs, threshold_search, a_star}
-evaluate = {}
-timeout = 60  # in seconds
-total_number_programs = 1_000_000 #10_000_000 # 1M programs
 
-def run_algorithm(dsl, examples, PCFG, algorithm, param):
+timeout = 60  # in seconds
+# total_number_programs = 1_000_000 #10_000_000 # 1M programs
+total_number_programs = 10 #10_000_000 # 1M programs
+
+def run_algorithm(dsl, examples, pcfg, algorithm, param):
     '''
     Run the algorithm until either timeout or 3M programs, and for each program record probability and time of output
     '''
     print("Running: %s" % algorithm.__name__)
-    N = 0
-    chrono = 0
-    param["environments"] = examples
-    gen = algorithm(PCFG, **param)
+    search_time = 0
+    evaluation_time = 0
+    gen = algorithm(pcfg, **param)
     found = False
     # print(dsl)
-    # print(PCFG)
-    # print("examples", examples)
+    # print(pcfg)
+    print("examples", examples)
     nb_programs = 0
-    while (chrono < timeout and N < total_number_programs):
-        chrono -= time.perf_counter()
+    while (search_time < timeout and nb_programs < total_number_programs):
+        search_time -= time.perf_counter()
         program = next(gen)
+        search_time += time.perf_counter()
+        # print(program)
         if algorithm in reconstruct:
-            program = dsl.reconstruct_from_compressed(program)
-        if algorithm in evaluate:
-            if all([program.evaluation[i] == output for i,(_,output) in enumerate(examples)]):
-                found = True
-        else:
-            if all([program.eval(dsl, input_, i) == output for i,(input_,output) in enumerate(examples)]):
-                found = True
-        chrono += time.perf_counter()
+            target_type = pcfg.start[0]
+            program = dsl.reconstruct_from_compressed(program, target_type)
+        # print(program)
+        evaluation_time -= time.perf_counter()
+        if all([program.eval(dsl, input_, i) == output for i,(input_,output) in enumerate(examples)]):
+            found = True
+        evaluation_time += time.perf_counter()
 
         nb_programs += 1
 
@@ -57,28 +58,28 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
             print("nb_programs tested", nb_programs)
 
         if found:
-            print("Found in {}s after {} programs".format(chrono, nb_programs))
+            print("Found with {}s spent on search and {}s on evaluation, after {} programs".format(search_time, evaluation_time, nb_programs))
             print("The solution found: ", program)
-            return program, chrono, nb_programs
+            return program, search_time, evaluation_time, nb_programs
 
     print("Not found")
-    return None, timeout, nb_programs
+    return None, timeout, timeout, nb_programs
 
 
 result = []
-for i in range(218):
-    if i <= 20:
-        with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
-            name, dsl, pcfg, examples = pickle.load(f)
+range_experiments = range(218)
+for i in range_experiments:
+    with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
+        name, dsl, pcfg, examples = pickle.load(f)
 
-            param = {}
-            param["dsl"] = dsl
-            print("\nSolving task number {} called {}".format(i, name))
-            program, chrono, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
-            result.append((name, chrono, nb_programs))        
+        param = {}
+        print("\nSolving task number {} called {}".format(i, name))
+        program, search_time, evaluation_time, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
+        # program, search_time, evaluation_time, nb_programs = run_algorithm(dsl, examples, pcfg, a_star, param)
+        result.append((name, search_time, evaluation_time, nb_programs))        
 
-        with open('tmp/results.pickle', 'wb') as f:
-            pickle.dump(result, f)
+    with open('tmp/results_{}_{}.pickle'.format(range_experiments[0],range_experiments[-1]), 'wb') as f:
+        pickle.dump(result, f)
 
 
 

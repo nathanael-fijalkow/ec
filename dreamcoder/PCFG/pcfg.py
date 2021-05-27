@@ -57,26 +57,33 @@ class PCFG:
         '''
         restrict to co-reachable non-terminals
         '''
-        min_program_depth = self.compute_min_program_depth()
+        stable = False
+        while not stable:
+            stable = True
+            min_program_depth = self.compute_min_program_depth()
 
-        for S in set(self.rules):
-            if S[2] + min_program_depth[S] > self.max_program_depth \
-            or sum(w for _, _, w in self.rules[S]) == 0:
-                # print("remove S ", S)
-                del self.rules[S]
+            for S in set(self.rules):
+                if S[2] + min_program_depth[S] > self.max_program_depth \
+                or sum(w for _, _, w in self.rules[S]) == 0:
+                    # print("remove S ", S)
+                    del self.rules[S]
+                    stable = False
 
-        for S in self.rules:
-            new_list_derivations = []
-            for F, args_F, w in self.rules[S]:
-                keep = True
-                for arg in args_F:
-                    if S[2] + min_program_depth[arg] + 1 > self.max_program_depth \
-                    or arg not in self.rules:
-                        keep = False
-                        # print("remove F ", F)
-                if keep:
-                    new_list_derivations.append((F,args_F,w))
-            self.rules[S] = new_list_derivations
+            for S in set(self.rules):
+                new_list_derivations = []
+                for F, args_F, w in self.rules[S]:
+                    keep = True
+                    for arg in args_F:
+                        if arg not in self.rules:
+                            keep = False
+                            stable = False
+                            # print("remove F ", F)
+                    if keep:
+                        new_list_derivations.append((F,args_F,w))
+                if len(new_list_derivations) > 0:
+                    self.rules[S] = new_list_derivations
+                else:
+                    del self.rules[S]
 
     def compute_min_program_depth(self):
         '''
@@ -105,7 +112,6 @@ class PCFG:
         '''
         populates the dictionary max_probability
         '''
- 
         for S in reversed(self.rules):
             best_program = Variable((-1, UnknownType()))
             best_program.probability = 0
@@ -156,7 +162,7 @@ class PCFG:
     def sample_program(self, S):
         F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
         if len(args_F) == 0:
-            return F
+            return Variable(F)
         else:
             arguments = []
             for arg in args_F:
