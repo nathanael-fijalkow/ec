@@ -45,7 +45,7 @@ def create_dataset(PCFG):
 
 	while(not finished):
 		program = next(gen) # format: a list
-		proba = PCFG.proba_term(PCFG.start, program)
+		proba = PCFG.probability_program(PCFG.start, program)
 		i = int(-log10(proba))
 		if (i >= imin and i < imax and size_dataset[i] < number_samples):
 #            print("This program has probability %0.10f, it goes in bucket %u.\n" % (proba, i))
@@ -77,13 +77,19 @@ def run_algorithm(dsl, PCFG, algorithm, param):
 	while (chrono < timeout and N < total_number_programs):
 		chrono -= time.perf_counter()
 		program = next(gen)
+		# if algorithm.__name__ == 'dfs':
+    	# 		print(program)
+
 		chrono += time.perf_counter()
 		if algorithm in reconstruct:
 			program = dsl.reconstruct_from_compressed(program)
+		# if algorithm.__name__ == 'dfs':
+		# 	print(program)
+		print(program)
 		hash_program = str(program)
 		if hash_program not in result:
 			N += 1
-			result[hash_program] = N, chrono, PCFG.proba_term(PCFG.start, program)
+			result[hash_program] = N, chrono, PCFG.probability_program(PCFG.start, program)
 			# result.append((program, PCFG.proba_term(PCFG.start, program), chrono))
 
 	print("Run successful, output %u programs" % len(result))
@@ -112,7 +118,7 @@ dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {})]
+#list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {})]
 
 for algo, algo_name, param in list_algorithms:
 	run_algo = run_algorithm(dsl, pcfg, algo, param)

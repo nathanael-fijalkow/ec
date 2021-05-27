@@ -198,20 +198,25 @@ class DSL:
             var = program.pop()
             return Variable(var)
         else:
-            primitive = program.pop()
+            primitive_plus_types = program.pop()
+            primitive = primitive_plus_types[0]
             if primitive in self.primitive_types:
                 type_primitive = self.primitive_types[primitive]
                 nb_arguments = len(type_primitive.arguments())
                 arguments = [None]*nb_arguments
                 for i in range(nb_arguments):
                     arguments[nb_arguments-i-1] = self.reconstruct_from_list(program)
-                return MultiFunction(primitive, arguments)
+
+                return MultiFunction(primitive_plus_types, arguments)
             else:
-                return Variable(primitive)
+                return Variable(primitive_plus_types)
 
     def reconstruct_from_compressed(self, program):
         program_as_list = []
         self.list_from_compressed(program, program_as_list)
+        #print(program)
+
+        print(program_as_list)
         program_as_list.reverse()
         return self.reconstruct_from_list(program_as_list)
 

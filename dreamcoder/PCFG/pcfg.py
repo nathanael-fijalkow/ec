@@ -156,7 +156,7 @@ class PCFG:
     def sample_program(self, S):
         F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
         if len(args_F) == 0:
-            return F
+            return Variable(F)
         else:
             arguments = []
             for arg in args_F:
