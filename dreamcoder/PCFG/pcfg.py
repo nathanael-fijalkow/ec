@@ -162,7 +162,7 @@ class PCFG:
     def sample_program(self, S):
         F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
         if len(args_F) == 0:
-            return Variable(F)
+            return F
         else:
             arguments = []
             for arg in args_F:
@@ -187,15 +187,15 @@ class PCFG:
         '''
         Compute the probability of a program generated from non-terminal S
         '''
-        if program.probability:
-            return program.probability
-        elif isinstance(program, Variable): 
-            program.probability = self.probability[S][program.variable]
-        elif isinstance(program, MultiFunction):
+        if isinstance(program, Variable):
+            return self.probability[S][(program, program.variable[1])]
+        if isinstance(program, tuple): 
+            return self.probability[S][program]
+        if isinstance(program, MultiFunction):
             F = program.function
             args = program.arguments
             probability = self.probability[S][F]
             for i, arg in enumerate(args):
                 probability *= self.probability_program(self.arities[S][F][i], arg)
             program.probability = probability
-        return program.probability
+            return program.probability
