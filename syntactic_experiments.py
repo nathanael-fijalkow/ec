@@ -113,10 +113,13 @@ def experiment_enumeration_time(result):
 
 # parameters
 timeout = 50  # in seconds
-seed = 17
-total_number_programs = 10
+seed = 5
+total_number_programs = 100_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
+threshold_probability = 0.95 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
+
+title = "Cumulative probability versus time on DeepCoder"
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
@@ -149,14 +152,15 @@ def plot_cumulative_vs_time(PCFG, list_algorithms):
 			assert(False)
 		processed_run_algo = experiment_cumulative_vs_time(run_algo)
 		plt.scatter([x for (x,y) in processed_run_algo], [y for (x,y) in processed_run_algo], label = algo_name, s = 8)
+	plt.xlim((0,threshold_probability))
 	plt.legend()
 	plt.xlabel("cumulative probability")
 	plt.ylabel("search time (in seconds)")
-	plt.title('PCFG')
+	plt.title(title)
 	# plt.xscale('log')
 	plt.yscale('log')
 	#plt.show()
-	plt.savefig("results_syntactic/cumulative_time_%s.png" % 'PCFG', dpi=500, bbox_inches='tight')
+	plt.savefig("results_syntactic/cumulative_time_%s.png" % seed, dpi=500, bbox_inches='tight')
 	plt.clf()
 
 plot_cumulative_vs_time(pcfg, list_algorithms)
@@ -169,9 +173,10 @@ plot_cumulative_vs_time(pcfg, list_algorithms)
 # Enumeration time: heap search versus A*
 
 # parameters
+title = "Heap search versus A*"
 timeout = 50  # in seconds
 seed = 10
-total_number_programs = 100
+total_number_programs = 1_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (a_star, 'A*', {})]
@@ -201,15 +206,14 @@ def plot_enumeration_time(PCFG, list_algorithms):
 		processed_run_algo = experiment_enumeration_time(run_algo)
 		plt.scatter([x for x in range(1,len(processed_run_algo)+1)], processed_run_algo, label = algo_name, s = 8)
 	#min_proba = 0.5
-	#plt.xlim((0,min_proba))
 	plt.legend()
 	plt.xlabel("number of programs")
 	plt.ylabel("time (in seconds)")
-	plt.title('PCFG')
+	plt.title(title)
 	#plt.xscale('log')
 	plt.yscale('log')
 	#plt.show()
-	plt.savefig("results_syntactic/enumeration_time_%s.png" % 'PCFG', dpi=300, bbox_inches='tight')
+	plt.savefig("results_syntactic/enumeration_time_%s.png" % seed, dpi=300, bbox_inches='tight')
 	plt.clf()
 
 plot_enumeration_time(pcfg, list_algorithms)
@@ -223,23 +227,26 @@ plot_enumeration_time(pcfg, list_algorithms)
 # probability programs versus search time
 # paramaters for the dataset
 #Create a dataset, number_samples programs with proba in [1O^(-(i+1),1O^(-i)] for i in [imin, imax]
-imin = 7
-imax = 8
-number_samples = 1
+imin = 6
+imax = 12
+number_samples = 30
 
+title = "probability versus search time"
 # others parameters
-total_number_programs = 10
+total_number_programs = 100
 timeout = 50  # in seconds
-seed = 1
+seed = 20
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}),(a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
 
+dataset_creation = False
 
-dataset = create_dataset(pcfg)
-with open('results_syntactic/dataset_3_'+ str(seed) + ".pickle","wb" ) as f:
-	pickle.dump(dataset, f)
+if dataset_creation:
+	dataset = create_dataset(pcfg)
+	with open('results_syntactic/dataset_3_'+ str(seed) + ".pickle","wb" ) as f:
+		pickle.dump(dataset, f)
 
 for algo, algo_name, param in list_algorithms:
 	run_algo = run_algorithm(dsl, pcfg, algo, param)
@@ -278,11 +285,11 @@ def plot_probability_vs_time(PCFG, list_algorithms):
 	plt.legend()
 	plt.xlabel("probability")
 	plt.ylabel("search time (in seconds)")
-	plt.title('PCFG')
+	plt.title(title)
 	plt.xscale('log')
 	plt.yscale('log')
 	#plt.show()
-	plt.savefig("results_syntactic/proba_vs_search_time_%s.png" % 'PCFG', dpi=300, bbox_inches='tight')
+	plt.savefig("results_syntactic/proba_vs_search_time_%s.png" % seed, dpi=300, bbox_inches='tight')
 	plt.clf()
 
 plot_probability_vs_time(pcfg, list_algorithms)
@@ -295,11 +302,13 @@ plot_probability_vs_time(pcfg, list_algorithms)
 # cumulative proba versus number of trials
 
 # parameters
+title = "cumulative probability versus number of trials"
 timeout = 50  # in seconds
 seed = 3
 total_number_programs = 100_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
+threshold_probability = 0.92 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]
@@ -332,14 +341,15 @@ def plot_cumulative_vs_trials(PCFG, list_algorithms):
 			assert(False)
 		processed_run_algo = experiment_cumulative_vs_trials(run_algo)
 		plt.scatter([x for (x,y) in processed_run_algo], list(range(1,len(processed_run_algo)+1)), label = algo_name, s = 8)
+	plt.xlim((0,threshold_probability))
 	plt.legend()
 	plt.xlabel("cumulative probability")
 	plt.ylabel("number of trials")
-	plt.title('PCFG')
+	plt.title(title)
 	# plt.xscale('log')
 	plt.yscale('log')
 	#plt.show()
-	plt.savefig("results_syntactic/cumulative_time_versus_trials%s.png" % 'PCFG', dpi=500, bbox_inches='tight')
+	plt.savefig("results_syntactic/cumulative_time_versus_trials%s.png" % seed, dpi=500, bbox_inches='tight')
 	plt.clf()
 
 plot_cumulative_vs_trials(pcfg, list_algorithms)
