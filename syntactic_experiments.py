@@ -18,6 +18,7 @@ from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
 import pickle
 import time
+import random
 import matplotlib.pyplot as plt
 from math import log10
 
@@ -41,7 +42,7 @@ def create_dataset(PCFG):
 	size_dataset = [0 for _ in range(imax)]
 	finished = False
 
-	gen = deepcoder_PCFG_t.sampling()
+	gen = PCFG.sampling()
 
 	while(not finished):
 		program = next(gen) # format: a list
@@ -114,13 +115,14 @@ def experiment_enumeration_time(result):
 # parameters
 timeout = 50  # in seconds
 seed = 5
+random.seed(seed)
 total_number_programs = 100_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 threshold_probability = 0.95 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
 
 title = "Cumulative probability versus time on DeepCoder"
-recompute_from_scratch = True
+recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
@@ -178,12 +180,13 @@ plot_cumulative_vs_time(pcfg, list_algorithms)
 title = "Heap search versus A*"
 timeout = 50  # in seconds
 seed = 10
+random.seed(seed)
 total_number_programs = 1_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (a_star, 'A*', {})]
 
-recompute_from_scratch = True
+recompute_from_scratch = False
 
 if recompute_from_scratch:
 	for algo, algo_name, param in list_algorithms:
@@ -232,15 +235,16 @@ plot_enumeration_time(pcfg, list_algorithms)
 # probability programs versus search time
 # paramaters for the dataset
 #Create a dataset, number_samples programs with proba in [1O^(-(i+1),1O^(-i)] for i in [imin, imax]
-imin = 6
-imax = 12
-number_samples = 30
+imin = 3
+imax = 6
+number_samples = 3
 
 title = "probability versus search time"
 # others parameters
-total_number_programs = 100
+total_number_programs = 100_00
 timeout = 50  # in seconds
-seed = 20
+seed = 10
+random.seed(seed)
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}),(a_star, 'A*', {})]
@@ -310,11 +314,12 @@ plot_probability_vs_time(pcfg, list_algorithms)
 title = "cumulative probability versus number of trials"
 timeout = 50  # in seconds
 seed = 17
+random.seed(seed)
 total_number_programs = 100_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 threshold_probability = 0.95 
-recompute_from_scratch = True
+recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]

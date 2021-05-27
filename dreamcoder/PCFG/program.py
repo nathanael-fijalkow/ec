@@ -48,7 +48,11 @@ class Variable(Program):
         self.evaluation = {}
 
     def __repr__(self):
-        return "var" + str(self.variable[0])
+        if isinstance(self.variable[0], Variable):
+            return self.variable[0].__repr__()
+        else:
+            return '('+ "var" + str(self.variable[0]) + ' )'
+#            return "var" + str(self.variable[0])
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
@@ -70,7 +74,8 @@ class MultiFunction(Program):
         self.evaluation = {}
 
     def __repr__(self):
-            s = format(self.function[0]) + " "
+            s = '('
+            s += format(self.function[0]) + " "
             for arg in self.arguments:
                 s += " " + format(arg)
             s += ')'
