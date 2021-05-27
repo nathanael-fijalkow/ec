@@ -11,11 +11,11 @@ class DSL:
     '''
     Object that represents a domain specific language
 
-    semantics: a dictionary of the form {'F' : f}
-    mapping a function symbol F to its semantics f
+    semantics: a dictionary of the form {F : f}
+    mapping a BasicPrimitive F to its semantics f
 
-    primitive_types: a dictionary of the form {'F' : type}
-    mapping a function symbol F to its type
+    primitive_types: a dictionary of the form {F : type}
+    mapping a BasicPrimitive F to its type
     '''
     def __init__(self, semantics, primitive_types, no_repetitions):
         self.semantics = semantics
@@ -24,13 +24,11 @@ class DSL:
 
     def __repr__(self):
         s = "Print a DSL\n"
-        for primitive in self.primitive_types:
+        for primitive in self.semantics:
             s = s + "{}: {}\n".format(primitive, self.primitive_types[primitive])
         return s
 
-    def instantiate_polymorphic_types(self,
-        upper_bound_type_size = 3, 
-        upper_bound_type_nesting = 1):
+    def instantiate_polymorphic_types(self, upper_bound_type_size = 10):
 
         set_basic_types = set()
         for F in self.primitive_types:
@@ -67,9 +65,7 @@ class DSL:
                             unifier = {str(poly_type): type_}
                             intermediate_type = copy.deepcopy(instantiated_type)
                             new_type = intermediate_type.apply_unifier(unifier)
-                            size, nesting = new_type.size_and_nesting()
-                            if size <= upper_bound_type_size \
-                            and nesting <= upper_bound_type_nesting:
+                            if new_type.size() <= upper_bound_type_size:
                                 new_set_instantiated_types.add(new_type)
                     set_instantiated_types = new_set_instantiated_types
                 new_primitive_types.update({(F, type_) : type_ for type_ in set_instantiated_types})
@@ -78,19 +74,20 @@ class DSL:
 
         # print(new_primitive_types)
 
-        return DSL(semantics = self.semantics, primitive_types = new_primitive_types, no_repetitions = self.no_repetitions)
+        return DSL(semantics = self.semantics, 
+            primitive_types = new_primitive_types, 
+            no_repetitions = self.no_repetitions)
 
     def DSL_to_CFG(self, type_request, 
         upper_bound_type_size = 2, 
-        upper_bound_type_nesting = 1, 
         max_program_depth = 4,
         min_variable_depth = 1,
         n_gram = 1):
         '''
-        Constructs a CFG from a DSL imposing bounds on size and nesting of the types
+        Constructs a CFG from a DSL imposing bounds on size of the types
         and on the maximum program depth
         '''
-        instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size, upper_bound_type_nesting)
+        instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size)
 
         return_type = type_request.returns()
         args = type_request.arguments()
@@ -114,7 +111,7 @@ class DSL:
             if depth < max_program_depth and depth >= min_variable_depth:
                 for i in range(len(args)):
                     if current_type == args[i]:
-                        var = Variable(i)   
+                        var = Variable((i, current_type))
                         if non_terminal in rules:
                             if not ((var, []) in rules[non_terminal]): 
                                 rules[non_terminal].append(((var, current_type), []))
@@ -158,13 +155,11 @@ class DSL:
 
     def DSL_to_Uniform_PCFG(self, type_request, 
         upper_bound_type_size = 3, 
-        upper_bound_type_nesting = 1,
         max_program_depth = 4,
         min_variable_depth = 1,
         n_gram = 0):
         CFG = self.DSL_to_CFG(type_request, 
             upper_bound_type_size, 
-            upper_bound_type_nesting, 
             max_program_depth, 
             min_variable_depth, 
             n_gram)
@@ -176,14 +171,12 @@ class DSL:
 
     def DSL_to_Random_PCFG(self, type_request, 
         upper_bound_type_size = 3, 
-        upper_bound_type_nesting = 1,
         max_program_depth = 4,
         min_variable_depth = 1,
         n_gram = 0,
         alpha = 0.7):
         CFG = self.DSL_to_CFG(type_request, 
             upper_bound_type_size, 
-            upper_bound_type_nesting, 
             max_program_depth, 
             min_variable_depth, 
             n_gram)

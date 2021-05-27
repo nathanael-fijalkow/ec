@@ -35,13 +35,15 @@ class PCFG:
         self.max_program_depth = max_program_depth
         self.trim()
 
-        for S in self.rules:
+        for S in set(self.rules):
             self.rules[S].sort(key=lambda x: -x[2])
             s = sum(w for _, _, w in self.rules[S])
-            self.rules[S] = [(F, args_F, w / s) for (F, args_F, w) in self.rules[S]]
+            if s > 0:
+                self.rules[S] = [(F, args_F, w / s) for (F, args_F, w) in self.rules[S]]
+            else:
+                del self.rules[S]
 
         self.max_probability = {}
-        self.max_probability_F = {}
         self.compute_max_probability()
 
         self.arities = {S: {} for S in self.rules}
@@ -105,15 +107,16 @@ class PCFG:
         '''
  
         for S in reversed(self.rules):
-            best_program = Variable(-1)
+            best_program = Variable((-1, UnknownType()))
             best_program.probability = 0
             for F, args_F, w in self.rules[S]:
-                if isinstance(F[0], Variable):
-                    prog = F[0]
+                if isinstance(F, Variable):
+                    prog = F
                     prog.probability = w
                 else:
-                    prog = MultiFunction(F[0], [self.max_probability[arg] for arg in args_F])
-                    prog.probability = w * prod([self.max_probability[arg].probability for arg in args_F])
+                    if all([arg in self.max_probability for arg in args_F]):
+                        prog = MultiFunction(F, [self.max_probability[arg] for arg in args_F])
+                        prog.probability = w * prod([self.max_probability[arg].probability for arg in args_F])
                 self.max_probability[(S,F)] = prog
                 if prog.probability > best_program.probability:
                     best_program = prog
@@ -121,7 +124,7 @@ class PCFG:
 
     def initialise_arities_probability(self):
         for S in self.rules:
-            for (F,_), args_F, w in self.rules[S]:
+            for F, args_F, w in self.rules[S]:
                 self.arities[S][F] = args_F
                 self.probability[S][F] = w
 
@@ -153,12 +156,12 @@ class PCFG:
     def sample_program(self, S):
         F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
         if len(args_F) == 0:
-            return F[0]
+            return F
         else:
             arguments = []
             for arg in args_F:
                 arguments.append(self.sample_program(arg))
-            return MultiFunction(F[0],arguments)
+            return MultiFunction(F, arguments)
 
 
     ## UNUSED
@@ -175,9 +178,9 @@ class PCFG:
     #   return res
 
     def probability_program(self, S, program):
-    '''
-    Compute the probability of a program generated from non-terminal S
-    '''
+        '''
+        Compute the probability of a program generated from non-terminal S
+        '''
         if program.probability:
             return program.probability
         elif isinstance(program, Variable): 

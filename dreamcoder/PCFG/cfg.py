@@ -66,6 +66,6 @@ class CFG:
         s += "start: {}\n".format(self.start)
         for S in self.rules:
             s += '#\n {}\n'.format(S)
-            for F, args_F in self.rules[S]:
-                s += '   {}: {}\n'.format(F, args_F)
+            for (F, type_F), args_F in self.rules[S]:
+                s += '   {} - {}: {}\n'.format(F, type_F, args_F)
         return s

@@ -41,13 +41,14 @@ class Program:
 
 class Variable(Program):
     def __init__(self, variable):
+        # self.variable is a pair (x, type) where x is a natural number
         self.variable = variable
 
         self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
-        return "var" + str(self.variable)
+        return "var" + str(self.variable[0])
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
@@ -55,12 +56,13 @@ class Variable(Program):
             return self.evaluation[i]
         # print("not yet evaluated")
         try:
-            return index(environment, self.variable)
+            return index(environment, self.variable[0])
         except (IndexError, ValueError, TypeError):
             return None
 
 class MultiFunction(Program):
     def __init__(self, function, arguments):
+        # self.function is a pair (F, type_F)
         self.function = function
         self.arguments = arguments
 
@@ -68,17 +70,24 @@ class MultiFunction(Program):
         self.evaluation = {}
 
     def __repr__(self):
-        if len(self.arguments) == 0:
-            return format(self.function)
-        else:
-            s = format(self.function) + " ("
-            for arg in self.arguments[:-1]:
-                s += format(arg) + ', '
-            name_arg = ""
-            if len(self.arguments)>0:
-                name_arg = format(self.arguments[-1])
-            s += name_arg + ')'
+            s = format(self.function[0]) + " "
+            for arg in self.arguments:
+                s += " " + format(arg)
+            s += ')'
             return s
+
+    # def __repr__(self):
+    #     if len(self.arguments) == 0:
+    #         return format(self.function)
+    #     else:
+    #         s = format(self.function) + " ("
+    #         for arg in self.arguments[:-1]:
+    #             s += format(arg) + ', '
+    #         name_arg = ""
+    #         if len(self.arguments)>0:
+    #             name_arg = format(self.arguments[-1])
+    #         s += name_arg + ')'
+    #         return s
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
@@ -87,12 +96,12 @@ class MultiFunction(Program):
         # print("not yet evaluated")
         try:
             if len(self.arguments) == 0:
-                return self.function.eval(dsl, environment, i)
+                return self.function[0].eval(dsl, environment, i)
             else:
                 evaluated_arguments = []
                 for j in range(len(self.arguments)):
                     evaluated_arguments.append(self.arguments[j].eval(dsl, environment, i))
-                result = self.function.eval(dsl, environment, i)
+                result = self.function[0].eval(dsl, environment, i)
                 for evaluated_arg in evaluated_arguments:
                     result = result(evaluated_arg)
                 return result

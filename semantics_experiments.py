@@ -66,18 +66,19 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
 
 
 result = []
-for i in range(200,218):
-    with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
-        name, dsl, pcfg, examples = pickle.load(f)
+for i in range(218):
+    if i <= 20:
+        with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
+            name, dsl, pcfg, examples = pickle.load(f)
 
-        param = {}
-        param["dsl"] = dsl
-        print("Solving task number {} called {}".format(i, name))
-        program, chrono, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
-        result.append((name, chrono, nb_programs))        
+            param = {}
+            param["dsl"] = dsl
+            print("\nSolving task number {} called {}".format(i, name))
+            program, chrono, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
+            result.append((name, chrono, nb_programs))        
 
-    with open('tmp/results.pickle', 'wb') as f:
-        pickle.dump(result, f)
+        with open('tmp/results.pickle', 'wb') as f:
+            pickle.dump(result, f)
 
 
 
