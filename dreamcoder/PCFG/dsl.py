@@ -214,9 +214,6 @@ class DSL:
     def reconstruct_from_compressed(self, program):
         program_as_list = []
         self.list_from_compressed(program, program_as_list)
-        #print(program)
-
-        print(program_as_list)
         program_as_list.reverse()
         return self.reconstruct_from_list(program_as_list)
 

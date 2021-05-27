@@ -13,7 +13,7 @@ def a_star(G : PCFG):
     frontier = []
     initial_non_terminals = deque()
     initial_non_terminals.append(G.start)
-    heappush(frontier, ( -G.max_probability[G.start][0], (None, initial_non_terminals, 1)))
+    heappush(frontier, ( -G.max_probability[G.start].probability, (None, initial_non_terminals, 1)))
     # A frontier is a heap of pairs (-max_probability, (partial_program, non_terminals, probability))
     # describing a partial program:
     # max_probability is the most likely program completing the partial program
@@ -35,5 +35,5 @@ def a_star(G : PCFG):
                 new_max_probability = new_probability
                 for arg in args_F:
                     new_non_terminals.append(arg)
-                    new_max_probability *= G.max_probability[arg][0]
+                    new_max_probability *= G.max_probability[arg].probability
                 heappush(frontier, (-new_max_probability, (new_partial_program, new_non_terminals, new_probability)))

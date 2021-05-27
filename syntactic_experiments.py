@@ -84,8 +84,9 @@ def run_algorithm(dsl, PCFG, algorithm, param):
 		if algorithm in reconstruct:
 			program = dsl.reconstruct_from_compressed(program)
 		# if algorithm.__name__ == 'dfs':
-		# 	print(program)
-		print(program)
+    	# 		print(program)
+
+
 		hash_program = str(program)
 		if hash_program not in result:
 			N += 1
@@ -113,12 +114,12 @@ def experiment_enumeration_time(result):
 # parameters
 timeout = 50  # in seconds
 seed = 17
-total_number_programs = 100
+total_number_programs = 10000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
-#list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {})]
+#list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
+list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
 
 for algo, algo_name, param in list_algorithms:
 	run_algo = run_algorithm(dsl, pcfg, algo, param)
@@ -221,7 +222,7 @@ plot_enumeration_time(pcfg, list_algorithms)
 # Third experiment #
 ####################
 # Enumeration time: probability programs versus search time
-
+assert(False)
 # paramaters for the dataset
 #Create a dataset, number_samples programs with proba in [1O^(-(i+1),1O^(-i)] for i in [imin, imax]
 imin = 3
