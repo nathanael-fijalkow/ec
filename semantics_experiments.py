@@ -21,7 +21,7 @@ from math import exp
 # Set of algorithms where we need to reconstruct the programs
 reconstruct = {dfs, bfs, threshold_search, a_star}
 evaluate = {}
-timeout = 120  # in seconds
+timeout = 60  # in seconds
 total_number_programs = 1_000_000 #10_000_000 # 1M programs
 
 def run_algorithm(dsl, examples, PCFG, algorithm, param):
@@ -29,16 +29,14 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
     Run the algorithm until either timeout or 3M programs, and for each program record probability and time of output
     '''
     print("Running: %s" % algorithm.__name__)
-    result = {}
     N = 0
     chrono = 0
     param["environments"] = examples
-    # gen = algorithm(PCFG, **param)
+    gen = algorithm(PCFG, **param)
     found = False
     # print(dsl)
     # print(PCFG)
-    print("examples", examples)
-    assert(False)
+    # print("examples", examples)
     nb_programs = 0
     while (chrono < timeout and N < total_number_programs):
         chrono -= time.perf_counter()
@@ -53,44 +51,49 @@ def run_algorithm(dsl, examples, PCFG, algorithm, param):
                 found = True
         chrono += time.perf_counter()
 
-        # print(program)
-        # if not isinstance(program, Program):
-        #     print("None", nb_programs) 
-
         nb_programs += 1
 
-        if nb_programs % 1_000 == 0:
+        if nb_programs % 10_000 == 0:
             print("nb_programs tested", nb_programs)
 
         if found:
+            print("Found in {}s after {} programs".format(chrono, nb_programs))
+            print("The solution found: ", program)
             return program, chrono, nb_programs
 
     print("Not found")
-    return timeout, nb_programs
+    return None, timeout, nb_programs
 
-# for i in range(20):
-#     if i == 16:
-#         with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
-#             dsl, pcfg, examples = pickle.load(f)
 
-#             param = {}
-#             param["dsl"] = dsl
-#             print(run_algorithm(dsl, examples, pcfg, heap_search, param))
+result = []
+for i in range(218):
+    if i <= 20:
+        with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
+            name, dsl, pcfg, examples = pickle.load(f)
+
+            param = {}
+            param["dsl"] = dsl
+            print("\nSolving task number {} called {}".format(i, name))
+            program, chrono, nb_programs = run_algorithm(dsl, examples, pcfg, heap_search, param)
+            result.append((name, chrono, nb_programs))        
+
+        with open('tmp/results.pickle', 'wb') as f:
+            pickle.dump(result, f)
+
+
+
 
 # Import DSL
-from dreamcoder.PCFG.DSL.deepcoder import *
+# from dreamcoder.PCFG.DSL.deepcoder import *
 
-deepcoder = DSL(semantics, primitive_types, no_repetitions)
-t = Arrow(List(INT),List(INT))
-# deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
-deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
-environments = deque()
-environments.append((([1,2,3,8], None), [8]))
-environments.append((([4,2,3,9,6,4], None), [6]))
-gen = heap_search(deepcoder_PCFG_t, deepcoder, environments)
+# deepcoder = DSL(semantics, primitive_types, no_repetitions)
+# t = Arrow(List(INT),List(INT))
+# # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
+# deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7, max_program_depth = 4)
+# examples = deque()
+# examples.append((([1,2,3,8], None), [8]))
+# examples.append((([4,2,3,9,6,4], None), [6]))
 
-nb_programs = 0
-while (nb_programs <= 10):
-    program = next(gen)
-    print(program)
-    nb_programs += 1
+# param = {}
+# param["dsl"] = deepcoder
+# print(run_algorithm(deepcoder, examples, deepcoder_PCFG_t, heap_search, param))
