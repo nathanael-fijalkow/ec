@@ -41,7 +41,7 @@ class Program:
 
 class Variable(Program):
     def __init__(self, variable):
-        # self.variable is a pair (x, type) where x is a natural number
+        # self.variable is a pair (x, type) where x is a natural number,
         self.variable = variable
 
         self.probability = None 
@@ -64,17 +64,18 @@ class MultiFunction(Program):
     def __init__(self, function, arguments):
         # self.function is a pair (F, type_F)
         self.function = function
+        assert(isinstance(self.function, tuple))
         self.arguments = arguments
 
         self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
-            s = format(self.function[0]) + " "
-            for arg in self.arguments:
-                s += " " + format(arg)
-            s += ')'
-            return s
+        s = format(self.function[0]) + " "
+        for arg in self.arguments:
+            s += " " + format(arg)
+        s += ')'
+        return s
 
     # def __repr__(self):
     #     if len(self.arguments) == 0:
