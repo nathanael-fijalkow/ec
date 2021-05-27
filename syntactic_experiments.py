@@ -83,7 +83,7 @@ def run_algorithm(dsl, PCFG, algorithm, param):
 
 		chrono += time.perf_counter()
 		if algorithm in reconstruct:
-			program = dsl.reconstruct_from_compressed(program)
+			program = dsl.reconstruct_from_compressed(program, PCFG.start[0])
 		# if algorithm.__name__ == 'dfs':
     	# 		print(program)
 
@@ -125,7 +125,7 @@ title = "Cumulative probability versus time on DeepCoder"
 recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
+list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
 
 if recompute_from_scratch:
 	for algo, algo_name, param in list_algorithms:
@@ -184,7 +184,7 @@ random.seed(seed)
 total_number_programs = 1_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (a_star, 'A*', {})]
+list_algorithms = [(heap_search, 'heap search', {}), (a_star, 'A*', {})]
 
 recompute_from_scratch = False
 
@@ -248,7 +248,7 @@ random.seed(seed)
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}),(a_star, 'A*', {})]
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
+list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {})]
 
 recompute_from_scratch = True
 
@@ -322,7 +322,7 @@ threshold_probability = 0.95
 recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
-list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]
+list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]
 
 if recompute_from_scratch:
 	for algo, algo_name, param in list_algorithms:
