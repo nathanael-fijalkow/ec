@@ -42,7 +42,8 @@ def create_dataset(PCFG):
 	size_dataset = [0 for _ in range(imax)]
 	finished = False
 
-	gen = PCFG.sampling()
+#	gen = PCFG.sampling()
+	gen = sqrt_sampling(PCFG)
 
 	while(not finished):
 		program = next(gen) # format: a list
@@ -78,6 +79,7 @@ def run_algorithm(dsl, PCFG, algorithm, param):
 	while (chrono < timeout and N < total_number_programs):
 		chrono -= time.perf_counter()
 		program = next(gen)
+
 		# if algorithm.__name__ == 'dfs':
     	# 		print(program)
 
@@ -86,7 +88,8 @@ def run_algorithm(dsl, PCFG, algorithm, param):
 			program = dsl.reconstruct_from_compressed(program, PCFG.start[0])
 		# if algorithm.__name__ == 'dfs':
     	# 		print(program)
-
+		# if N <= 10:
+    	# 		print(algorithm.__name__, program)
 
 		hash_program = str(program)
 		if hash_program not in result:
@@ -116,12 +119,13 @@ def experiment_enumeration_time(result):
 timeout = 50  # in seconds
 seed = 5
 random.seed(seed)
-total_number_programs = 100_0
+total_number_programs = 100
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
 threshold_probability = 0.95 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
 
-title = "Cumulative probability versus time on DeepCoder"
+#title = "Cumulative probability versus time"
+title = ""
 recompute_from_scratch = True
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
@@ -177,7 +181,8 @@ plot_cumulative_vs_time(pcfg, list_algorithms)
 # Enumeration time: heap search versus A*
 
 # parameters
-title = "Heap search versus A*"
+# title = "Heap search versus A*"
+title = ""
 timeout = 50  # in seconds
 seed = 10
 random.seed(seed)
@@ -235,15 +240,16 @@ plot_enumeration_time(pcfg, list_algorithms)
 # probability programs versus search time
 # paramaters for the dataset
 #Create a dataset, number_samples programs with proba in [1O^(-(i+1),1O^(-i)] for i in [imin, imax]
-imin = 3
-imax = 6
-number_samples = 3
+imin = 5
+imax = 10
+number_samples = 20
 
-title = "probability versus search time"
+#title = "probability versus search time"
+title = ""
 # others parameters
-total_number_programs = 100_00
+total_number_programs = 100_000
 timeout = 50  # in seconds
-seed = 10
+seed = 2
 random.seed(seed)
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
@@ -311,7 +317,8 @@ plot_probability_vs_time(pcfg, list_algorithms)
 # cumulative proba versus number of trials
 
 # parameters
-title = "cumulative probability versus number of trials"
+#title = "cumulative probability versus number of trials"
+title = ""
 timeout = 50  # in seconds
 seed = 17
 random.seed(seed)
@@ -361,7 +368,7 @@ def plot_cumulative_vs_trials(PCFG, list_algorithms):
 	# plt.xscale('log')
 	plt.yscale('log')
 	#plt.show()
-	plt.savefig("results_syntactic/cumulative_time_versus_trials%s.png" % seed, dpi=500, bbox_inches='tight')
+	plt.savefig("results_syntactic/cumulative_time_versus_trials_%s.png" % seed, dpi=500, bbox_inches='tight')
 	plt.clf()
 
 plot_cumulative_vs_trials(pcfg, list_algorithms)
