@@ -22,6 +22,9 @@ import random
 import matplotlib.pyplot as plt
 from math import log10
 
+
+seed = 100
+random.seed(seed)
 deepcoder = DSL(semantics, primitive_types, no_repetitions)
 t = Arrow(List(INT),List(INT))
 deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
@@ -43,10 +46,10 @@ def create_dataset(PCFG):
 	finished = False
 
 #	gen = PCFG.sampling()
-	gen = sqrt_sampling(PCFG)
+	gen = sqrt_sampling(PCFG) # better than a simple sampling to get interesting programs
 
 	while(not finished):
-		program = next(gen) # format: a list
+		program = next(gen) # format: a program
 		proba = PCFG.probability_program(PCFG.start, program)
 		i = int(-log10(proba))
 		if (i >= imin and i < imax and size_dataset[i] < number_samples):
@@ -84,6 +87,8 @@ def run_algorithm(dsl, PCFG, algorithm, param):
     	# 		print(program)
 
 		chrono += time.perf_counter()
+		if algorithm.__name__ == 'bfs':
+    			print(N)
 		if algorithm in reconstruct:
 			program = dsl.reconstruct_from_compressed(program, PCFG.start[0])
 		# if algorithm.__name__ == 'dfs':
@@ -116,17 +121,16 @@ def experiment_enumeration_time(result):
 # cumulative probability versus time
 
 # parameters
-timeout = 50  # in seconds
-seed = 5
+timeout = 30  # in seconds
 random.seed(seed)
-total_number_programs = 100_000
+total_number_programs = 150_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
-threshold_probability = 0.96 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
+threshold_probability = 1 # do not plot if cumulative proba greater than this threshold, otherwise hard to interpret
 
 #title = "Cumulative probability versus time"
 title = ""
-recompute_from_scratch = True
+recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {}), (bfs, 'bfs', {'beam_width' : 50000})]
@@ -160,7 +164,7 @@ def plot_cumulative_vs_time(PCFG, list_algorithms):
 			assert(False)
 		processed_run_algo = experiment_cumulative_vs_time(run_algo)
 		plt.scatter([x for (x,y) in processed_run_algo], [y for (x,y) in processed_run_algo], label = algo_name, s = 8)
-	plt.xlim((0,threshold_probability))
+	#plt.xlim((0,threshold_probability))
 	plt.legend()
 	plt.xlabel("cumulative probability")
 	plt.ylabel("time (in seconds)")
@@ -175,61 +179,60 @@ plot_cumulative_vs_time(pcfg, list_algorithms)
 
 
 
-#####################
-# Second experiment #
-#####################
-# Enumeration time: heap search versus A*
+# #####################
+# # Second experiment #
+# #####################
+# # Enumeration time: heap search versus A*
 
-# parameters
-# title = "Heap search versus A*"
-title = ""
-timeout = 50  # in seconds
-seed = 10
-random.seed(seed)
-total_number_programs = 1_000_000
-dsl = deepcoder
-pcfg = deepcoder_PCFG_t
-list_algorithms = [(heap_search, 'heap search', {}), (a_star, 'A*', {})]
+# # parameters
+# # title = "Heap search versus A*"
+# title = ""
+# timeout = 50  # in seconds
+# random.seed(seed)
+# total_number_programs = 300_000
+# dsl = deepcoder
+# pcfg = deepcoder_PCFG_t
+# list_algorithms = [(heap_search, 'heap search', {}), (a_star, 'A*', {})]
 
-recompute_from_scratch = True
+# recompute_from_scratch = False
 
-if recompute_from_scratch:
-	for algo, algo_name, param in list_algorithms:
-		run_algo = run_algorithm(dsl, pcfg, algo, param)
-		with open("results_syntactic/run_2_" + algo_name + '_' + str(seed) + ".pickle","wb" ) as f:
-			pickle.dump(run_algo, f)
+# if recompute_from_scratch:
+# 	for algo, algo_name, param in list_algorithms:
+# 		run_algo = run_algorithm(dsl, pcfg, algo, param)
+# 		with open("results_syntactic/run_2_" + algo_name + '_' + str(seed) + ".pickle","wb" ) as f:
+# 			pickle.dump(run_algo, f)
 
-def experiment_enumeration_time(run_algo):
-	result = [run_algo[e][1] for e in run_algo] #N, chrono, proba
-	result.sort()
-	return result
+# def experiment_enumeration_time(run_algo):
+# 	result = [run_algo[e][1] for e in run_algo] #N, chrono, proba
+# 	result.sort()
+# 	return result
 
-def plot_enumeration_time(PCFG, list_algorithms):
-	'''
-	Retrieve the results and plot
-	'''
-	for i, (algorithm, algo_name, param) in enumerate(list_algorithms):
-		try:
-			f = open("results_syntactic/run_2_" + algo_name + '_' + str(seed) + ".pickle","rb")
-			run_algo = pickle.load(f)
-			f.close()
-		except:
-			print("algorithm not run yet")
-			assert(False)
-		processed_run_algo = experiment_enumeration_time(run_algo)
-		plt.scatter([x for x in range(1,len(processed_run_algo)+1)], processed_run_algo, label = algo_name, s = 8)
-	#min_proba = 0.5
-	plt.legend()
-	plt.xlabel("number of programs")
-	plt.ylabel("time (in seconds)")
-	plt.title(title)
-	#plt.xscale('log')
-	plt.yscale('log')
-	#plt.show()
-	plt.savefig("results_syntactic/enumeration_time_%s.png" % seed, dpi=300, bbox_inches='tight')
-	plt.clf()
+# def plot_enumeration_time(PCFG, list_algorithms):
+# 	'''
+# 	Retrieve the results and plot
+# 	'''
+# 	for i, (algorithm, algo_name, param) in enumerate(list_algorithms):
+# 		try:
+# 			f = open("results_syntactic/run_2_" + algo_name + '_' + str(seed) + ".pickle","rb")
+# 			run_algo = pickle.load(f)
+# 			f.close()
+# 		except:
+# 			print("algorithm not run yet")
+# 			assert(False)
+# 		processed_run_algo = experiment_enumeration_time(run_algo)
+# 		plt.scatter([x for x in range(1,len(processed_run_algo)+1)], processed_run_algo, label = algo_name, s = 8)
+# 	#min_proba = 0.5
+# 	plt.legend()
+# 	plt.xlabel("number of programs")
+# 	plt.ylabel("time (in seconds)")
+# 	plt.title(title)
+# 	#plt.xscale('log')
+# 	plt.yscale('log')
+# 	#plt.show()
+# 	plt.savefig("results_syntactic/enumeration_time_%s.png" % seed, dpi=300, bbox_inches='tight')
+# 	plt.clf()
 
-plot_enumeration_time(pcfg, list_algorithms)
+# plot_enumeration_time(pcfg, list_algorithms)
 
 
 
@@ -240,16 +243,15 @@ plot_enumeration_time(pcfg, list_algorithms)
 # probability programs versus search time
 # paramaters for the dataset
 #Create a dataset, number_samples programs with proba in [1O^(-(i+1),1O^(-i)] for i in [imin, imax]
-imin = 4
-imax = 14
-number_samples = 20
+imin = 2
+imax = 10
+number_samples = 10
 
 #title = "probability versus search time"
 title = ""
 # others parameters
-total_number_programs = 300_000
-timeout = 50  # in seconds
-seed = 2
+total_number_programs = 150_000
+timeout = 20  # in seconds
 random.seed(seed)
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
@@ -315,23 +317,22 @@ plot_probability_vs_time(pcfg, list_algorithms)
 #####################
 # Fourth experiment #
 #####################
-# cumulative proba versus number of trials
+# cumulative proba versus number of programs output
 
 # parameters
-#title = "cumulative probability versus number of trials"
+#title = "cumulative probability versus number of programs output"
 title = ""
-timeout = 50  # in seconds
-seed = 17
+timeout = 30  # in seconds
 random.seed(seed)
-total_number_programs = 100_000
+total_number_programs = 150_000
 dsl = deepcoder
 pcfg = deepcoder_PCFG_t
-threshold_probability = 0.96
-recompute_from_scratch = True
+threshold_probability = 1
+recompute_from_scratch = False
 
 #list_algorithms = [(heap_search, 'heap search', {'dsl' : dsl, 'environments': {}}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (sqrt_sampling, 'SQRT', {}), (a_star, 'A*', {})]
 #list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10})]
-list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (a_star, 'A*', {}), (bfs, 'bfs', {'beam_width' : 50000})]
+list_algorithms = [(heap_search, 'heap search', {}), (sqrt_sampling, 'SQRT', {}), (dfs, 'dfs', {}), (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), (bfs, 'bfs', {'beam_width' : 50000})]
 
 if recompute_from_scratch:
 	for algo, algo_name, param in list_algorithms:
@@ -354,7 +355,7 @@ def plot_cumulative_vs_trials(PCFG, list_algorithms):
 	'''Retrieve the results and plot'''
 	for i, (algorithm, algo_name, param) in enumerate(list_algorithms):
 		try:
-			f = open("results_syntactic/run_4_" + algo_name + '_' + str(seed) + ".pickle","rb")
+			f = open("results_syntactic/run_1_" + algo_name + '_' + str(seed) + ".pickle","rb")
 			run_algo = pickle.load(f)
 			f.close()
 		except:
@@ -362,7 +363,7 @@ def plot_cumulative_vs_trials(PCFG, list_algorithms):
 			assert(False)
 		processed_run_algo = experiment_cumulative_vs_trials(run_algo)
 		plt.scatter([x for (x,y) in processed_run_algo], list(range(1,len(processed_run_algo)+1)), label = algo_name, s = 8)
-	plt.xlim((0,threshold_probability))
+	#plt.xlim((0,threshold_probability))
 	plt.legend()
 	plt.xlabel("cumulative probability")
 	plt.ylabel("number of programs output")
