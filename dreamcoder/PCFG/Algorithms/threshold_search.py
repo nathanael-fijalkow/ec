@@ -36,7 +36,7 @@ def bounded_threshold(G : PCFG, threshold = 0.0001):
 
 def threshold_search(G: PCFG, initial_threshold = 0.0001, scale_factor = 100):        
     threshold = initial_threshold
-    print("Initialising threshold to {}".format(threshold))
+    # print("Initialising threshold to {}".format(threshold))
     gen = bounded_threshold(G, threshold)
 
     while True:

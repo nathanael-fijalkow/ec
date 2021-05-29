@@ -11,13 +11,17 @@ class PCFG:
     Object that represents a probabilistic context-free grammar
 
     rules: a dictionary of type {S: L}
-    with S a non-terminal and L a list of triplets (F, l, w)
-    with F a program, l a list of non-terminals, and w a weight
-    representing the derivation S -> F(S1, S2, ...) with weight w for l' = [S1, S2, ...]
+    with S a non-terminal and L a list of triplets (P, l, w)
+    with P a program, l a list of non-terminals, and w a weight
+    representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
     IMPORTANT: we assume that the derivations are sorted in non-decreasing order of weights,
     Example: if rules[S] = {(F1, l1, w1), (F2, l2, w2)}
     then w1 <= w2
+
+    CONVENTION: S non-terminal is a triple (type, context, depth)
+    if n_gram = 0 context = None
+    otherwise context is a list of (program, number_argument)
 
     cumulatives: a dictionary of type {S: l}
     with S a non-terminal and l a list of weights representing the sum of the probabilities from S
@@ -27,21 +31,29 @@ class PCFG:
 
     max_probability: a dictionary of type {S: (p, P)}
     with a S a non-terminal, p = max_{P generated from S} probability(P)
-    and P = argmax probability(p)
+    and P = argmax probability(p), again P = (F, type_F)
     '''
-    def __init__(self, start: Program, rules, max_program_depth = 4):
+    def __init__(self, start, rules, max_program_depth = 4):
         self.start = start
         self.rules = rules
         self.max_program_depth = max_program_depth
-        self.trim()
+
+        for S in reversed(self.rules):
+            for P, args_P, _ in self.rules[S]:
+                assert(isinstance(P, (New, Variable, BasicPrimitive)))
+
+        stable = self.trim(max_program_depth)
+        while(not stable):
+            stable = self.trim(max_program_depth)
 
         for S in set(self.rules):
-            self.rules[S].sort(key=lambda x: -x[2])
+            assert(len(self.rules[S]) > 0)
             s = sum(w for _, _, w in self.rules[S])
-            if s > 0:
-                self.rules[S] = [(F, args_F, w / s) for (F, args_F, w) in self.rules[S]]
-            else:
-                del self.rules[S]
+            self.rules[S] = [(P, args_P, w / s) for (P, args_P, w) in self.rules[S]]
+            for P, args_P, w in self.rules[S]:
+                assert(w > 0)
+                for arg in args_P:
+                    assert(arg in self.rules)
 
         self.max_probability = {}
         self.compute_max_probability()
@@ -53,86 +65,86 @@ class PCFG:
         self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
         self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
 
-    def trim(self):
+    def trim(self, max_program_depth = 4, stable = True):
         '''
         restrict to co-reachable non-terminals
         '''
-        stable = False
-        while not stable:
-            stable = True
-            min_program_depth = self.compute_min_program_depth()
-
-            for S in set(self.rules):
-                if S[2] + min_program_depth[S] > self.max_program_depth \
-                or sum(w for _, _, w in self.rules[S]) == 0:
-                    # print("remove S ", S)
-                    del self.rules[S]
+        # print("trim")
+        for S in set(self.rules):
+            new_list_derivations = []
+            for P, args_P, w in self.rules[S]:
+                if all([arg in self.rules for arg in args_P]) and w > 0:
+                    new_list_derivations.append((P, args_P, w))
+                else:
                     stable = False
+                    # print("remove", P, P.type)
+            if not stable:
+                self.rules[S] = new_list_derivations
 
-            for S in set(self.rules):
-                new_list_derivations = []
-                for F, args_F, w in self.rules[S]:
-                    keep = True
-                    for arg in args_F:
-                        if arg not in self.rules:
-                            keep = False
-                            stable = False
-                            # print("remove F ", F)
-                    if keep:
-                        new_list_derivations.append((F,args_F,w))
-                if len(new_list_derivations) > 0:
-                    self.rules[S] = new_list_derivations
-                else:
-                    del self.rules[S]
+        for S in set(self.rules):
+            if len(self.rules[S]) == 0\
+            or sum(w for _, _, w in self.rules[S]) == 0:
+                del self.rules[S]
+                stable = False
+                # print("remove", S)
 
-    def compute_min_program_depth(self):
-        '''
-            min_program_depth: a dictionary of type {S: d}
-            with S a non-terminal and d the smallest depth of a program generated from S
-        '''
-        min_program_depth = {}
-        for S in self.rules:
-            min_program_depth[S] = 100
-            for _, args_F, _ in self.rules[S]:
-                for arg in args_F:
-                    min_program_depth[arg] = 100
+        return stable
 
-        for S in reversed(self.rules):
-            for _, args_F, _ in self.rules[S]:
-                if len(args_F) == 0:
-                    val = 1
-                else:
-                    val = 1 + max(min_program_depth[arg] for arg in args_F)
-                if val < min_program_depth[S]:
-                    min_program_depth[S] = val
-
-        return min_program_depth
 
     def compute_max_probability(self):
         '''
         populates the dictionary max_probability
         '''
         for S in reversed(self.rules):
-            best_program = Variable((-1, UnknownType()))
-            best_program.probability = 0
-            for F, args_F, w in self.rules[S]:
-                if isinstance(F, Variable):
-                    prog = F
-                    prog.probability = w
+            # print("\n\n###########\nLooking at S", S)
+            best_program = None
+            best_probability = 0
+            for P, args_P, w in self.rules[S]:
+                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
+                if len(args_P) == 0:
+                    if isinstance(P, New):
+                        self.max_probability[(S,P)] = New(body = P.body, type_ = P.type, probability = w)
+                    elif isinstance(P, Variable):
+                        self.max_probability[(S,P)] = Variable(variable = P.variable, type_ = P.type, probability = w)
+                    elif isinstance(P, BasicPrimitive):
+                        self.max_probability[(S,P)] = BasicPrimitive(primitive = P.primitive, type_ = P.type, probability = w)
+                    else:
+                        assert(False)
                 else:
-                    if all([arg in self.max_probability for arg in args_F]):
-                        prog = MultiFunction(F, [self.max_probability[arg] for arg in args_F])
-                        prog.probability = w * prod([self.max_probability[arg].probability for arg in args_F])
-                self.max_probability[(S,F)] = prog
-                if prog.probability > best_program.probability:
-                    best_program = prog
-            self.max_probability[S] = best_program
+                    probability = \
+                    w * prod([self.max_probability[arg].probability for arg in args_P])
+                    self.max_probability[(S,P)] = \
+                    MultiFunction(function = P, 
+                        arguments = [self.max_probability[arg] for arg in args_P], 
+                        type_ = S[0],
+                        probability = probability)
+                # print("We found: ", self.max_probability[(S,P)], self.max_probability[(S,P)].probability)
+                if self.max_probability[(S,P)].probability > best_probability:
+                    best_program = P
+                    best_probability = self.max_probability[(S,P)].probability
+                # print("Best program for S after P: ", best_program, best_probability)
+                
+            # print("\nNow updating best program for S: ", S)
+            # print("best_program", best_program, best_probability)
+            if best_probability == 0:
+                assert(False)
+            if isinstance(best_program, New):
+                self.max_probability[S] = \
+                New(best_program.body, best_program.type, best_probability)
+            elif isinstance(best_program, Variable):
+                self.max_probability[S] = \
+                Variable(best_program.variable, best_program.type, best_probability)
+            elif isinstance(best_program, BasicPrimitive):
+                self.max_probability[S] = \
+                BasicPrimitive(best_program.primitive, best_program.type, best_probability)
+            else:
+                assert(False)
 
     def initialise_arities_probability(self):
         for S in self.rules:
-            for F, args_F, w in self.rules[S]:
-                self.arities[S][F] = args_F
-                self.probability[S][F] = w
+            for P, args_P, w in self.rules[S]:
+                self.arities[S][P] = args_P
+                self.probability[S][P] = w
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -148,8 +160,8 @@ class PCFG:
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
             s += '#\n {}\n'.format(S)
-            for (F, type_F), args_F, w in self.rules[S]:
-                s += '   {} - {}: {}     {}\n'.format(F, type_F, args_F, w)
+            for P, args_P, w in self.rules[S]:
+                s += '   {} - {}: {}     {}\n'.format(P, P.type, args_P, w)
         return s
         
     def sampling(self):
@@ -160,15 +172,15 @@ class PCFG:
             yield self.sample_program(self.start)
 
     def sample_program(self, S):
-        F, args_F, w = self.rules[S][self.vose_samplers[S].sample()]
-        if len(args_F) == 0:
-            return F[0]
-        else:
+        P, args_P, w = self.rules[S][self.vose_samplers[S].sample()]
+        if isinstance(P, Variable):
+            return P
+        if isinstance(P, (New, BasicPrimitive)):
             arguments = []
-            for arg in args_F:
+            for arg in args_P:
                 arguments.append(self.sample_program(arg))
-            return MultiFunction(F, arguments)
-
+            return MultiFunction(P, arguments)
+        assert(False)
 
     ## UNUSED
     # def sample_rule(self, cumulative):
@@ -183,19 +195,18 @@ class PCFG:
     #   res = mid+1 if cumulative[mid] < threshold else mid
     #   return res
 
-    def probability_program(self, S, program):
+    def probability_program(self, S, P):
         '''
-        Compute the probability of a program generated from non-terminal S
+        Compute the probability of a program P generated from the non-terminal S
         '''
-        if isinstance(program, Variable):
-            return self.probability[S][(program, program.variable[1])]
-        if isinstance(program, tuple): 
-            return self.probability[S][program]
-        if isinstance(program, MultiFunction):
-            F = program.function
-            args = program.arguments
+        if isinstance(P, (Variable, BasicPrimitive, New)):
+            return self.probability[S][P]            
+        if isinstance(P, MultiFunction):
+            F = P.function
+            args = P.arguments
             probability = self.probability[S][F]
             for i, arg in enumerate(args):
                 probability *= self.probability_program(self.arities[S][F][i], arg)
-            program.probability = probability
-            return program.probability
+            P.probability = probability
+            return probability
+        assert(False)

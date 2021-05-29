@@ -36,20 +36,22 @@ class heap_search_object:
         ## 1. add F(max(S1),max(S2), ...) to Heap(S) for all S -> F(S1, S2, ...) 
         for S in reversed(self.rules):
             # print("###########\nS", S)
-            for F, args_F, _ in self.rules[S]:
+            for F, _, _ in self.rules[S]:
                 # print("####\nF", F)
                 program = self.G.max_probability[(S,F)]
+                # print(program, program.probability)
                 hash_program = compute_hash_program(program)
                 # We first check whether the program is already in the heap
                 if hash_program not in self.hash_table_program[S]:
                     self.hash_table_program[S].add(hash_program)
                     # We only evaluate when yielding the program
                     # self.compute_evaluation(program)
-                    # print("adding to the heap", program)
+                    # print("adding to the heap", program, program.probability)
                     heappush(self.heaps[S], (-program.probability, program))
 
         # for S in self.rules:
         #     print("\nheaps[", S, "] = ", self.heaps[S], "\n")
+        # assert(False)
 
         # print("\n######################\nInitialisation phase 1 over\n######################\n")
 
@@ -117,11 +119,11 @@ class heap_search_object:
                         self.hash_table_program[S].add(hash_new_program)
                         # We only evaluate when yielding the program
                         # self.compute_evaluation(new_program)
-                        weight = self.G.probability[S][F]
+                        probability = self.G.probability[S][F]
                         for arg in new_arguments:
-                            weight *= arg.probability
-                        new_program.probability = weight
-                        heappush(self.heaps[S], (-weight, new_program))
+                            probability *= arg.probability
+                        new_program.probability = probability
+                        heappush(self.heaps[S], (-probability, new_program))
 
         return succ
 
@@ -132,7 +134,9 @@ def compute_hash_program(program):
         return str(id(program.function)) + str([id(arg) for arg in program.arguments])
     if isinstance(program, Lambda):
         return str(id(program.body))
+    if isinstance(program, New):
+        return str(id(program.body))
     if isinstance(program, BasicPrimitive):
-        return str(program.primitive)
+        return str(id(program.primitive))
     else:
         return ""

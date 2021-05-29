@@ -1,5 +1,6 @@
 from dreamcoder.PCFG.type_system import *
 from dreamcoder.PCFG.cons_list import *
+
     # dictionary { number of environment : value }
 
     # environment: a cons list 
@@ -11,25 +12,29 @@ class Program:
     '''
 
     def __eq__(self, other):
-        b = isinstance(self,Variable) \
+        return isinstance(self,Program) and isinstance(other,Program) \
+        and self.type == other.type and self.typeless_eq(other)
+
+    def typeless_eq(self, other):
+        b = isinstance(self,Program) and isinstance(other,Program)
+        b2 = (isinstance(self,Variable) \
         and isinstance(other,Variable) \
-        and self.variable == other.variable
-        b = b or (isinstance(self,MultiFunction) \
+        and self.variable == other.variable)
+        b2 = b2 or (isinstance(self,MultiFunction) \
             and isinstance(other,MultiFunction) \
-            and self.function.__eq__(other.function) \
+            and self.function.typeless_eq(other.function) \
             and len(self.arguments) == len(other.arguments) \
-            and all([x.__eq__(y) for x,y in zip(self.arguments, other.arguments)]))
-        # b = b or (isinstance(self,Function) and isinstance(other,Function) and self.function == other.function and self.argument == other.argument)
-        b = b or (isinstance(self,Lambda) \
+            and all([x.typeless_eq(y) for x,y in zip(self.arguments, other.arguments)]))
+        b2 = b2 or (isinstance(self,Lambda) \
             and isinstance(other,Lambda) \
-            and self.body.__eq__(other.body))
-        b = b or (isinstance(self,BasicPrimitive) \
+            and self.body.typeless_eq(other.body))
+        b2 = b2 or (isinstance(self,BasicPrimitive) \
             and isinstance(other,BasicPrimitive) \
-            and self.primitive.__eq__(other.primitive))
-        b = b or (isinstance(self,New) \
+            and self.primitive == other.primitive)
+        b2 = b2 or (isinstance(self,New) \
             and isinstance(other,New) \
-            and self.body.__eq__(other.body))
-        return b
+            and self.body.typeless_eq(other.body))
+        return b and b2
 
     def __gt__(self, other): True
     def __lt__(self, other): False
@@ -37,20 +42,20 @@ class Program:
     def __le__(self, other): False
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(str(self) + str(self.type))
 
 class Variable(Program):
-    def __init__(self, variable):
-        # self.variable is a pair (x, type) where x is a natural number
-        # and type is a type
-        assert(isinstance(variable,tuple))
+    def __init__(self, variable, type_ = UnknownType(), probability = 0):
+        # self.variable is a natural number
+        assert(isinstance(variable,int))
         self.variable = variable
+        self.type = type_
+        self.probability = probability 
 
-        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
-        return "var" + format(self.variable[0])
+        return "var" + format(self.variable)
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
@@ -58,25 +63,26 @@ class Variable(Program):
             return self.evaluation[i]
         # print("not yet evaluated")
         try:
-            return index(environment, self.variable[0])
+            return index(environment, self.variable)
         except (IndexError, ValueError, TypeError):
             return None
 
 class MultiFunction(Program):
-    def __init__(self, function, arguments):
-        # self.function is a pair (F, type_F)
+    def __init__(self, function, arguments, type_ = UnknownType(), probability = 0):
+        # self.function is a proram
+        assert(isinstance(function, Program))
         self.function = function
-        assert(isinstance(self.function, tuple))
         self.arguments = arguments
+        self.type = type_
+        self.probability = probability 
 
-        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
         if len(self.arguments) == 0:
-            return format(self.function[0])
+            return format(self.function)
         else:
-            s = "(" + format(self.function[0])
+            s = "(" + format(self.function)
             for arg in self.arguments:
                 s += " " + format(arg)
             return s + ")"
@@ -88,12 +94,12 @@ class MultiFunction(Program):
         # print("not yet evaluated")
         try:
             if len(self.arguments) == 0:
-                return self.function[0].eval(dsl, environment, i)
+                return self.function.eval(dsl, environment, i)
             else:
                 evaluated_arguments = []
                 for j in range(len(self.arguments)):
                     evaluated_arguments.append(self.arguments[j].eval(dsl, environment, i))
-                result = self.function[0].eval(dsl, environment, i)
+                result = self.function.eval(dsl, environment, i)
                 for evaluated_arg in evaluated_arguments:
                     result = result(evaluated_arg)
                 return result
@@ -101,10 +107,11 @@ class MultiFunction(Program):
             return None
 
 class Lambda(Program):
-    def __init__(self, body):
+    def __init__(self, body, type_ = UnknownType()):
         self.body = body
+        self.type = type_
 
-        self.probability = None 
+        self.probability = 0 
         self.evaluation = {}
 
     def __repr__(self):
@@ -120,10 +127,11 @@ class Lambda(Program):
             return None
 
 class BasicPrimitive(Program):
-    def __init__(self, primitive):
+    def __init__(self, primitive, type_ = UnknownType(), probability = 0):
         self.primitive = primitive
+        self.type = type_
+        self.probability = probability
 
-        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):
@@ -133,10 +141,11 @@ class BasicPrimitive(Program):
         return dsl.semantics[self.primitive]
 
 class New(Program):
-    def __init__(self, body):
+    def __init__(self, body, type_ = UnknownType(), probability = 0):
         self.body = body
+        self.type = type_
+        self.probability = probability 
 
-        self.probability = None 
         self.evaluation = {}
 
     def __repr__(self):

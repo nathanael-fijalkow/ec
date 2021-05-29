@@ -3,11 +3,12 @@ class Type:
     Object that represents a type
     '''
     def __eq__(self, other):
-        b = isinstance(self,PolymorphicType) and isinstance(other,PolymorphicType) and self.name == other.name
-        b = b or (isinstance(self,PrimitiveType) and isinstance(other,PrimitiveType) and self.type == other.type)
-        b = b or (isinstance(self,Arrow) and isinstance(other,Arrow) and self.type_in.__eq__(other.type_in) and self.type_out.__eq__(other.type_out))
-        b = b or (isinstance(self,List) and isinstance(other,List) and self.type_elt.__eq__(other.type_elt))
-        return b
+        b = isinstance(self, Type) and isinstance(other, Type)
+        b2 = (isinstance(self,PolymorphicType) and isinstance(other,PolymorphicType) and self.name == other.name)
+        b2 = b2 or (isinstance(self,PrimitiveType) and isinstance(other,PrimitiveType) and self.type == other.type)
+        b2 = b2 or (isinstance(self,Arrow) and isinstance(other,Arrow) and self.type_in.__eq__(other.type_in) and self.type_out.__eq__(other.type_out))
+        b2 = b2 or (isinstance(self,List) and isinstance(other,List) and self.type_elt.__eq__(other.type_elt))
+        return b and b2
 
     def __gt__(self, other): True
     def __lt__(self, other): False
@@ -184,6 +185,9 @@ class List(Type):
             return "list({})".format(self.type_elt)
 
 class UnknownType(Type):
+    def __init__(self):
+        self.type = ""
+
     def __repr__(self):
         return "UnknownType"
 

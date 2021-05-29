@@ -50,14 +50,12 @@ def compute_partition_function(G: PCFG):
 	'''
 	Z = {S: 1 for S in G.rules}
 
-	for i in range(100):
-		for S in G.rules:
-			s = 0
-			for F, args_F, w in G.rules[S]:
-				prod = w
-				for arg in args_F:
-					prod *= Z[arg]
-				s += prod
-			Z[S] = s
-		# print(Z)
+	for S in reversed(G.rules):
+		s = 0
+		for F, args_F, w in G.rules[S]:
+			prod = w
+			for arg in args_F:
+				prod *= Z[arg]
+			s += prod
+		Z[S] = s
 	return Z

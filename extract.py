@@ -22,9 +22,9 @@ from math import exp
 def construct_PCFG(DSL, 
     type_request,
     Q,
-    upper_bound_type_size = 2, 
-    max_program_depth = 3,
-    min_variable_depth = 2):
+    upper_bound_type_size = 8, 
+    max_program_depth = 4,
+    min_variable_depth = 1):
     CFG = DSL.DSL_to_CFG(type_request, 
         upper_bound_type_size, 
         max_program_depth, 
@@ -33,20 +33,34 @@ def construct_PCFG(DSL,
     # print(CFG)
 
     augmented_rules = {}
+    newQ = {}
     for S in CFG.rules:
         _, previous, _ = S
         if previous:
             primitive, argument_number = previous
+            for F, _ in CFG.rules[S]:
+                found = False
+                for p, a, F2 in Q:
+                    if (p != None and p.typeless_eq(primitive)) and a == argument_number and F.typeless_eq(F2):
+                        found = True
+                        newQ[primitive, argument_number, F] = Q[p, a, F2]
+                if not found:
+                    newQ[primitive, argument_number, F] = 0
+                    # print("not initialised", F)
         else:
             primitive, argument_number = None, 0
-
-        for F, _ in CFG.rules[S]:
-            if (primitive, argument_number, F[0]) not in Q:
-                Q[primitive, argument_number, F[0]] = 0
-                # print("not initialised", F)
+            for F, _ in CFG.rules[S]:
+                found = False
+                for p, a, F2 in Q:
+                    if p == None and a == argument_number and F.typeless_eq(F2):
+                        found = True
+                        newQ[primitive, argument_number, F] = Q[p, a, F2]
+                if not found:
+                    newQ[primitive, argument_number, F] = 0
+                    # print("not initialised", F)
 
         augmented_rules[S] = \
-        [(F, args_F, Q[primitive, argument_number, F[0]]) \
+        [(F, args_F, newQ[primitive, argument_number, F]) \
         for (F, args_F) in CFG.rules[S]]
 
     return PCFG(start = CFG.start, 
@@ -58,10 +72,10 @@ def translate_program(old_program):
         return BasicPrimitive(old_program.name)
     if isinstance(old_program, Index):
         # We do not check the type of this variable, does not matter
-        return Variable((old_program.i, UnknownType()))
+        return Variable(old_program.i)
     if isinstance(old_program, Application):
         # We do not check the type of this function, does not matter
-        return MultiFunction((translate_program(old_program.f), UnknownType()), 
+        return MultiFunction(translate_program(old_program.f), 
             [translate_program(old_program.x)])
     if isinstance(old_program, Abstraction):
         return Lambda(translate_program(old_program.body))
@@ -128,7 +142,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 Q[None, 0, new_primitive] = exp(log_probability)
 
             for k in range(len(arguments)):
-                Q[None, 0, Variable((k, arguments[k]))] = 0
+                Q[None, 0, Variable(k)] = 0
 
             # Fill in probabilities from primitives to primitives
             for old_primitive, new_primitive in list_primitives_old_and_new:
@@ -143,7 +157,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                     if primitive_argument_types[j].unify(arguments[k])]
 
                     for k in range(len(arguments) ):
-                        var = Variable((k, arguments[k]))
+                        var = Variable(k)
                         if k in compatible_variables:
                             Q[new_primitive, j, var] = grammar.logVariable / len(compatible_variables) 
                         else:
@@ -157,9 +171,9 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
             pcfg = construct_PCFG(DSL = dsl, 
                 type_request = type_request,
                 Q = Q, 
-                upper_bound_type_size = 10,
+                upper_bound_type_size = 8,
                 min_variable_depth = 1,
-                max_program_depth = 4)
+                max_program_depth = 3)
             # print(pcfg)
 
             info = task.name, dsl, pcfg, examples

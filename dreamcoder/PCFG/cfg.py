@@ -11,61 +11,49 @@ class CFG:
     and l' a list of non-terminals representing the derivation S -> F(S1,S2,..) 
     with l' = [S1,S2,...]
     '''
-    def __init__(self, start, rules):
+    def __init__(self, start, rules, max_program_depth):
         self.start = start
         self.rules = rules
 
-    def trim(self, max_program_depth = 4):
+        stable = self.trim(max_program_depth)
+        while(not stable):
+            stable = self.trim(max_program_depth)
+
+        for S in self.rules:
+            assert(len(self.rules[S]) > 0)
+            for P, args_P in self.rules[S]:
+                for arg in args_P:
+                    assert(arg in self.rules)
+
+    def trim(self, max_program_depth = 4, stable = True):
         '''
         restrict to co-reachable non-terminals
         '''
-        min_program_depth = self.compute_min_program_depth()
-        # print(min_program_depth)
+        # print("trim")
+        for S in set(self.rules):
+            new_list_derivations = []
+            for P, args_P in self.rules[S]:
+                if all([arg in self.rules for arg in args_P]):
+                    new_list_derivations.append((P, args_P))
+                else:
+                    stable = False
+                    # print("remove", P, P.type)
+            if not stable:
+                self.rules[S] = new_list_derivations
 
         for S in set(self.rules):
-            if S[2] + min_program_depth[S] > max_program_depth:
+            if len(self.rules[S]) == 0:
                 del self.rules[S]
+                stable = False
+                # print("remove", S)
 
-        for S in self.rules:
-            new_list_derivations = []
-            for F, args_F in self.rules[S]:
-                keep = True
-                for arg in args_F:
-                    if S[2] + min_program_depth[arg] > max_program_depth:
-                        keep = False
-                if keep:
-                    new_list_derivations.append((F,args_F))
-            self.rules[S] = new_list_derivations
-
-        return CFG(start = self.start, rules = self.rules)
-
-    def compute_min_program_depth(self):
-        '''
-            min_program_depth: a dictionary of type {S: d}
-            with S a non-terminal and d the smallest depth of a program generated from S
-        '''
-        min_program_depth = {}
-        for S in self.rules:
-            min_program_depth[S] = 100
-            for (_, args_F) in self.rules[S]:
-                for arg in args_F:
-                    min_program_depth[arg] = 100
-
-        for S in reversed(self.rules):
-            for (F, args_F) in self.rules[S]:
-                if len(args_F) == 0:
-                    val = 1
-                else:
-                    val = 1 + max(min_program_depth[arg] for arg in args_F)
-                if val < min_program_depth[S]:
-                    min_program_depth[S] = val
-        return min_program_depth
+        return stable
 
     def __repr__(self):
         s = "Print a CFG\n"
         s += "start: {}\n".format(self.start)
-        for S in self.rules:
+        for S in reversed(self.rules):
             s += '#\n {}\n'.format(S)
-            for (F, type_F), args_F in self.rules[S]:
-                s += '   {} - {}: {}\n'.format(F, type_F, args_F)
+            for F, args_F in self.rules[S]:
+                s += '   {} - {}: {}\n'.format(F, F.type, args_F)
         return s
