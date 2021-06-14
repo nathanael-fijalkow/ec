@@ -11,29 +11,48 @@ class DSL:
     '''
     Object that represents a domain specific language
 
-    semantics: a dictionary of the form {F : f}
-    mapping a BasicPrimitive F to its semantics f
+    list_primitives: a list of primitives, either BasicPrimitive or New
 
-    primitive_types: a dictionary of the form {F : type}
-    mapping a BasicPrimitive F to its type
+    semantics: a dictionary of the form {P : f}
+    mapping a program P to its semantics f
+    for P a BasicPrimitive
+
+    hash_table_programs: a dictionary {hash: P}
+    mapping hashes to programs
+    for all programs appearing in semantics
     '''
-    def __init__(self, semantics, primitive_types, no_repetitions):
-        self.semantics = semantics
-        self.primitive_types = primitive_types
-        self.no_repetitions = no_repetitions
+    def __init__(self, semantics, primitive_types):
+        self.list_primitives = []
+        self.semantics = {}
+        self.hash_table_programs = {}
+
+        for P in primitive_types:
+            assert(isinstance(P, (BasicPrimitive, New)))
+            P_unique = self.return_unique(P)
+            P_unique.type = primitive_types[P]
+            self.list_primitives.append(P_unique)
+            if isinstance(P_unique, New):
+                self.semantics[P_unique] = semantics[P]
+
+    def return_unique(self, program):
+        hash_P = program.__hash__()
+        if hash_P in self.hash_table_programs:
+            return self.hash_table_programs[hash_P]
+        else:
+            self.hash_table_programs[hash_P] = program
+            return program
 
     def __repr__(self):
         s = "Print a DSL\n"
-        for primitive in self.semantics:
-            s = s + "{}: {}\n".format(primitive, self.primitive_types[primitive])
+        for P in self.list_primitives:
+            s = s + "{}: {}\n".format(P, P.type)
         return s
 
     def instantiate_polymorphic_types(self, upper_bound_type_size = 10):
-
         set_basic_types = set()
-        for F in self.primitive_types:
-            set_basic_types_F, set_polymorphic_types_F = self.primitive_types[F].decompose_type()
-            set_basic_types = set_basic_types | set_basic_types_F
+        for P in self.list_primitives:
+            set_basic_types_P, set_polymorphic_types_P = P.type.decompose_type()
+            set_basic_types = set_basic_types | set_basic_types_P
 
         # print("basic types", set_basic_types)
 
@@ -53,14 +72,14 @@ class DSL:
 
         new_primitive_types = {}
 
-        for F in self.primitive_types:
-            assert(isinstance(F, (New, BasicPrimitive)))
-            type_F = self.primitive_types[F]
-            set_basic_types_F,set_polymorphic_types_F = type_F.decompose_type()
-            if set_polymorphic_types_F:
+        for P in self.list_primitives:
+            assert(isinstance(P, (New, BasicPrimitive)))
+            type_P = P.type
+            set_basic_types_P,set_polymorphic_types_P = type_P.decompose_type()
+            if set_polymorphic_types_P:
                 set_instantiated_types = set()
-                set_instantiated_types.add(type_F)
-                for poly_type in set_polymorphic_types_F:
+                set_instantiated_types.add(type_P)
+                for poly_type in set_polymorphic_types_P:
                     new_set_instantiated_types = set()
                     for type_ in set_types:
                         for instantiated_type in set_instantiated_types:
@@ -71,31 +90,22 @@ class DSL:
                                 new_set_instantiated_types.add(new_type)
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
-                    if isinstance(F, New):
-                        instantiated_F = New(F.body, type_)
-                    if isinstance(F, BasicPrimitive):
-                        instantiated_F = BasicPrimitive(F.primitive, type_)
-                    # print(instantiated_F, instantiated_F.type)
-                    new_primitive_types[instantiated_F] = type_
+                    if isinstance(P, New):
+                        instantiated_P = New(P.body, type_)
+                    if isinstance(P, BasicPrimitive):
+                        instantiated_P = BasicPrimitive(P.primitive, type_)
+                    new_primitive_types[instantiated_P] = type_
             else:
-                if isinstance(F, New):
-                    new_F = New(F.body, type_F)
-                if isinstance(F, BasicPrimitive):
-                    new_F = BasicPrimitive(F.primitive, type_F)
-                new_primitive_types[new_F] = type_F
+                new_primitive_types[P] = type_P
 
-        # print(new_primitive_types)
+        # print("new primitive types", new_primitive_types)
 
-        # for F in new_primitive_types:
-        #     if isinstance(F, BasicPrimitive):
-        #         print(F, new_primitive_types[F])
+        return DSL(semantics = self.semantics,
+            primitive_types = new_primitive_types)
 
-        return DSL(semantics = self.semantics, 
-            primitive_types = new_primitive_types, 
-            no_repetitions = self.no_repetitions)
-
-    def DSL_to_CFG(self, type_request, 
-        upper_bound_type_size = 2, 
+    def DSL_to_CFG(self, 
+        type_request, 
+        upper_bound_type_size = 10, 
         max_program_depth = 4,
         min_variable_depth = 1,
         n_gram = 1):
@@ -105,6 +115,7 @@ class DSL:
         '''
         instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size)
 
+        # print("instantiated_dsl", instantiated_dsl)
         return_type = type_request.returns()
         args = type_request.arguments()
 
@@ -119,58 +130,49 @@ class DSL:
 
         list_to_be_treated = deque()
         list_to_be_treated.append((return_type, [], 0))
+
         while len(list_to_be_treated) > 0:
             current_type, context, depth = list_to_be_treated.pop()
             non_terminal = repr(current_type, context, depth)
+
             # a non-terminal is a triple (type, context, depth)
             # if n_gram = 0 context = None
             # otherwise context is a list of (primitive, number_argument)
             # print("\ncollecting from the non-terminal ", non_terminal)
 
-            # an argument is a program
+            if non_terminal not in rules:
+                rules[non_terminal] = {}
 
             if depth < max_program_depth and depth >= min_variable_depth:
                 for i in range(len(args)):
                     if current_type == args[i]:
                         var = Variable(i, current_type)
-                        if non_terminal in rules:
-                            if (var, []) not in rules[non_terminal]: 
-                                rules[non_terminal].append(var, [])
-                        else:
-                            rules[non_terminal] = [(var, [])]
+                        rules[non_terminal][var] = []
 
             if depth == max_program_depth - 1:
-                for F in instantiated_dsl.primitive_types:
-                    type_F = F.type
-                    return_F = type_F.returns()
-                    if return_F == current_type and len(type_F.arguments()) == 0:
-                        if non_terminal in rules:
-                            if (F, []) not in rules[non_terminal]: 
-                                rules[non_terminal].append((F, []))
-                        else:
-                            rules[non_terminal] = [(F, [])]
+                for P in instantiated_dsl.list_primitives:
+                    type_P = P.type
+                    return_P = type_P.returns()
+                    if return_P == current_type and len(type_P.arguments()) == 0:
+                        rules[non_terminal][P] = []
 
             elif depth < max_program_depth:
-                for F in instantiated_dsl.primitive_types:
-                    type_F = F.type
-                    arguments_F = type_F.ends_with(current_type)
-                    if arguments_F != None:
-                        decorated_arguments_F = []
-                        for i, arg in enumerate(arguments_F):
+                for P in instantiated_dsl.list_primitives:
+                    type_P = P.type
+                    arguments_P = type_P.ends_with(current_type)
+                    if arguments_P != None:
+                        decorated_arguments_P = []
+                        for i, arg in enumerate(arguments_P):
                             new_context = context.copy()
-                            new_context = [(F,i)] + new_context
+                            new_context = [(P,i)] + new_context
                             if len(new_context) > n_gram: new_context.pop()
-                            decorated_arguments_F.append(repr(arg, new_context, depth + 1))
+                            decorated_arguments_P.append(repr(arg, new_context, depth + 1))
                             if (arg, new_context, depth + 1) not in list_to_be_treated:
                                 list_to_be_treated.appendleft((arg, new_context, depth + 1))
 
-                        if non_terminal in rules:
-                            if (F, decorated_arguments_F) not in rules[non_terminal]: 
-                                rules[non_terminal].append((F, decorated_arguments_F))
-                        else:
-                            rules[non_terminal] = [(F, decorated_arguments_F)]
+                        rules[non_terminal][P] = decorated_arguments_P
 
-        # print(rules)
+        print(rules)
         return CFG(start = (return_type, None, 0), 
             rules = rules, 
             max_program_depth = max_program_depth)
@@ -214,33 +216,3 @@ class DSL:
             for i, (P, args_P) in enumerate(CFG.rules[S]):
                 new_rules[S].append((P, args_P, weights[random_permutation[i]]))
         return PCFG(start = CFG.start, rules = new_rules, max_program_depth = max_program_depth)
-
-    def reconstruct_from_list(self, program_as_list, target_type):
-        # print("program_as_list, target_type", program_as_list, target_type)
-        if len(program_as_list) == 1:
-            return program_as_list.pop()
-        else:
-            P = program_as_list.pop()
-            if isinstance(P, (New, BasicPrimitive)):
-                list_arguments = P.type.ends_with(target_type)
-                arguments = [None] * len(list_arguments)
-                for i in range(len(list_arguments)):
-                    arguments[len(list_arguments)-i-1] = \
-                    self.reconstruct_from_list(program_as_list, list_arguments[len(list_arguments)-i-1])
-                return MultiFunction(P, arguments)
-            if isinstance(P, Variable):
-                return P
-            assert(False)
-
-    def reconstruct_from_compressed(self, program, target_type):
-        program_as_list = []
-        self.list_from_compressed(program, program_as_list)
-        program_as_list.reverse()
-        # print(program_as_list)
-        return self.reconstruct_from_list(program_as_list, target_type)
-
-    def list_from_compressed(self, program, program_as_list = []):
-        (P, sub_program) = program
-        if sub_program:
-            self.list_from_compressed(sub_program, program_as_list)
-        program_as_list.append(P)

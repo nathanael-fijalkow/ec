@@ -6,54 +6,84 @@ class CFG:
  
     start: a non-terminal
 
-    rules: a dictionary of type {S: l}
-    with S a non-terminal and l a list of pairs (F,l') with F a program 
-    and l' a list of non-terminals representing the derivation S -> F(S1,S2,..) 
-    with l' = [S1,S2,...]
+    rules: a dictionary of type {S: D}
+    with S a non-terminal and D a dictionary {P : l} with P a program 
+    and l a list of non-terminals representing the derivation S -> P(S1,S2,..) 
+    with l = [S1,S2,...]
     '''
     def __init__(self, start, rules, max_program_depth):
         self.start = start
         self.rules = rules
 
-        stable = self.trim(max_program_depth)
+        stable = False
         while(not stable):
             stable = self.trim(max_program_depth)
 
+
+        print(self)
+
+        reachable = self.reachable(max_program_depth)
+
+        for S in set(self.rules):
+            if S not in reachable:
+                del self.rules[S]
+                print("remove non-terminal, not reachable:", S)
+
+        print(self)
+
         for S in self.rules:
             assert(len(self.rules[S]) > 0)
-            for P, args_P in self.rules[S]:
-                for arg in args_P:
+            for P in self.rules[S]:
+                for arg in self.rules[S][P]:
                     assert(arg in self.rules)
 
     def trim(self, max_program_depth = 4, stable = True):
         '''
         restrict to co-reachable non-terminals
         '''
-        # print("trim")
-        for S in set(self.rules):
-            new_list_derivations = []
-            for P, args_P in self.rules[S]:
-                if all([arg in self.rules for arg in args_P]):
-                    new_list_derivations.append((P, args_P))
-                else:
+        for S in set(reversed(self.rules)):
+            for P in set(self.rules[S]):
+                args_P = self.rules[S][P]
+                if any([arg not in self.rules for arg in args_P]):
                     stable = False
-                    # print("remove", P, P.type)
-            if not stable:
-                self.rules[S] = new_list_derivations
-
-        for S in set(self.rules):
+                    del self.rules[S][P]
+                    print("remove rule from S", S, P)
             if len(self.rules[S]) == 0:
-                del self.rules[S]
                 stable = False
-                # print("remove", S)
+                del self.rules[S]
+                print("remove non-terminal", S)
 
         return stable
+
+    def reachable(self, max_program_depth = 4):
+        '''
+        compute the reachable non-terminals
+        '''
+        reachable = set()
+        reachable.add(self.start)
+
+        reach = set()
+        new_reach = set()
+        reach.add(self.start)
+
+        for i in range(max_program_depth):
+            new_reach.clear()
+            for S in reach:
+                for P in set(self.rules[S]):
+                    args_P = self.rules[S][P]
+                    for arg in args_P:
+                        new_reach.add(arg)
+                        reachable.add(arg)
+            reach.clear()
+            reach = new_reach.copy()
+
+        return reachable
 
     def __repr__(self):
         s = "Print a CFG\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
             s += '#\n {}\n'.format(S)
-            for F, args_F in self.rules[S]:
-                s += '   {} - {}: {}\n'.format(F, F.type, args_F)
+            for P in self.rules[S]:
+                s += '   {} - {}: {}\n'.format(P, P.type, self.rules[S][P])
         return s

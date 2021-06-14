@@ -1,8 +1,16 @@
+'''
+Objective: define a type system.
+A type can be either PolymorphicType, PrimitiveType, Arrow, or List
+'''
+
 class Type:
     '''
     Object that represents a type
     '''
     def __eq__(self, other):
+        '''
+        Type equality
+        '''
         b = isinstance(self, Type) and isinstance(other, Type)
         b2 = (isinstance(self,PolymorphicType) and isinstance(other,PolymorphicType) and self.name == other.name)
         b2 = b2 or (isinstance(self,PrimitiveType) and isinstance(other,PrimitiveType) and self.type == other.type)
@@ -63,6 +71,7 @@ class Type:
         if isinstance(self,List) and isinstance(self.type_elt,List) \
         and isinstance(self.type_elt.type_elt,(PrimitiveType,PolymorphicType)):
             return 3
+        # We do not want List(List(List(...)))
         return 100
 
     def find_polymorphic_types(self):
@@ -152,6 +161,7 @@ class Type:
 
 class PolymorphicType(Type):
     def __init__(self, name):
+        assert(isinstance(name,str))
         self.name = name
 
     def __repr__(self):
@@ -159,6 +169,7 @@ class PolymorphicType(Type):
 
 class PrimitiveType(Type):
     def __init__(self, type_):
+        assert(isinstance(type_,str))
         self.type = type_
 
     def __repr__(self):
@@ -166,6 +177,8 @@ class PrimitiveType(Type):
 
 class Arrow(Type):
     def __init__(self, type_in, type_out):
+        assert(isinstance(type_in,Type))
+        assert(isinstance(type_out,Type))
         self.type_in = type_in
         self.type_out = type_out
 
@@ -176,6 +189,7 @@ class Arrow(Type):
 
 class List(Type):
     def __init__(self, _type):
+        assert(isinstance(_type,Type))
         self.type_elt = _type
 
     def __repr__(self):
@@ -185,6 +199,9 @@ class List(Type):
             return "list({})".format(self.type_elt)
 
 class UnknownType(Type):
+    '''
+    In case we need to define an unknown type
+    '''
     def __init__(self):
         self.type = ""
 
