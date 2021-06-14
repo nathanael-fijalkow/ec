@@ -16,31 +16,17 @@ class DSL:
     semantics: a dictionary of the form {P : f}
     mapping a program P to its semantics f
     for P a BasicPrimitive
-
-    hash_table_programs: a dictionary {hash: P}
-    mapping hashes to programs
-    for all programs appearing in semantics
     '''
     def __init__(self, semantics, primitive_types):
         self.list_primitives = []
         self.semantics = {}
-        self.hash_table_programs = {}
 
         for P in primitive_types:
             assert(isinstance(P, (BasicPrimitive, New)))
-            P_unique = self.return_unique(P)
-            P_unique.type = primitive_types[P]
-            self.list_primitives.append(P_unique)
-            if isinstance(P_unique, New):
-                self.semantics[P_unique] = semantics[P]
-
-    def return_unique(self, program):
-        hash_P = program.__hash__()
-        if hash_P in self.hash_table_programs:
-            return self.hash_table_programs[hash_P]
-        else:
-            self.hash_table_programs[hash_P] = program
-            return program
+            P.type = primitive_types[P]
+            self.list_primitives.append(P)
+            if isinstance(P, BasicPrimitive):
+                self.semantics[P] = semantics[P]
 
     def __repr__(self):
         s = "Print a DSL\n"
@@ -100,8 +86,7 @@ class DSL:
 
         # print("new primitive types", new_primitive_types)
 
-        return DSL(semantics = self.semantics,
-            primitive_types = new_primitive_types)
+        return DSL(semantics = self.semantics, primitive_types = new_primitive_types)
 
     def DSL_to_CFG(self, 
         type_request, 
@@ -114,8 +99,8 @@ class DSL:
         and on the maximum program depth
         '''
         instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size)
-
         # print("instantiated_dsl", instantiated_dsl)
+
         return_type = type_request.returns()
         args = type_request.arguments()
 
@@ -172,16 +157,17 @@ class DSL:
 
                         rules[non_terminal][P] = decorated_arguments_P
 
-        print(rules)
+        # print(rules)
         return CFG(start = (return_type, None, 0), 
             rules = rules, 
             max_program_depth = max_program_depth)
 
-    def DSL_to_Uniform_PCFG(self, type_request, 
-        upper_bound_type_size = 3, 
+    def DSL_to_Uniform_PCFG(self, 
+        type_request, 
+        upper_bound_type_size = 10, 
         max_program_depth = 4,
         min_variable_depth = 1,
-        n_gram = 0):
+        n_gram = 1):
         CFG = self.DSL_to_CFG(type_request, 
             upper_bound_type_size, 
             max_program_depth, 
@@ -189,15 +175,20 @@ class DSL:
             n_gram)
         augmented_rules = {}
         for S in CFG.rules:
+            augmented_rules[S] = {}
             p = len(CFG.rules[S])
-            augmented_rules[S] = [(P, args_P, 1 / p) for (P, args_P) in CFG.rules[S]]
-        return PCFG(start = CFG.start, rules = augmented_rules, max_program_depth = max_program_depth)
+            for P in CFG.rules[S]:
+                augmented_rules[S][P] = (CFG.rules[S][P], 1 / p)
+        return PCFG(start = CFG.start, 
+            rules = augmented_rules, 
+            max_program_depth = max_program_depth)
 
-    def DSL_to_Random_PCFG(self, type_request, 
-        upper_bound_type_size = 3, 
+    def DSL_to_Random_PCFG(self, 
+        type_request, 
+        upper_bound_type_size = 10, 
         max_program_depth = 4,
         min_variable_depth = 1,
-        n_gram = 0,
+        n_gram = 1,
         alpha = 0.7):
         CFG = self.DSL_to_CFG(type_request, 
             upper_bound_type_size, 
@@ -207,12 +198,15 @@ class DSL:
         new_rules = {}
         for S in CFG.rules:
             out_degree = len(CFG.rules[S])
-            weights = [random.random()*(alpha**i) for i in range(out_degree)] 
             # weights with alpha-exponential decrease
+            weights = [random.random()*(alpha**i) for i in range(out_degree)] 
             s = sum(weights)
-            weights = [w / s for w in weights] # normalization
+            # normalization
+            weights = [w / s for w in weights] 
             random_permutation = list(np.random.permutation([i for i in range(out_degree)]))
-            new_rules[S] = []
-            for i, (P, args_P) in enumerate(CFG.rules[S]):
-                new_rules[S].append((P, args_P, weights[random_permutation[i]]))
-        return PCFG(start = CFG.start, rules = new_rules, max_program_depth = max_program_depth)
+            new_rules[S] = {}
+            for i, P in enumerate(CFG.rules[S]):
+                new_rules[S][P] = (CFG.rules[S][P], weights[random_permutation[i]])
+        return PCFG(start = CFG.start, 
+            rules = new_rules, 
+            max_program_depth = max_program_depth)

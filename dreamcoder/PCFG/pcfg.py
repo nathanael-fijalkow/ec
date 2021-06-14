@@ -19,10 +19,6 @@ class PCFG:
     Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
     then w1 >= w2
 
-    CONVENTION: S non-terminal is a triple (type, context, depth)
-    if n_gram = 0 context = None
-    otherwise context is a list of (program, number_argument)
-
     cumulatives: a dictionary of type {S: l}
     with S a non-terminal and l a list of weights representing the sum of the probabilities from S
     of all previous derivations
@@ -34,8 +30,7 @@ class PCFG:
     max_probability[S] = argmax_{P generated from S} probability(P)
     max_probability[(S,P)] = argmax_{P' generated from S with derivation P} probability(P')
 
-    TO BE UPDATED§!!!!! ALL PROGRAMS!!!!
-    hash_table_max_probability: a dictionary {hash: P}
+    hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
     for all programs appearing in max_probability
     '''

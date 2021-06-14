@@ -2,18 +2,15 @@ import unittest
 import dreamcoder.PCFG.dsl as dsl
 from dreamcoder.PCFG.DSL.deepcoder import *
 
-deepcoder = dsl.DSL(semantics, primitive_types, no_repetitions)
-# t = Arrow(List(INT),List(INT))
-# deepcoder_CFG_t = deepcoder.DSL_to_CFG(t)
 # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 # deepcoder_PCFG_t.put_random_weights(alpha = .7)
-deepcoder = dsl.DSL(semantics, primitive_types, no_repetitions)
-t = Arrow(List(INT),List(INT))
-deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
-from dreamcoder.PCFG.Algorithms.heap_search import *
-from dreamcoder.PCFG.Algorithms.a_star import *
-from dreamcoder.PCFG.Algorithms.threshold_search import *
-from dreamcoder.PCFG.Algorithms.dfs import *
+
+# deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
+
+# from dreamcoder.PCFG.Algorithms.heap_search import *
+# from dreamcoder.PCFG.Algorithms.a_star import *
+# from dreamcoder.PCFG.Algorithms.threshold_search import *
+# from dreamcoder.PCFG.Algorithms.dfs import *
 
 # TO ADD:
         # p0 = Lambda(Function(Function(BasicPrimitive("+"), Variable(0)), BasicPrimitive("1")))
@@ -30,49 +27,105 @@ from dreamcoder.PCFG.Algorithms.dfs import *
 
 class TestSum(unittest.TestCase):
 
+    def test_construction_CFG(self):
+        t0 = PolymorphicType('t0')
+        t1 = PolymorphicType('t1')
+        semantics = {
+            BasicPrimitive('RANGE') : (),
+            BasicPrimitive('HEAD') : (),
+            BasicPrimitive('SUCC')  : (),
+            BasicPrimitive('MAP')  : (),
+        }
+        primitive_types = {
+            BasicPrimitive('HEAD'): Arrow(List(INT),INT),
+            BasicPrimitive('RANGE'): Arrow(INT, List(INT)),
+            BasicPrimitive('SUCC'): Arrow(INT,INT),
+            BasicPrimitive('MAP'): Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+        }
+        toy_dsl = dsl.DSL(semantics, primitive_types)
+        type_request = Arrow(List(INT),List(INT))
+        toy_cfg = toy_dsl.DSL_to_CFG(type_request)
+        # print(toy_cfg)
+        self.assertTrue(len(toy_cfg.rules) == 14)
+        self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
+
+        UPDATE HERE: TEST WHETHER THE SAME PROGRAM IS THE SAME OBJECT
+        for S in toy_dsl.rules:
+            for P in toy_dsl.rules[S]:
+                for S2 in toy_dsl.rules:
+                    for P2 in toy_dsl.rules[S2]:
+                        # if they represent the same program
+                        if str(P) == str(P2):
+                            # then it is the same object
+                            self.assertTrue(P == P2)
+
     
-    def test_completeness_heap_search(self):
-        '''
-        Check if heap_search does not miss any program and if it outputs programs in decreasing order.
-        '''
+    # def test_construction_PCFG(self):
+    #     t0 = PolymorphicType('t0')
+    #     t1 = PolymorphicType('t1')
+    #     semantics = {
+    #         BasicPrimitive('RANGE') : (),
+    #         BasicPrimitive('HEAD') : (),
+    #         BasicPrimitive('SUCC')  : (),
+    #         BasicPrimitive('MAP')  : (),
+    #     }
+    #     primitive_types = {
+    #         BasicPrimitive('HEAD'): Arrow(List(INT),INT),
+    #         BasicPrimitive('RANGE'): Arrow(INT, List(INT)),
+    #         BasicPrimitive('SUCC'): Arrow(INT,INT),
+    #         BasicPrimitive('MAP'): Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+    #     }
+    #     toy_dsl = dsl.DSL(semantics, primitive_types)
+    #     type_request = Arrow(List(INT),List(INT))
+    #     toy_pcfg = toy_dsl.DSL_to_Uniform_PCFG(type_request)
+    #     print(toy_pcfg)
+    #     print(len(toy_pcfg.rules))
+    #     print(len(toy_pcfg.rules[toy_pcfg.start]))
+    #     # self.assertTrue(len(toy_cfg.rules) == 14)
+    #     # self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
 
-        N = 1_000_000 # number of programs to be genetared by heap search
-        K = 10_000 # number of programs to be sampled from the PCFG
+#     def test_completeness_heap_search(self):
+#         '''
+#         Check if heap_search does not miss any program and if it outputs programs in decreasing order.
+#         '''
 
-        gen_sampling = deepcoder_PCFG_t.sampling()
-        gen_heap_search = heap_search(deepcoder_PCFG_t, deepcoder, {})
-        seen_sampling = set()
-        seen_heaps = set()
+#         N = 1_000_000 # number of programs to be genetared by heap search
+#         K = 10_000 # number of programs to be sampled from the PCFG
 
-        proba_current = 1
-        for i in range(N):
-            if (100*i//N) != (100*(i+1)//N):
-                print(100*(i+1)//N, " %")
-            t = next(gen_heap_search)
-            #print(t)
-            # proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
-            proba_t = t.probability
-            # self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
-            self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
+#         gen_sampling = deepcoder_PCFG_t.sampling()
+#         gen_heap_search = heap_search(deepcoder_PCFG_t, deepcoder, {})
+#         seen_sampling = set()
+#         seen_heaps = set()
 
-            proba_current = proba_t
-            seen_heaps.add(str(t))
+#         proba_current = 1
+#         for i in range(N):
+#             if (100*i//N) != (100*(i+1)//N):
+#                 print(100*(i+1)//N, " %")
+#             t = next(gen_heap_search)
+#             #print(t)
+#             # proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
+#             proba_t = t.probability
+#             # self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
+#             self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
 
-        min_proba = proba_current
+#             proba_current = proba_t
+#             seen_heaps.add(str(t))
+
+#         min_proba = proba_current
         
-        while len(seen_sampling) < K:
-            t = next(gen_sampling)
-            #print(t)
-            # t.reverse()
-            #t = deepcoder.reconstruct_from_list(t)
-            #proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
-            # if proba_t > min_proba:
-            #     seen_sampling.add(str(t))
-            seen_sampling.add(str(t))
+#         while len(seen_sampling) < K:
+#             t = next(gen_sampling)
+#             #print(t)
+#             # t.reverse()
+#             #t = deepcoder.reconstruct_from_list(t)
+#             #proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
+#             # if proba_t > min_proba:
+#             #     seen_sampling.add(str(t))
+#             seen_sampling.add(str(t))
 
-        diff = seen_sampling - seen_heaps
+#         diff = seen_sampling - seen_heaps
             
-        self.assertEqual(0, len(diff))
+#         self.assertEqual(0, len(diff))
 
 
     # def test_completeness_a_star(self):

@@ -10,36 +10,62 @@ class CFG:
     with S a non-terminal and D a dictionary {P : l} with P a program 
     and l a list of non-terminals representing the derivation S -> P(S1,S2,..) 
     with l = [S1,S2,...]
+
+    hash_table_programs: a dictionary {hash: P}
+    mapping hashes to programs
+    for all programs appearing in rules
+
     '''
     def __init__(self, start, rules, max_program_depth):
         self.start = start
         self.rules = rules
 
+        self.hash_table_programs = {}
+
+        for S in self.rules:
+            CONTINUE HERE: USE 
+            P_unique = self.return_unique(P)
+            TO MAKE SURE THAT each program appears once as an object
+
+            # assert(isinstance(P, (BasicPrimitive, New)))
+            # P.type = primitive_types[P]
+            # self.list_primitives.append(P)
+            # if isinstance(P, BasicPrimitive):
+            #     self.semantics[P] = semantics[P]
+
         stable = False
         while(not stable):
-            stable = self.trim(max_program_depth)
-
-
-        print(self)
+            stable = self.remove_non_productive(max_program_depth)
 
         reachable = self.reachable(max_program_depth)
 
         for S in set(self.rules):
             if S not in reachable:
                 del self.rules[S]
-                print("remove non-terminal, not reachable:", S)
+                # print("the non-terminal {} is not reachable:".format(S))
 
-        print(self)
-
+        # this list of assertions checks that all non-terminals are productive
         for S in self.rules:
             assert(len(self.rules[S]) > 0)
             for P in self.rules[S]:
                 for arg in self.rules[S][P]:
                     assert(arg in self.rules)
 
-    def trim(self, max_program_depth = 4, stable = True):
+    def return_unique(self, P):
         '''
-        restrict to co-reachable non-terminals
+        ensures that if a program appears in several rules,
+        it is represented by the same object
+        '''
+        hash_P = P.__hash__()
+        if hash_P in self.hash_table_programs:
+            return self.hash_table_programs[hash_P]
+        else:
+            self.hash_table_programs[hash_P] = P
+            return P
+
+    def remove_non_productive(self, max_program_depth = 4, stable = True):
+        '''
+        remove non-terminals which do not produce programs
         '''
         for S in set(reversed(self.rules)):
             for P in set(self.rules[S]):
@@ -47,17 +73,17 @@ class CFG:
                 if any([arg not in self.rules for arg in args_P]):
                     stable = False
                     del self.rules[S][P]
-                    print("remove rule from S", S, P)
+                    # print("the rule {} from {} is non-productive".format(P,S))
             if len(self.rules[S]) == 0:
                 stable = False
                 del self.rules[S]
-                print("remove non-terminal", S)
+                # print("the non-terminal {} is non-productive".format(S))
 
         return stable
 
     def reachable(self, max_program_depth = 4):
         '''
-        compute the reachable non-terminals
+        compute the set of reachable non-terminals
         '''
         reachable = set()
         reachable.add(self.start)
