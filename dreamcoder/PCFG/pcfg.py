@@ -15,10 +15,6 @@ class PCFG:
     with P a program, l a list of non-terminals, and w a weight
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
     
-    IMPORTANT: we assume that the derivations are sorted in non-decreasing order of weights,
-    Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
-    then w1 >= w2
-
     cumulatives: a dictionary of type {S: l}
     with S a non-terminal and l a list of weights representing the sum of the probabilities from S
     of all previous derivations
@@ -27,65 +23,120 @@ class PCFG:
 
     max_probability: a dictionary of type {S: Pmax} cup {(S, P): Pmax}
     with a S a non-terminal:
-    max_probability[S] = argmax_{P generated from S} probability(P)
+    max_probability[S] = argmax_{P' generated from S} probability(P')
     max_probability[(S,P)] = argmax_{P' generated from S with derivation P} probability(P')
 
     hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
-    for all programs appearing in max_probability
+    for all programs appearing in rules and max_probability
     '''
     def __init__(self, start, rules, max_program_depth = 4):
         self.start = start
-        self.rules = rules
+        self.rules = {}
         self.max_program_depth = max_program_depth
 
-        for S in reversed(self.rules):
-            for P in self.rules[S]:
+        self.hash_table_programs = {}
+
+        # ensures that the same program is always represented by the same object
+        for S in rules:
+            self.rules[S] = {}
+            for P in rules[S]:
                 assert(isinstance(P, (New, Variable, BasicPrimitive)))
+                P_unique = self.return_unique(P)
+                self.rules[S][P_unique] = rules[S][P]
 
         stable = False
         while(not stable):
-            stable = self.trim(max_program_depth)
+            stable = self.remove_non_productive(max_program_depth)
+
+        reachable = self.reachable(max_program_depth)
 
         for S in set(self.rules):
+            if S not in reachable:
+                del self.rules[S]
+                # print("the non-terminal {} is not reachable:".format(S))
+
+        # checks that all non-terminal are productive
+        for S in set(self.rules):
             assert(len(self.rules[S]) > 0)
-            s = sum(w for _, (_, w) in self.rules[S].items())
-            self.rules[S][P] = self.rules[S][0], self.rules[S][1] / s
-            for args_P, w in self.rules[S].keys():
+            s = sum(w for (_, w) in self.rules[S].values())
+            assert(s > 0)
+            for P in self.rules[S]:
+                args_P, w = self.rules[S][P]
                 assert(w > 0)
+                self.rules[S][P] = args_P, w / s
                 for arg in args_P:
                     assert(arg in self.rules)
 
         self.max_probability = {}
-        self.hash_table_max_probability = {}
         self.compute_max_probability()
 
-        self.cumulatives = {S: [sum([self.rules[S][j][2] for j in range(i+1)]) for i in range(len(self.rules[S]))] for S in self.rules}
-        self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
+        print(self)
 
-    def trim(self, max_program_depth = 4, stable = True):
+        self.cumulatives = {}
+        self.vose_samplers = {}
+
+        print(self.rules[self.start])
+        ISSUE HERE: WE CANNOT USE self.rules[S][j] for the j-th derivation rule from S
+
+        for S in self.rules:
+            self.cumulatives[S] = [sum([self.rules[S][j][1] for j in range(i+1)]) for i, P in enumerate(self.rules[S])]
+            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][j][1] for j in range(len(self.rules[S]))]))
+
+    def return_unique(self, P):
         '''
-        restrict to co-reachable non-terminals
+        ensures that if a program appears in several rules,
+        it is represented by the same object
         '''
-        for S in set(self.rules):
-            new_list_derivations = []
-            for P, args_P, w in self.rules[S]:
-                if all([arg in self.rules for arg in args_P]) and w > 0:
-                    new_list_derivations.append((P, args_P, w))
-                else:
+        hash_P = P.__hash__()
+        if hash_P in self.hash_table_programs:
+            return self.hash_table_programs[hash_P]
+        else:
+            self.hash_table_programs[hash_P] = P
+            return P
+
+    def remove_non_productive(self, max_program_depth = 4, stable = True):
+        '''
+        remove non-terminals which do not produce programs
+        '''
+        for S in set(reversed(self.rules)):
+            for P in set(self.rules[S]):
+                args_P, w = self.rules[S][P]
+                if any([arg not in self.rules for arg in args_P]) or w == 0:
                     stable = False
-                    # print("remove", P, P.type)
-            if not stable:
-                self.rules[S] = new_list_derivations
-
-        for S in set(self.rules):
+                    del self.rules[S][P]
+                    # print("the rule {} from {} is non-productive".format(P,S))
             if len(self.rules[S]) == 0\
-            or sum(w for _, _, w in self.rules[S]) == 0:
-                del self.rules[S]
+            or sum(w for _, w in self.rules[S].values()) == 0:
                 stable = False
-                # print("remove", S)
+                del self.rules[S]
+                # print("the non-terminal {} is non-productive".format(S))
 
         return stable
+
+    def reachable(self, max_program_depth = 4):
+        '''
+        compute the set of reachable non-terminals
+        '''
+        reachable = set()
+        reachable.add(self.start)
+
+        reach = set()
+        new_reach = set()
+        reach.add(self.start)
+
+        for i in range(max_program_depth):
+            new_reach.clear()
+            for S in reach:
+                for P in set(self.rules[S]):
+                    args_P,_ = self.rules[S][P]
+                    for arg in args_P:
+                        new_reach.add(arg)
+                        reachable.add(arg)
+            reach.clear()
+            reach = new_reach.copy()
+
+        return reachable
 
     def compute_max_probability(self):
         '''
@@ -95,22 +146,23 @@ class PCFG:
             # print("\n\n###########\nLooking at S", S)
             best_program = None
             best_probability = 0
-            for P, (args_P, w) in self.rules[S].items():
+            for P in self.rules[S]:
+                args_P, w = self.rules[S][P]
                 # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
                 if len(args_P) == 0:
-                    hash_P = str(P)
-                    if hash_P in self.hash_table_max_probability:
-                        self.max_probability[(S,P)] = self.hash_table_max_probability[hash_P]
-                    else:
-                        self.max_probability[(S,P)] = P
+                    P_unique = self.return_unique(P)
+                    P_unique.probability = w
+                    self.max_probability[(S,P)] = P
                 else:
                     probability = \
-                    w * prod([self.max_probability[arg].probability[to_be_determined] for arg in args_P])
-                    self.max_probability[(S,P)] = \
-                    Function(function = P, 
+                    w * prod([self.max_probability[arg].probability for arg in args_P])
+                    new_program = Function(function = P, 
                         arguments = [self.max_probability[arg] for arg in args_P], 
                         type_ = S[0],
                         probability = probability)
+                    new_program = self.return_unique(new_program)
+                    self.max_probability[(S,P)] = new_program
+
                 # print("We found: ", self.max_probability[(S,P)], self.max_probability[(S,P)].probability)
                 if self.max_probability[(S,P)].probability > best_probability:
                     best_program = P
@@ -119,19 +171,8 @@ class PCFG:
                 
             # print("\nNow updating best program for S: ", S)
             # print("best_program", best_program, best_probability)
-            if best_probability == 0:
-                assert(False)
-            if isinstance(best_program, New):
-                self.max_probability[S] = \
-                New(best_program.body, best_program.type, best_probability)
-            elif isinstance(best_program, Variable):
-                self.max_probability[S] = \
-                Variable(best_program.variable, best_program.type, best_probability)
-            elif isinstance(best_program, BasicPrimitive):
-                self.max_probability[S] = \
-                BasicPrimitive(best_program.primitive, best_program.type, best_probability)
-            else:
-                assert(False)
+            assert(best_probability > 0)
+            self.max_probability[S] = best_program
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -148,19 +189,29 @@ class PCFG:
         for S in reversed(self.rules):
             s += '#\n {}\n'.format(S)
             for P in self.rules[S]:
-                s += '   {} - {}: {}     {}\n'.format(P, P.type, self.rules[S][P][0], self.rules[S][P][1])
+                args_P, w = self.rules[S][P]
+                s += '   {} - {}: {}     {}\n'.format(P, P.type, args_P, w)
         return s
         
     def sampling(self):
         '''
         A generator that samples programs according to the PCFG G
+
+        IMPORTANT: we need that the derivations are sorted in non-decreasing order of weights,
+        Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
+        then w1 >= w2
         '''
+        for S in self.rules:
+            self.rules[S].sort(key=lambda x: x[1])
+
         while True:
             yield self.sample_program(self.start)
 
     def sample_program(self, S):
-        P, args_P, w = self.rules[S][self.vose_samplers[S].sample()]
-        if isinstance(P, Variable):
+        i = self.vose_samplers[S].sample()
+        args_P, w = self.rules[S][i]
+        # HOW DO WE FIND P?
+        if len(args_P) == 0:
             return P
         if isinstance(P, (New, BasicPrimitive)):
             arguments = []

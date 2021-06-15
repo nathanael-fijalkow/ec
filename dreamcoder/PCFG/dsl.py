@@ -21,12 +21,10 @@ class DSL:
         self.list_primitives = []
         self.semantics = {}
 
-        for P in primitive_types:
-            assert(isinstance(P, (BasicPrimitive, New)))
-            P.type = primitive_types[P]
+        for p in primitive_types:
+            P = BasicPrimitive(primitive = p, type_ = primitive_types[p])
             self.list_primitives.append(P)
-            if isinstance(P, BasicPrimitive):
-                self.semantics[P] = semantics[P]
+            self.semantics[P] = semantics[p]
 
     def __repr__(self):
         s = "Print a DSL\n"
@@ -80,13 +78,8 @@ class DSL:
                         instantiated_P = New(P.body, type_)
                     if isinstance(P, BasicPrimitive):
                         instantiated_P = BasicPrimitive(P.primitive, type_)
-                    new_primitive_types[instantiated_P] = type_
-            else:
-                new_primitive_types[P] = type_P
-
-        # print("new primitive types", new_primitive_types)
-
-        return DSL(semantics = self.semantics, primitive_types = new_primitive_types)
+                    self.list_primitives.append(instantiated_P)
+                self.list_primitives.remove(P)
 
     def DSL_to_CFG(self, 
         type_request, 
@@ -98,8 +91,7 @@ class DSL:
         Constructs a CFG from a DSL imposing bounds on size of the types
         and on the maximum program depth
         '''
-        instantiated_dsl = self.instantiate_polymorphic_types(upper_bound_type_size)
-        # print("instantiated_dsl", instantiated_dsl)
+        self.instantiate_polymorphic_types(upper_bound_type_size)
 
         return_type = type_request.returns()
         args = type_request.arguments()
@@ -135,14 +127,14 @@ class DSL:
                         rules[non_terminal][var] = []
 
             if depth == max_program_depth - 1:
-                for P in instantiated_dsl.list_primitives:
+                for P in self.list_primitives:
                     type_P = P.type
                     return_P = type_P.returns()
                     if return_P == current_type and len(type_P.arguments()) == 0:
                         rules[non_terminal][P] = []
 
             elif depth < max_program_depth:
-                for P in instantiated_dsl.list_primitives:
+                for P in self.list_primitives:
                     type_P = P.type
                     arguments_P = type_P.ends_with(current_type)
                     if arguments_P != None:

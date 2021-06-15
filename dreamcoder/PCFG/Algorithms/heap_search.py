@@ -30,6 +30,10 @@ class heap_search_object:
         # Stores the successor of a program
         self.succ = {S: {} for S in self.symbols}
 
+TO DO: UPDATE
+        # Dictionary {hash: program}
+        self.hash_table_global = {}
+
         # print(self.G)
 
         # Initialisation heaps
@@ -112,6 +116,12 @@ class heap_search_object:
                 if isinstance(succ_sub_program, Program):
                     new_arguments = [arg for arg in succ.arguments]
                     new_arguments[i] = succ_sub_program
+
+
+                    # Il faut vérifier qu'on n'a pas déjà créé ce programme
+                    # new_arguments sont uniques par induction
+                    # il suffit de vérifier si ce hash existe : 
+                    # id(F) + list(id(arg))
                     new_program = MultiFunction(F, new_arguments)
 
                     hash_new_program = compute_hash_program(new_program)
@@ -119,24 +129,10 @@ class heap_search_object:
                         self.hash_table_program[S].add(hash_new_program)
                         # We only evaluate when yielding the program
                         # self.compute_evaluation(new_program)
-                        probability = self.G.probability[S][F]
-                        for arg in new_arguments:
+                        probability = self.G.rules[S][F][1]
+                        for arg in zip(new_arguments, self.G.rules[S][F]):
                             probability *= arg.probability
                         new_program.probability = probability
                         heappush(self.heaps[S], (-probability, new_program))
 
         return succ
-
-def compute_hash_program(program):
-    if isinstance(program, Variable):
-        return str(program.variable)
-    if isinstance(program, MultiFunction):
-        return str(id(program.function)) + str([id(arg) for arg in program.arguments])
-    if isinstance(program, Lambda):
-        return str(id(program.body))
-    if isinstance(program, New):
-        return str(id(program.body))
-    if isinstance(program, BasicPrimitive):
-        return str(id(program.primitive))
-    else:
-        return ""

@@ -1,4 +1,5 @@
 from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.program import *
 
 class CFG:
     '''
@@ -22,16 +23,12 @@ class CFG:
 
         self.hash_table_programs = {}
 
+        # ensures that the same program is always represented by the same object
         for S in self.rules:
-            CONTINUE HERE: USE 
-            P_unique = self.return_unique(P)
-            TO MAKE SURE THAT each program appears once as an object
-
-            # assert(isinstance(P, (BasicPrimitive, New)))
-            # P.type = primitive_types[P]
-            # self.list_primitives.append(P)
-            # if isinstance(P, BasicPrimitive):
-            #     self.semantics[P] = semantics[P]
+            for P in set(self.rules[S]):
+                assert(isinstance(P, (Variable, BasicPrimitive, New)))
+                P_unique = self.return_unique(P)
+                self.rules[S][P_unique] = self.rules[S][P]
 
         stable = False
         while(not stable):
@@ -44,7 +41,7 @@ class CFG:
                 del self.rules[S]
                 # print("the non-terminal {} is not reachable:".format(S))
 
-        # this list of assertions checks that all non-terminals are productive
+        # checks that all non-terminals are productive
         for S in self.rules:
             assert(len(self.rules[S]) > 0)
             for P in self.rules[S]:

@@ -13,14 +13,14 @@ from dreamcoder.PCFG.DSL.deepcoder import *
 # from dreamcoder.PCFG.Algorithms.dfs import *
 
 # TO ADD:
-        # p0 = Lambda(Function(Function(BasicPrimitive("+"), Variable(0)), BasicPrimitive("1")))
-        # p1 = Function(Lambda(Function(Function(BasicPrimitive("map"), p0), Variable(0))), Variable(0))
+        # p0 = Lambda(Function(Function("+"), Variable(0)), "1")))
+        # p1 = Function(Lambda(Function(Function("map"), p0), Variable(0))), Variable(0))
         # env = ([2,4], None)
         # print(p1.eval(dsl, p1, env, 0))va falloir rajouter des fonctions
 
-        # p0 = Lambda(Function(Function(BasicPrimitive("+"), Variable(0)), Variable(1)))
+        # p0 = Lambda(Function(Function("+"), Variable(0)), Variable(1)))
         # p1 = Function(Function(\
-        #     Lambda(Lambda(Function(Function(BasicPrimitive("map"), p0), Variable(1)))), \
+        #     Lambda(Lambda(Function(Function("map"), p0), Variable(1)))), \
         #     Variable(0)), Variable(1))
         # env = ([2,4,24], (5, None))
         # print(p1.eval(dsl, env, 0))
@@ -31,16 +31,16 @@ class TestSum(unittest.TestCase):
         t0 = PolymorphicType('t0')
         t1 = PolymorphicType('t1')
         semantics = {
-            BasicPrimitive('RANGE') : (),
-            BasicPrimitive('HEAD') : (),
-            BasicPrimitive('SUCC')  : (),
-            BasicPrimitive('MAP')  : (),
+            'RANGE' : (),
+            'HEAD' : (),
+            'SUCC'  : (),
+            'MAP'  : (),
         }
         primitive_types = {
-            BasicPrimitive('HEAD'): Arrow(List(INT),INT),
-            BasicPrimitive('RANGE'): Arrow(INT, List(INT)),
-            BasicPrimitive('SUCC'): Arrow(INT,INT),
-            BasicPrimitive('MAP'): Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+            'HEAD': Arrow(List(INT),INT),
+            'RANGE': Arrow(INT, List(INT)),
+            'SUCC': Arrow(INT,INT),
+            'MAP': Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
         }
         toy_dsl = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT),List(INT))
@@ -49,40 +49,39 @@ class TestSum(unittest.TestCase):
         self.assertTrue(len(toy_cfg.rules) == 14)
         self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
 
-        UPDATE HERE: TEST WHETHER THE SAME PROGRAM IS THE SAME OBJECT
-        for S in toy_dsl.rules:
-            for P in toy_dsl.rules[S]:
-                for S2 in toy_dsl.rules:
-                    for P2 in toy_dsl.rules[S2]:
-                        # if they represent the same program
-                        if str(P) == str(P2):
+        for S in toy_cfg.rules:
+            for P in toy_cfg.rules[S]:
+                for S2 in toy_cfg.rules:
+                    for P2 in toy_cfg.rules[S2]:
+                        # if they represent the same program with same type
+                        if str(P) == str(P2) and str(P.type) == str(P2.type):
                             # then it is the same object
                             self.assertTrue(P == P2)
 
     
-    # def test_construction_PCFG(self):
-    #     t0 = PolymorphicType('t0')
-    #     t1 = PolymorphicType('t1')
-    #     semantics = {
-    #         BasicPrimitive('RANGE') : (),
-    #         BasicPrimitive('HEAD') : (),
-    #         BasicPrimitive('SUCC')  : (),
-    #         BasicPrimitive('MAP')  : (),
-    #     }
-    #     primitive_types = {
-    #         BasicPrimitive('HEAD'): Arrow(List(INT),INT),
-    #         BasicPrimitive('RANGE'): Arrow(INT, List(INT)),
-    #         BasicPrimitive('SUCC'): Arrow(INT,INT),
-    #         BasicPrimitive('MAP'): Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
-    #     }
-    #     toy_dsl = dsl.DSL(semantics, primitive_types)
-    #     type_request = Arrow(List(INT),List(INT))
-    #     toy_pcfg = toy_dsl.DSL_to_Uniform_PCFG(type_request)
-    #     print(toy_pcfg)
-    #     print(len(toy_pcfg.rules))
-    #     print(len(toy_pcfg.rules[toy_pcfg.start]))
-    #     # self.assertTrue(len(toy_cfg.rules) == 14)
-    #     # self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
+    def test_construction_PCFG(self):
+        t0 = PolymorphicType('t0')
+        t1 = PolymorphicType('t1')
+        semantics = {
+            'RANGE': (),
+            'HEAD': (),
+            'SUCC': (),
+            'MAP': (),
+        }
+        primitive_types = {
+            'HEAD': Arrow(List(INT),INT),
+            'RANGE': Arrow(INT, List(INT)),
+            'SUCC': Arrow(INT,INT),
+            'MAP': Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+        }
+        toy_dsl = dsl.DSL(semantics, primitive_types)
+        type_request = Arrow(List(INT),List(INT))
+        toy_pcfg = toy_dsl.DSL_to_Uniform_PCFG(type_request)
+        print(toy_pcfg)
+        print(len(toy_pcfg.rules))
+        print(len(toy_pcfg.rules[toy_pcfg.start]))
+        # self.assertTrue(len(toy_cfg.rules) == 14)
+        # self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
 
 #     def test_completeness_heap_search(self):
 #         '''

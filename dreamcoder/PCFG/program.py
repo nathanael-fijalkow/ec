@@ -57,14 +57,14 @@ class Program:
         assert(False)
 
 class Variable(Program):
-    def __init__(self, variable, type_ = UnknownType()):
+    def __init__(self, variable, type_ = UnknownType(), probability = 0):
         # self.variable is a natural number
         assert(isinstance(variable,int))
         self.variable = variable
         assert(isinstance(type_,Type))
         self.type = type_
 
-        self.probability = {}
+        self.probability = probability
         self.evaluation = {}
 
     def __repr__(self):
@@ -81,14 +81,14 @@ class Variable(Program):
             return None
 
 class Function(Program):
-    def __init__(self, function, arguments, type_ = UnknownType()):
+    def __init__(self, function, arguments, type_ = UnknownType(), probability = 0):
         assert(isinstance(function, Program))
         self.function = function
         assert(isinstance(arguments, list))
         self.arguments = arguments
         self.type = type_
 
-        self.probability = {}
+        self.probability = probability
         self.evaluation = {}
 
     def __repr__(self):
@@ -120,13 +120,13 @@ class Function(Program):
             return None
 
 class Lambda(Program):
-    def __init__(self, body, type_ = UnknownType()):
+    def __init__(self, body, type_ = UnknownType(), probability = 0):
         assert(isinstance(body,Program))
         self.body = body
         assert(isinstance(type_,Type))
         self.type = type_
 
-        self.probability = {}
+        self.probability = probability
         self.evaluation = {}
 
     def __repr__(self):
@@ -142,13 +142,13 @@ class Lambda(Program):
             return None
 
 class BasicPrimitive(Program):
-    def __init__(self, primitive, type_ = UnknownType()):
+    def __init__(self, primitive, type_ = UnknownType(), probability = 0):
         assert(isinstance(primitive,str))
         self.primitive = primitive
         assert(isinstance(type_,Type))
         self.type = type_
 
-        self.probability = {}
+        self.probability = probability
         self.evaluation = {}
 
     def __repr__(self):
@@ -158,11 +158,11 @@ class BasicPrimitive(Program):
         return dsl.semantics[self.primitive]
 
 class New(Program):
-    def __init__(self, body, type_ = UnknownType()):
+    def __init__(self, body, type_ = UnknownType(), probability = 0):
         self.body = body
         self.type = type_
 
-        self.probability = {}
+        self.probability = probability
         self.evaluation = {}
 
     def __repr__(self):
