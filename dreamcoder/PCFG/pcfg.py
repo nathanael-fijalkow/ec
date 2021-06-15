@@ -36,6 +36,8 @@ class PCFG:
         self.max_program_depth = max_program_depth
 
         self.hash_table_programs = {}
+        self.P = {} # S:list_P from S
+
 
         # ensures that the same program is always represented by the same object
         for S in rules:
@@ -73,15 +75,17 @@ class PCFG:
 
         print(self)
 
-        self.cumulatives = {}
+
+        self.P = {S:list(self.rules[S]) for S in self.rules}
+
         self.vose_samplers = {}
 
-        print(self.rules[self.start])
-        ISSUE HERE: WE CANNOT USE self.rules[S][j] for the j-th derivation rule from S
+        #print(self.rules[self.start])
+        #ISSUE HERE: WE CANNOT USE self.rules[S][j] for the j-th derivation rule from S
 
         for S in self.rules:
-            self.cumulatives[S] = [sum([self.rules[S][j][1] for j in range(i+1)]) for i, P in enumerate(self.rules[S])]
-            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][j][1] for j in range(len(self.rules[S]))]))
+            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][P][1] for P in self.P[S]]))
+#            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][j][1] for j in range(len(self.rules[S]))]))
 
     def return_unique(self, P):
         '''
@@ -181,8 +185,8 @@ class PCFG:
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
-
+        #self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
+        self.vose_samplers = {S:vose.Sampler(np.array([self.rules[S][P][1] for P in self.P[S]])) for S in self.rules}
     def __repr__(self):
         s = "Print a PCFG\n"
         s += "start: {}\n".format(self.start)
@@ -209,7 +213,8 @@ class PCFG:
 
     def sample_program(self, S):
         i = self.vose_samplers[S].sample()
-        args_P, w = self.rules[S][i]
+        P = self.P[S][i]
+        args_P, w = self.rules[S][P]
         # HOW DO WE FIND P?
         if len(args_P) == 0:
             return P
