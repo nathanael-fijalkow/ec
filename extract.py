@@ -35,33 +35,31 @@ def construct_PCFG(DSL,
     augmented_rules = {}
     newQ = {}
     for S in CFG.rules:
+        augmented_rules[S] = {}
         _, previous, _ = S
         if previous:
             primitive, argument_number = previous
-            for F, _ in CFG.rules[S]:
-                found = False
-                for p, a, F2 in Q:
-                    if (p != None and p.typeless_eq(primitive)) and a == argument_number and F.typeless_eq(F2):
-                        found = True
-                        newQ[primitive, argument_number, F] = Q[p, a, F2]
-                if not found:
-                    newQ[primitive, argument_number, F] = 0
-                    # print("not initialised", F)
         else:
             primitive, argument_number = None, 0
-            for F, _ in CFG.rules[S]:
-                found = False
-                for p, a, F2 in Q:
-                    if p == None and a == argument_number and F.typeless_eq(F2):
-                        found = True
-                        newQ[primitive, argument_number, F] = Q[p, a, F2]
-                if not found:
-                    newQ[primitive, argument_number, F] = 0
-                    # print("not initialised", F)
 
-        augmented_rules[S] = \
-        [(F, args_F, newQ[primitive, argument_number, F]) \
-        for (F, args_F) in CFG.rules[S]]
+        for P in CFG.rules[S]:
+            found = False
+            for p, a, P2 in Q:
+                if (p != None and p.typeless_eq(primitive)) \
+                and a == argument_number and P.typeless_eq(P2):
+                    found = True
+                    newQ[primitive, argument_number, P] = Q[p, a, P2]
+                if p == None and primitive == None \
+                and a == argument_number and P.typeless_eq(P2):
+                    found = True
+                    newQ[primitive, argument_number, P] = Q[p, a, P2]
+            if not found:
+                newQ[primitive, argument_number, P] = 0
+                # print("not initialised", P)
+
+        for P in CFG.rules[S]:
+            augmented_rules[S][P] = \
+            CFG.rules[S][P], newQ[primitive, argument_number, P]
 
     return PCFG(start = CFG.start, 
         rules = augmented_rules, 
@@ -75,13 +73,12 @@ def translate_program(old_program):
         return Variable(old_program.i)
     if isinstance(old_program, Application):
         # We do not check the type of this function, does not matter
-        return MultiFunction(translate_program(old_program.f), 
+        return Function(translate_program(old_program.f), 
             [translate_program(old_program.x)])
     if isinstance(old_program, Abstraction):
         return Lambda(translate_program(old_program.body))
     if isinstance(old_program, Invented):
         return New(translate_program(old_program.body))
-    assert(False)
 
 def translate_type(old_type):
     if isinstance(old_type, TypeVariable):
@@ -104,7 +101,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
     from dreamcoder.PCFG.DSL.list import semantics
    
     # print(tasks)
-    range_task = range(218)
+    range_task = range(1)
     for i, task in enumerate(tasks):
         if i in range_task:
             print(i)
@@ -141,8 +138,8 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
                 Q[None, 0, new_primitive] = exp(log_probability)
 
-            for k in range(len(arguments)):
-                Q[None, 0, Variable(k)] = 0
+            # for k in range(len(arguments)):
+            #     Q[None, 0, Variable(k)] = 0
 
             # Fill in probabilities from primitives to primitives
             for old_primitive, new_primitive in list_primitives_old_and_new:
@@ -165,7 +162,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
             # print(Q)
 
-            dsl = DSL(semantics = semantics, primitive_types = primitive_types, no_repetitions = ())
+            dsl = DSL(semantics = semantics, primitive_types = primitive_types)
             # print(dsl)
 
             pcfg = construct_PCFG(DSL = dsl, 

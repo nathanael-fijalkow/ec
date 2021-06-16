@@ -21,41 +21,46 @@ class heap_search_object:
         self.rules = G.rules
         self.symbols = [S for S in self.rules]
 
-        # One heap per non-terminal symbol
+        # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps = {S: [] for S in self.symbols}
 
-        # To avoid putting the same program twice in the same heap
-        self.hash_table_program = {S: set() for S in self.symbols}
-
-        # Stores the successor of a program
+        # self.succ[S][P] is the successor of P from S
         self.succ = {S: {} for S in self.symbols}
 
-TO DO: UPDATE
-        # Dictionary {hash: program}
+        # self.hash_table_program[S] is the set of hashes of programs 
+        # ever added to the heap for S
+        self.hash_table_program = {S: set() for S in self.symbols}
+
+
+        # self.hash_table_global[hash] = P maps
+        # hashes to programs for all programs ever added to some heap
         self.hash_table_global = {}
 
         # print(self.G)
 
         # Initialisation heaps
-        ## 1. add F(max(S1),max(S2), ...) to Heap(S) for all S -> F(S1, S2, ...) 
+        ## 1. add P(max(S1),max(S2), ...) to Heap(S) for all S -> P(S1, S2, ...) 
         for S in reversed(self.rules):
             # print("###########\nS", S)
-            for F, _, _ in self.rules[S]:
-                # print("####\nF", F)
-                program = self.G.max_probability[(S,F)]
+            for P in self.rules[S]:
+                # print("####\nP", P)
+                args_P, w = self.rules[S][P]
+                program = self.G.max_probability[(S,P)]
                 # print(program, program.probability)
-                hash_program = compute_hash_program(program)
-                # We first check whether the program is already in the heap
-                if hash_program not in self.hash_table_program[S]:
-                    self.hash_table_program[S].add(hash_program)
-                    # We only evaluate when yielding the program
-                    # self.compute_evaluation(program)
+                hash_program = program.__hash__()
+
+                # Remark: the program cannot already be in Heap(S)
+                assert(hash_program not in self.hash_table_program[S])
+
+                # We check whether the program has ever been added to some heap
+                if hash_program not in self.hash_table_global:
+                    self.hash_table_program.add(hash_program)
                     # print("adding to the heap", program, program.probability)
                     heappush(self.heaps[S], (-program.probability, program))
 
         # for S in self.rules:
         #     print("\nheaps[", S, "] = ", self.heaps[S], "\n")
-        # assert(False)
+        assert(False)
 
         # print("\n######################\nInitialisation phase 1 over\n######################\n")
 
@@ -84,7 +89,7 @@ TO DO: UPDATE
         '''
         # print("\nquery:", S, program, program.__class__.__name__)
 
-        hash_program = compute_hash_program(program)
+        hash_program = program.__hash__()
 
         # print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
@@ -124,7 +129,7 @@ TO DO: UPDATE
                     # id(F) + list(id(arg))
                     new_program = MultiFunction(F, new_arguments)
 
-                    hash_new_program = compute_hash_program(new_program)
+                    hash_new_program = new_program.__hash__()
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
                         # We only evaluate when yielding the program

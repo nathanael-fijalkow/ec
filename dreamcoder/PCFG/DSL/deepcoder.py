@@ -65,7 +65,7 @@ semantics = {
 	'SCANL1[MIN]': scanl(lambda x, y: min(x,y)),
 	'SCANL1[MAX]': scanl(lambda x, y: max(x,y)),
 
-	'MAP': map,
+	'MAP': lambda f: lambda l: list(map(f, l)),
 }
 
 primitive_types = {

@@ -22,9 +22,13 @@ class DSL:
         self.semantics = {}
 
         for p in primitive_types:
-            self.semantics[p] = semantics[p]
-            P = BasicPrimitive(primitive = p, type_ = primitive_types[p])
-            self.list_primitives.append(P)
+            if format(p) in semantics:
+                self.semantics[p] = semantics[format(p)]
+                P = BasicPrimitive(primitive = format(p), type_ = primitive_types[p])
+                self.list_primitives.append(P)
+            else:
+                P = New(body = p, type_ = primitive_types[p])
+                self.list_primitives.append(P)
 
     def __repr__(self):
         s = "Print a DSL\n"

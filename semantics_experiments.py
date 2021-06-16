@@ -36,7 +36,7 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
     found = False
     # print(dsl)
     # print(pcfg)
-    # print("examples", examples)
+    print("examples", examples)
     if name_algo == "SQRT":
         _ = next(gen)  
         print("initialised")
@@ -79,16 +79,16 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
 
 list_algorithms = [
     (heap_search, 'heap search', {}), 
-    (sqrt_sampling, 'SQRT', {}), 
-    (a_star, 'A*', {}),
-    (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
-    (bfs, 'bfs', {'beam_width' : 50000}),
-    (dfs, 'dfs', {}), 
+    # (sqrt_sampling, 'SQRT', {}), 
+    # (a_star, 'A*', {}),
+    # (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
+    # (bfs, 'bfs', {'beam_width' : 50000}),
+    # (dfs, 'dfs', {}), 
 # sort and add ???????
     ]
 
 
-range_experiments = range(218)
+range_experiments = range(1)
 for i in range_experiments:
     result = {}
 
