@@ -35,7 +35,7 @@ def dfs(G : PCFG):
             # for F, args_F, w in G.rules[S]:
             for P in G.list_derivations[S]:
                 args_F, w = G.rules[P]
-                new_partial_program = (F, partial_program)
+                new_partial_program = (P, partial_program)
                 new_non_terminals = non_terminals.copy()
                 for arg in args_F:
                     new_non_terminals.append(arg)
