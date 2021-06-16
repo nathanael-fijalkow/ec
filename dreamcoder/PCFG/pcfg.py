@@ -81,9 +81,10 @@ class PCFG:
         self.vose_samplers = {}
 
         for S in self.rules:
-            self.list_derivations[S] = list(self.rules[S]).sort(key=lambda x: x[1])
-            self.rules[S] = {P: (args_P, w) for P, (args_P, w) in ....}
-            HERE WE NEED TO SORT RULES[S]...
+            # self.list_derivations[S] = list(self.rules[S]).sort(key=lambda x: x[1])
+            self.list_derivations[S] = sorted(self.rules[S], key=lambda P: self.rules[S][P][1])
+            # self.rules[S] = {P: (args_P, w) for P, (args_P, w) in ....}
+            # HERE WE NEED TO SORT RULES[S]...
 
             self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][P][1] for P in self.list_derivations[S]]))
 

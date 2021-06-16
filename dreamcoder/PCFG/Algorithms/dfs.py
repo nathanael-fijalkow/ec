@@ -11,8 +11,10 @@ def dfs(G : PCFG):
     '''
     # chrono = -time.perf_counter()
     # We reverse the rules: they should be non-increasing
-    for S in G.rules:
-        G.rules[S].sort(key=lambda x: x[2])
+
+    # for S in G.rules:
+    #     G.rules[S].sort(key=lambda x: x[2])
+        
     # chrono += time.perf_counter()
     # print("Sorted the rules in {}".format(chrono))
 
@@ -30,7 +32,9 @@ def dfs(G : PCFG):
             yield partial_program
         else:
             S = non_terminals.pop()
-            for F, args_F, w in G.rules[S]:
+            # for F, args_F, w in G.rules[S]:
+            for P in G.list_derivations[S]:
+                args_F, w = G.rules[P]
                 new_partial_program = (F, partial_program)
                 new_non_terminals = non_terminals.copy()
                 for arg in args_F:
