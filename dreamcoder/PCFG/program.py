@@ -1,10 +1,10 @@
 from dreamcoder.PCFG.type_system import *
 from dreamcoder.PCFG.cons_list import *
 
-    # dictionary { number of environment : value }
+# dictionary { number of environment : value }
 
-    # environment: a cons list 
-    # list = None | (value, list)
+# environment: a cons list 
+# list = None | (value, list)
 
 class Program:
     '''
@@ -111,7 +111,8 @@ class Function(Program):
             else:
                 evaluated_arguments = []
                 for j in range(len(self.arguments)):
-                    evaluated_arguments.append(self.arguments[j].eval(dsl, environment, i))
+                    e = self.arguments[j].eval(dsl, environment, i)
+                    evaluated_arguments.append(e)
                 result = self.function.eval(dsl, environment, i)
                 for evaluated_arg in evaluated_arguments:
                     result = result(evaluated_arg)

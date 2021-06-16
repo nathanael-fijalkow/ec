@@ -19,16 +19,17 @@ class CFG:
     '''
     def __init__(self, start, rules, max_program_depth):
         self.start = start
-        self.rules = rules
+        self.rules = {}
 
         self.hash_table_programs = {}
 
         # ensures that the same program is always represented by the same object
-        for S in self.rules:
-            for P in set(self.rules[S]):
+        for S in rules:
+            self.rules[S] = {}
+            for P in rules[S]:
                 assert(isinstance(P, (Variable, BasicPrimitive, New)))
                 P_unique = self.return_unique(P)
-                self.rules[S][P_unique] = self.rules[S][P]
+                self.rules[S][P_unique] = rules[S][P]
 
         stable = False
         while(not stable):

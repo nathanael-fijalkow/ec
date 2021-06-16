@@ -14,6 +14,9 @@ class PCFG:
     with S a non-terminal and D a dictionary : {P : l, w}
     with P a program, l a list of non-terminals, and w a weight
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
+
+    list_derivations: a dictionary of type {S: l}
+    with S a non-terminal and l the list of programs P appearing in derivations from S
     
     cumulatives: a dictionary of type {S: l}
     with S a non-terminal and l a list of weights representing the sum of the probabilities from S
@@ -36,8 +39,7 @@ class PCFG:
         self.max_program_depth = max_program_depth
 
         self.hash_table_programs = {}
-        self.P = {} # S:list_P from S
-
+        self.list_derivations = {}
 
         # ensures that the same program is always represented by the same object
         for S in rules:
@@ -73,19 +75,14 @@ class PCFG:
         self.max_probability = {}
         self.compute_max_probability()
 
-        print(self)
+        # print(self)
 
-
-        self.P = {S:list(self.rules[S]) for S in self.rules}
-
+        self.list_derivations = {}
         self.vose_samplers = {}
 
-        #print(self.rules[self.start])
-        #ISSUE HERE: WE CANNOT USE self.rules[S][j] for the j-th derivation rule from S
-
         for S in self.rules:
-            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][P][1] for P in self.P[S]]))
-#            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][j][1] for j in range(len(self.rules[S]))]))
+            self.list_derivations[S] = list(self.rules[S])
+            self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][P][1] for P in self.list_derivations[S]]))
 
     def return_unique(self, P):
         '''
@@ -169,7 +166,7 @@ class PCFG:
 
                 # print("We found: ", self.max_probability[(S,P)], self.max_probability[(S,P)].probability)
                 if self.max_probability[(S,P)].probability > best_probability:
-                    best_program = P
+                    best_program = self.max_probability[(S,P)]
                     best_probability = self.max_probability[(S,P)].probability
                 # print("Best program for S after P: ", best_program, best_probability)
                 
@@ -185,8 +182,8 @@ class PCFG:
 
     def __setstate__(self, d):
         self.__dict__ = d
-        #self.vose_samplers = {S: vose.Sampler(np.array([self.rules[S][j][2] for j in range(len(self.rules[S]))])) for S in self.rules}
-        self.vose_samplers = {S:vose.Sampler(np.array([self.rules[S][P][1] for P in self.P[S]])) for S in self.rules}
+        self.vose_samplers = {S:vose.Sampler(np.array([self.rules[S][P][1] for P in self.list_derivations[S]])) for S in self.rules}
+
     def __repr__(self):
         s = "Print a PCFG\n"
         s += "start: {}\n".format(self.start)
@@ -213,30 +210,26 @@ class PCFG:
 
     def sample_program(self, S):
         i = self.vose_samplers[S].sample()
-        P = self.P[S][i]
+        P = self.list_derivations[S][i]
         args_P, w = self.rules[S][P]
-        # HOW DO WE FIND P?
         if len(args_P) == 0:
             return P
-        if isinstance(P, (New, BasicPrimitive)):
-            arguments = []
-            for arg in args_P:
-                arguments.append(self.sample_program(arg))
-            return Function(P, arguments)
-        assert(False)
+        arguments = []
+        for arg in args_P:
+            arguments.append(self.sample_program(arg))
+        return Function(P, arguments)
 
     def probability_program(self, S, P):
         '''
         Compute the probability of a program P generated from the non-terminal S
         '''
         if isinstance(P, (Variable, BasicPrimitive, New)):
-            return self.probability[S][P]            
+            return self.rules[S][P][1]            
         if isinstance(P, Function):
             F = P.function
-            args = P.arguments
-            probability = self.probability[S][F]
+            args_P = P.arguments
+            probability = self.rules[S][F][1]
             for i, arg in enumerate(args):
-                probability *= self.probability_program(self.arities[S][F][i], arg)
-            P.probability = probability
+                probability *= self.probability_program(self.rules[S][F][0][i], arg)
             return probability
-        assert(False)
+            

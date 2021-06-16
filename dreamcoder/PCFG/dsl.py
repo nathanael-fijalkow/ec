@@ -22,9 +22,9 @@ class DSL:
         self.semantics = {}
 
         for p in primitive_types:
+            self.semantics[p] = semantics[p]
             P = BasicPrimitive(primitive = p, type_ = primitive_types[p])
             self.list_primitives.append(P)
-            self.semantics[P] = semantics[p]
 
     def __repr__(self):
         s = "Print a DSL\n"

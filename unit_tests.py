@@ -12,20 +12,45 @@ from dreamcoder.PCFG.DSL.deepcoder import *
 # from dreamcoder.PCFG.Algorithms.threshold_search import *
 # from dreamcoder.PCFG.Algorithms.dfs import *
 
-# TO ADD:
-        # p0 = Lambda(Function(Function("+"), Variable(0)), "1")))
-        # p1 = Function(Lambda(Function(Function("map"), p0), Variable(0))), Variable(0))
-        # env = ([2,4], None)
-        # print(p1.eval(dsl, p1, env, 0))va falloir rajouter des fonctions
-
-        # p0 = Lambda(Function(Function("+"), Variable(0)), Variable(1)))
-        # p1 = Function(Function(\
-        #     Lambda(Lambda(Function(Function("map"), p0), Variable(1)))), \
-        #     Variable(0)), Variable(1))
-        # env = ([2,4,24], (5, None))
-        # print(p1.eval(dsl, env, 0))
-
 class TestSum(unittest.TestCase):
+
+    def test_programs(self):
+        p1 = BasicPrimitive("MAP")
+        p2 = BasicPrimitive("MAP")
+        p3 = BasicPrimitive("MAP", type_ = PolymorphicType(name = "test"))
+        # checking whether they represent the same programs and same types
+        self.assertTrue(str(p1) == str(p2) and str(p1.type) == str(p2.type))
+        self.assertTrue(p1.typeless_eq(p2))
+        self.assertTrue(p1.__eq__(p2))
+        # checking whether they represent the same programs
+        self.assertTrue(p1.typeless_eq(p3))
+        # checking whether they are different objects
+        self.assertFalse(id(p1) == id(p2))
+        self.assertFalse(id(p1) == id(p3))
+
+        semantics = {
+            '+1'  : lambda x: x+1,
+            'MAP'  : lambda f: lambda l: list(map(f, l)),
+        }
+        primitive_types = {
+            '+1': Arrow(INT,INT),
+            'MAP': Arrow(Arrow(t0,t1),Arrow(List(t0),List(t1))),
+        }
+        toy_dsl = dsl.DSL(semantics, primitive_types)
+
+        p0 = Function(
+                BasicPrimitive("+1"), 
+                [Variable(0)]
+            )
+        env = (2, None)
+        self.assertTrue(p0.eval(toy_dsl, env, 0) == 3)
+
+        p1 = Function(
+                BasicPrimitive("MAP"), 
+                [BasicPrimitive("+1"), Variable(0)]
+            )
+        env = ([2,4], None)
+        self.assertTrue(p1.eval(toy_dsl, env, 0) == [3,5])
 
     def test_construction_CFG(self):
         t0 = PolymorphicType('t0')
@@ -45,7 +70,6 @@ class TestSum(unittest.TestCase):
         toy_dsl = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT),List(INT))
         toy_cfg = toy_dsl.DSL_to_CFG(type_request)
-        # print(toy_cfg)
         self.assertTrue(len(toy_cfg.rules) == 14)
         self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
 
@@ -54,9 +78,10 @@ class TestSum(unittest.TestCase):
                 for S2 in toy_cfg.rules:
                     for P2 in toy_cfg.rules[S2]:
                         # if they represent the same program with same type
-                        if str(P) == str(P2) and str(P.type) == str(P2.type):
+                        if P == P2:
                             # then it is the same object
-                            self.assertTrue(P == P2)
+                            # print(S, S2, P, P2, P.type, P2.type)
+                            self.assertTrue(id(P) == id(P2))
 
     
     def test_construction_PCFG(self):
@@ -77,11 +102,28 @@ class TestSum(unittest.TestCase):
         toy_dsl = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT),List(INT))
         toy_pcfg = toy_dsl.DSL_to_Uniform_PCFG(type_request)
-        print(toy_pcfg)
-        print(len(toy_pcfg.rules))
-        print(len(toy_pcfg.rules[toy_pcfg.start]))
-        # self.assertTrue(len(toy_cfg.rules) == 14)
-        # self.assertTrue(len(toy_cfg.rules[toy_cfg.start]) == 3)
+        # print(toy_pcfg)
+        # for S in toy_pcfg.rules:
+        #     print(S, toy_pcfg.max_probability[S], toy_pcfg.max_probability[S].probability)
+        max_program = Function(
+                BasicPrimitive("RANGE"), 
+                [Function(
+                    BasicPrimitive("HEAD"), 
+                    [Variable(0)]
+                    )
+                ]
+            ) 
+        self.assertTrue(toy_pcfg.max_probability[toy_pcfg.start].typeless_eq(max_program))
+
+        for S in toy_pcfg.rules:
+            for P in toy_pcfg.rules[S]:
+                for S2 in toy_pcfg.rules:
+                    for P2 in toy_pcfg.rules[S2]:
+                        # if they represent the same program with same type
+                        if P == P2:
+                            # then it is the same object
+                            # print(S, S2, P, P2, P.type, P2.type)
+                            self.assertTrue(id(P) == id(P2))
 
 #     def test_completeness_heap_search(self):
 #         '''
