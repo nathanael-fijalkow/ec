@@ -19,17 +19,18 @@ class CFG:
     '''
     def __init__(self, start, rules, max_program_depth):
         self.start = start
-        self.rules = {}
+        self.rules = rules
 
         self.hash_table_programs = {}
 
+        # self.rules = {}
         # ensures that the same program is always represented by the same object
-        for S in rules:
-            self.rules[S] = {}
-            for P in rules[S]:
-                assert(isinstance(P, (Variable, BasicPrimitive, New)))
-                P_unique = self.return_unique(P)
-                self.rules[S][P_unique] = rules[S][P]
+        # for S in rules:
+        #     self.rules[S] = {}
+        #     for P in rules[S]:
+        #         assert(isinstance(P, (Variable, BasicPrimitive, New)))
+        #         P_unique = self.return_unique(P)
+        #         self.rules[S][P_unique] = [self.return_unique(arg) for arg in rules[S][P]]
 
         stable = False
         while(not stable):
@@ -60,7 +61,7 @@ class CFG:
         else:
             self.hash_table_programs[hash_P] = P
             return P
-
+            
     def remove_non_productive(self, max_program_depth = 4, stable = True):
         '''
         remove non-terminals which do not produce programs

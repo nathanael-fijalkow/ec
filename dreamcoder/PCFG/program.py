@@ -6,6 +6,10 @@ from dreamcoder.PCFG.cons_list import *
 # environment: a cons list 
 # list = None | (value, list)
 
+# probability: a dictionary {S : probability}
+# such that P.probability[S] is the probability that P is generated
+# from the non-terminal S
+
 class Program:
     '''
     Object that represents a program: a lambda term with basic primitives
@@ -14,16 +18,18 @@ class Program:
         return isinstance(self,Program) and isinstance(other,Program) \
         and self.type.__eq__(other.type) and self.typeless_eq(other)
 
-    def typeless_eq(self, other):
+    def typeless_eq(self, other, verbose = False):
+        if verbose:
+            print("checking:\n    1:{}\nclass: {}\n    2:{}\nclass: {}".format(self, self.__class__.__name__, other, other.__class__.__name__,))
         b = isinstance(self,Program) and isinstance(other,Program)
         b2 = (isinstance(self,Variable) \
         and isinstance(other,Variable) \
         and self.variable == other.variable)
         b2 = b2 or (isinstance(self,Function) \
             and isinstance(other,Function) \
-            and self.function.typeless_eq(other.function) \
+            and self.function.typeless_eq(other.function, verbose) \
             and len(self.arguments) == len(other.arguments) \
-            and all([x.typeless_eq(y) for x,y in zip(self.arguments, other.arguments)]))
+            and all([x.typeless_eq(y, verbose) for x,y in zip(self.arguments, other.arguments)]))
         b2 = b2 or (isinstance(self,Lambda) \
             and isinstance(other,Lambda) \
             and self.body.typeless_eq(other.body))
@@ -32,7 +38,7 @@ class Program:
             and self.primitive == other.primitive)
         b2 = b2 or (isinstance(self,New) \
             and isinstance(other,New) \
-            and self.body.typeless_eq(other.body))
+            and (self.body).typeless_eq(other.body, verbose))
         return b and b2
 
     def __gt__(self, other): True
@@ -57,7 +63,7 @@ class Program:
         assert(False)
 
 class Variable(Program):
-    def __init__(self, variable, type_ = UnknownType(), probability = 0):
+    def __init__(self, variable, type_ = UnknownType(), probability = {}):
         # self.variable is a natural number
         assert(isinstance(variable,int))
         self.variable = variable
@@ -81,7 +87,7 @@ class Variable(Program):
             return None
 
 class Function(Program):
-    def __init__(self, function, arguments, type_ = UnknownType(), probability = 0):
+    def __init__(self, function, arguments, type_ = UnknownType(), probability = {}):
         assert(isinstance(function, Program))
         self.function = function
         assert(isinstance(arguments, list))
@@ -121,7 +127,7 @@ class Function(Program):
             return None
 
 class Lambda(Program):
-    def __init__(self, body, type_ = UnknownType(), probability = 0):
+    def __init__(self, body, type_ = UnknownType(), probability = {}):
         assert(isinstance(body,Program))
         self.body = body
         assert(isinstance(type_,Type))
@@ -143,7 +149,7 @@ class Lambda(Program):
             return None
 
 class BasicPrimitive(Program):
-    def __init__(self, primitive, type_ = UnknownType(), probability = 0):
+    def __init__(self, primitive, type_ = UnknownType(), probability = {}):
         assert(isinstance(primitive,str))
         self.primitive = primitive
         assert(isinstance(type_,Type))
@@ -159,7 +165,7 @@ class BasicPrimitive(Program):
         return dsl.semantics[self.primitive]
 
 class New(Program):
-    def __init__(self, body, type_ = UnknownType(), probability = 0):
+    def __init__(self, body, type_ = UnknownType(), probability = {}):
         self.body = body
         self.type = type_
 
@@ -167,7 +173,7 @@ class New(Program):
         self.evaluation = {}
 
     def __repr__(self):
-        return format(self.body)       
+        return format(self.body)
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:

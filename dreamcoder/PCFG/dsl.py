@@ -27,7 +27,7 @@ class DSL:
                 P = BasicPrimitive(primitive = format(p), type_ = primitive_types[p])
                 self.list_primitives.append(P)
             else:
-                P = New(body = p, type_ = primitive_types[p])
+                P = New(body = p.body, type_ = primitive_types[p])
                 self.list_primitives.append(P)
 
     def __repr__(self):

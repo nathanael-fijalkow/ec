@@ -16,7 +16,8 @@ class PCFG:
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
     list_derivations: a dictionary of type {S: l}
-    with S a non-terminal and l the list of programs P appearing in derivations from S
+    with S a non-terminal and l the list of programs P appearing in derivations from S,
+    sorted from most probable to least probable
     
     cumulatives: a dictionary of type {S: l}
     with S a non-terminal and l a list of weights representing the sum of the probabilities from S
@@ -24,30 +25,29 @@ class PCFG:
     Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
     then cumulatives[S] = [w1, w1 + w2]
 
-    max_probability: a dictionary of type {S: Pmax} cup {(S, P): Pmax}
-    with a S a non-terminal:
-    max_probability[S] = argmax_{P' generated from S} probability(P')
-    max_probability[(S,P)] = argmax_{P' generated from S with derivation P} probability(P')
+    max_probability: a dictionary of type {S: (Pmax, probability)} cup {(S, P): (Pmax, probability)}
+    with S a non-terminal
 
     hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
-    for all programs appearing in rules and max_probability
+    for all programs appearing in max_probability
     '''
     def __init__(self, start, rules, max_program_depth = 4):
         self.start = start
-        self.rules = {}
+        self.rules = rules
         self.max_program_depth = max_program_depth
 
         self.hash_table_programs = {}
-        self.list_derivations = {}
 
+        # self.rules = {}
         # ensures that the same program is always represented by the same object
-        for S in rules:
-            self.rules[S] = {}
-            for P in rules[S]:
-                assert(isinstance(P, (New, Variable, BasicPrimitive)))
-                P_unique = self.return_unique(P)
-                self.rules[S][P_unique] = rules[S][P]
+        # for S in rules:
+        #     self.rules[S] = {}
+        #     for P in rules[S]:
+        #         assert(isinstance(P, (New, Variable, BasicPrimitive)))
+        #         P_unique = self.return_unique(P)
+        #         args_P, w = rules[S][P]
+        #         self.rules[S][P_unique] = [self.return_unique(arg) for arg in args_P], w
 
         stable = False
         while(not stable):
@@ -75,19 +75,12 @@ class PCFG:
         self.max_probability = {}
         self.compute_max_probability()
 
-        # print(self)
-
         self.list_derivations = {}
         self.vose_samplers = {}
 
         for S in self.rules:
-            # self.list_derivations[S] = list(self.rules[S]).sort(key=lambda x: x[1])
             self.list_derivations[S] = sorted(self.rules[S], key=lambda P: self.rules[S][P][1])
-            # self.rules[S] = {P: (args_P, w) for P, (args_P, w) in ....}
-            # HERE WE NEED TO SORT RULES[S]...
-
             self.vose_samplers[S] = vose.Sampler(np.array([self.rules[S][P][1] for P in self.list_derivations[S]]))
-
 
     def return_unique(self, P):
         '''
@@ -148,36 +141,40 @@ class PCFG:
         '''
         populates the dictionary max_probability
         '''
+
+        TO DO: when adding a program P, update its P.probability[S]
+
         for S in reversed(self.rules):
             # print("\n\n###########\nLooking at S", S)
-            best_program = None
-            best_probability = 0
+            best_program = None, 0
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
                 # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
-                if len(args_P) == 0:
-                    P_unique = self.return_unique(P)
-                    P_unique.probability = w
-                    self.max_probability[(S,P)] = P
-                else:
-                    probability = \
-                    w * prod([self.max_probability[arg].probability for arg in args_P])
-                    new_program = Function(function = P, 
-                        arguments = [self.max_probability[arg] for arg in args_P], 
-                        type_ = S[0],
-                        probability = probability)
-                    new_program = self.return_unique(new_program)
-                    self.max_probability[(S,P)] = new_program
+                P_unique = self.return_unique(P)
+                # we want to have a unique representation of the program
+                # so that it is evaluated only once
+                # the same program may appear in different places of max_probability
+                # with different probabilities
 
-                # print("We found: ", self.max_probability[(S,P)], self.max_probability[(S,P)].probability)
-                if self.max_probability[(S,P)].probability > best_probability:
+                if len(args_P) == 0:
+                    # print("max_probability[({},{})] = ({}, {})".format(S,P,P,w))
+                    self.max_probability[(S,P)] = (P, w)
+
+                else:
+                    new_program = Function(function = P, 
+                        arguments = [self.max_probability[arg][0] for arg in args_P], 
+                        type_ = S[0])
+                    new_program = self.return_unique(new_program)
+                    probability = \
+                    w * prod([self.max_probability[arg][1] for arg in args_P])
+                    # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
+                    self.max_probability[(S,P)] = (new_program, probability)
+
+                if self.max_probability[(S,P)][1] > best_program[1]:
                     best_program = self.max_probability[(S,P)]
-                    best_probability = self.max_probability[(S,P)].probability
-                # print("Best program for S after P: ", best_program, best_probability)
                 
-            # print("\nNow updating best program for S: ", S)
-            # print("best_program", best_program, best_probability)
-            assert(best_probability > 0)
+            assert(best_program[1] > 0)
+            # print("max_probability[{}] = {}".format(S,best_program))
             self.max_probability[S] = best_program
 
     def __getstate__(self):
