@@ -153,5 +153,6 @@ class heap_search_object:
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                             probability *= arg.probability[S3]
                         heappush(self.heaps[S], (-probability, new_program))
+                        new_program.probability[S] = probability
 
         return succ

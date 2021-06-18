@@ -142,7 +142,7 @@ class PCFG:
         populates the dictionary max_probability
         '''
 
-        TO DO: when adding a program P, update its P.probability[S]
+        #TO DO: when adding a program P, update its P.probability[S]
 
         for S in reversed(self.rules):
             # print("\n\n###########\nLooking at S", S)
@@ -159,6 +159,7 @@ class PCFG:
                 if len(args_P) == 0:
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,P,w))
                     self.max_probability[(S,P)] = (P, w)
+                    P.probability[S] = w
 
                 else:
                     new_program = Function(function = P, 
@@ -169,6 +170,7 @@ class PCFG:
                     w * prod([self.max_probability[arg][1] for arg in args_P])
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
                     self.max_probability[(S,P)] = (new_program, probability)
+                    new_program.probability[S] = probability
 
                 if self.max_probability[(S,P)][1] > best_program[1]:
                     best_program = self.max_probability[(S,P)]
