@@ -2,12 +2,13 @@ import unittest
 import dreamcoder.PCFG.dsl as dsl
 from dreamcoder.PCFG.DSL.deepcoder import *
 
+deepcoder = dsl.DSL(semantics, primitive_types)
 # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 # deepcoder_PCFG_t.put_random_weights(alpha = .7)
+t = Arrow(List(INT),List(INT))
+deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
 
-# deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
-
-# from dreamcoder.PCFG.Algorithms.heap_search import *
+from dreamcoder.PCFG.Algorithms.heap_search import *
 # from dreamcoder.PCFG.Algorithms.a_star import *
 # from dreamcoder.PCFG.Algorithms.threshold_search import *
 # from dreamcoder.PCFG.Algorithms.dfs import *
