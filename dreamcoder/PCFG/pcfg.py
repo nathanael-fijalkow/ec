@@ -249,6 +249,6 @@ class PCFG:
             F = P.function
             args_P = P.arguments
             probability = self.rules[S][F][1]
-            for i, arg in enumerate(args):
+            for i, arg in enumerate(args_P):
                 probability *= self.probability_program(self.rules[S][F][0][i], arg)
             return probability
