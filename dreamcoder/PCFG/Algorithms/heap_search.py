@@ -53,8 +53,8 @@ class heap_search_object:
 
         # print(self.G)
 
-        TO DO: update with the convention: for a program P,
-        P.probability[S] is the probability that P is generated from S
+        # TO DO: update with the convention: for a program P,
+        # P.probability[S] is the probability that P is generated from S
 
         # Initialisation heaps
         ## 1. add P(max(S1),max(S2), ...) to self.heaps[S] for all S -> P(S1, S2, ...) 
