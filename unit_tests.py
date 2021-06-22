@@ -6,7 +6,7 @@ deepcoder = dsl.DSL(semantics, primitive_types)
 # deepcoder_PCFG_t = deepcoder.DSL_to_Uniform_PCFG(t)
 # deepcoder_PCFG_t.put_random_weights(alpha = .7)
 t = Arrow(List(INT),List(INT))
-deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7)
+deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = 0.7)
 
 from dreamcoder.PCFG.Algorithms.heap_search import *
 # from dreamcoder.PCFG.Algorithms.a_star import *
@@ -120,48 +120,50 @@ class TestSum(unittest.TestCase):
         #                     self.assertTrue(id(P) == id(P2))
 
 
-#     def test_completeness_heap_search(self):
-#         '''
-#         Check if heap_search does not miss any program and if it outputs programs in decreasing order.
-#         '''
+    def test_completeness_heap_search(self):
+        '''
+        Check if heap_search does not miss any program and if it outputs programs in decreasing order.
+        '''
 
-#         N = 1_000_000 # number of programs to be genetared by heap search
-#         K = 10_000 # number of programs to be sampled from the PCFG
+        N = 1_000_000 # number of programs to be genetared by heap search
+        K = 10_000 # number of programs to be sampled from the PCFG
 
-#         gen_sampling = deepcoder_PCFG_t.sampling()
-#         gen_heap_search = heap_search(deepcoder_PCFG_t, deepcoder, {})
-#         seen_sampling = set()
-#         seen_heaps = set()
+        gen_sampling = deepcoder_PCFG_t.sampling()
+        gen_heap_search = heap_search(deepcoder_PCFG_t)
+        seen_sampling = set()
+        seen_heaps = set()
 
-#         proba_current = 1
-#         for i in range(N):
-#             if (100*i//N) != (100*(i+1)//N):
-#                 print(100*(i+1)//N, " %")
-#             t = next(gen_heap_search)
-#             #print(t)
-#             # proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
-#             proba_t = t.probability
-#             # self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
-#             self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
+        proba_current = 1
+        for i in range(N):
+            if (100*i//N) != (100*(i+1)//N):
+                print(100*(i+1)//N, " %")
+            t = next(gen_heap_search)
+            #print(t)
+            # proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
+            proba_t = t.probability[deepcoder_PCFG_t.start]
+            proba_t2 = deepcoder_PCFG_t.probability_program(deepcoder_PCFG_t.start, t)
+            print(proba_t, proba_t2)
+            # self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
+            self.assertLessEqual(proba_t, proba_current) # check if in decreasing order
 
-#             proba_current = proba_t
-#             seen_heaps.add(str(t))
+            proba_current = proba_t
+            seen_heaps.add(str(t))
 
-#         min_proba = proba_current
+        min_proba = proba_current
 
-#         while len(seen_sampling) < K:
-#             t = next(gen_sampling)
-#             #print(t)
-#             # t.reverse()
-#             #t = deepcoder.reconstruct_from_list(t)
-#             #proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
-#             # if proba_t > min_proba:
-#             #     seen_sampling.add(str(t))
-#             seen_sampling.add(str(t))
+        while len(seen_sampling) < K:
+            t = next(gen_sampling)
+            #print(t)
+            # t.reverse()
+            #t = deepcoder.reconstruct_from_list(t)
+            #proba_t = deepcoder_PCFG_t.proba_term(deepcoder_PCFG_t.start, t)
+            # if proba_t > min_proba:
+            #     seen_sampling.add(str(t))
+            seen_sampling.add(str(t))
 
-#         diff = seen_sampling - seen_heaps
+        diff = seen_sampling - seen_heaps
 
-#         self.assertEqual(0, len(diff))
+        self.assertEqual(0, len(diff))
 
 
 # def test_completeness_a_star(self):
