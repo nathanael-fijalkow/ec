@@ -21,68 +21,47 @@ class CFG:
         self.start = start
         self.rules = rules
 
-        self.hash_table_programs = {}
-
-        # self.rules = {}
-        # ensures that the same program is always represented by the same object
-        # for S in rules:
-        #     self.rules[S] = {}
-        #     for P in rules[S]:
-        #         assert(isinstance(P, (Variable, BasicPrimitive, New)))
-        #         P_unique = self.return_unique(P)
-        #         self.rules[S][P_unique] = [self.return_unique(arg) for arg in rules[S][P]]
-
-        stable = False
-        while(not stable):
-            stable = self.remove_non_productive(max_program_depth)
-
-        reachable = self.reachable(max_program_depth)
-
-        for S in set(self.rules):
-            if S not in reachable:
-                del self.rules[S]
-                # print("the non-terminal {} is not reachable:".format(S))
-
+        self.remove_non_productive(max_program_depth)
+        self.remove_non_reachable(max_program_depth)
+            
         # checks that all non-terminals are productive
         for S in self.rules:
+            # print("\n\n###########\nLooking at S", S)            
             assert(len(self.rules[S]) > 0)
             for P in self.rules[S]:
-                for arg in self.rules[S][P]:
+                args_P = self.rules[S][P]
+                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P)
+                for arg in args_P:
+                    # print("checking", arg)
                     assert(arg in self.rules)
 
-    def return_unique(self, P):
-        '''
-        ensures that if a program appears in several rules,
-        it is represented by the same object
-        '''
-        hash_P = P.__hash__()
-        if hash_P in self.hash_table_programs:
-            return self.hash_table_programs[hash_P]
-        else:
-            self.hash_table_programs[hash_P] = P
-            return P
-            
-    def remove_non_productive(self, max_program_depth = 4, stable = True):
+    def remove_non_productive(self, max_program_depth = 4):
         '''
         remove non-terminals which do not produce programs
         '''
-        for S in set(reversed(self.rules)):
-            for P in set(self.rules[S]):
+        new_rules = {}
+        for S in reversed(self.rules):
+            # print("\n\n###########\nLooking at S", S)            
+            for P in self.rules[S]:
                 args_P = self.rules[S][P]
-                if any([arg not in self.rules for arg in args_P]):
-                    stable = False
-                    del self.rules[S][P]
-                    # print("the rule {} from {} is non-productive".format(P,S))
-            if len(self.rules[S]) == 0:
-                stable = False
+                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P)
+                if all([arg in new_rules for arg in args_P]):
+                    if S not in new_rules:
+                        new_rules[S] = {}
+                    new_rules[S][P] = self.rules[S][P]
+                # else:
+                #     print("the rule {} from {} is non-productive".format(P,S))
+
+        for S in set(self.rules):
+            if S in new_rules:
+                self.rules[S] = new_rules[S]
+            else:
                 del self.rules[S]
                 # print("the non-terminal {} is non-productive".format(S))
 
-        return stable
-
-    def reachable(self, max_program_depth = 4):
+    def remove_non_reachable(self, max_program_depth = 4):
         '''
-        compute the set of reachable non-terminals
+        remove non-terminals which are not reachable from the initial non-terminal
         '''
         reachable = set()
         reachable.add(self.start)
@@ -94,7 +73,7 @@ class CFG:
         for i in range(max_program_depth):
             new_reach.clear()
             for S in reach:
-                for P in set(self.rules[S]):
+                for P in self.rules[S]:
                     args_P = self.rules[S][P]
                     for arg in args_P:
                         new_reach.add(arg)
@@ -102,7 +81,10 @@ class CFG:
             reach.clear()
             reach = new_reach.copy()
 
-        return reachable
+        for S in set(self.rules):
+            if S not in reachable:
+                del self.rules[S]
+                # print("the non-terminal {} is not reachable:".format(S))
 
     def __repr__(self):
         s = "Print a CFG\n"

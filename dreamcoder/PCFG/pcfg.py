@@ -39,41 +39,10 @@ class PCFG:
         self.rules = rules
         self.max_program_depth = max_program_depth
 
+        self.remove_non_productive(max_program_depth)
+        self.remove_non_reachable(max_program_depth)
+
         self.hash_table_programs = {}
-
-        # self.rules = {}
-        # ensures that the same program is always represented by the same object
-        # for S in rules:
-        #     self.rules[S] = {}
-        #     for P in rules[S]:
-        #         assert(isinstance(P, (New, Variable, BasicPrimitive)))
-        #         P_unique = self.return_unique(P)
-        #         args_P, w = rules[S][P]
-        #         self.rules[S][P_unique] = [self.return_unique(arg) for arg in args_P], w
-
-        stable = False
-        while not stable:
-            stable = self.remove_non_productive(max_program_depth)
-
-        reachable = self.reachable(max_program_depth)
-
-        for S in set(self.rules):
-            if S not in reachable:
-                del self.rules[S]
-                # print("the non-terminal {} is not reachable:".format(S))
-
-        # checks that all non-terminal are productive
-        for S in set(self.rules):
-            assert len(self.rules[S]) > 0
-            s = sum(w for (_, w) in self.rules[S].values())
-            assert s > 0
-            for P in self.rules[S]:
-                args_P, w = self.rules[S][P]
-                assert w > 0
-                self.rules[S][P] = args_P, w / s
-                for arg in args_P:
-                    assert arg in self.rules
-
         self.max_probability = {}
         self.compute_max_probability()
 
@@ -100,31 +69,34 @@ class PCFG:
             self.hash_table_programs[hash_P] = P
             return P
 
-    def remove_non_productive(self, max_program_depth=4, stable=True):
-        """
+    def remove_non_productive(self, max_program_depth = 4):
+        '''
         remove non-terminals which do not produce programs
-        """
-        for S in set(reversed(self.rules)):
-            for P in set(self.rules[S]):
+        '''
+        new_rules = {}
+        for S in reversed(self.rules):
+            # print("\n\n###########\nLooking at S", S)            
+            for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
-                if any([arg not in self.rules for arg in args_P]) or w == 0:
-                    stable = False
-                    del self.rules[S][P]
-                    # print("the rule {} from {} is non-productive".format(P,S))
-            if (
-                len(self.rules[S]) == 0
-                or sum(w for _, w in self.rules[S].values()) == 0
-            ):
-                stable = False
+                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
+                if all([arg in new_rules for arg in args_P]) and w > 0:
+                    if S not in new_rules:
+                        new_rules[S] = {}
+                    new_rules[S][P] = self.rules[S][P]
+                # else:
+                #     print("the rule {} from {} is non-productive".format(P,S))
+
+        for S in set(self.rules):
+            if S in new_rules:
+                self.rules[S] = new_rules[S]
+            else:
                 del self.rules[S]
                 # print("the non-terminal {} is non-productive".format(S))
 
-        return stable
-
-    def reachable(self, max_program_depth=4):
-        """
-        compute the set of reachable non-terminals
-        """
+    def remove_non_reachable(self, max_program_depth = 4):
+        '''
+        remove non-terminals which are not reachable from the initial non-terminal
+        '''
         reachable = set()
         reachable.add(self.start)
 
@@ -135,7 +107,7 @@ class PCFG:
         for i in range(max_program_depth):
             new_reach.clear()
             for S in reach:
-                for P in set(self.rules[S]):
+                for P in self.rules[S]:
                     args_P, _ = self.rules[S][P]
                     for arg in args_P:
                         new_reach.add(arg)
@@ -143,18 +115,20 @@ class PCFG:
             reach.clear()
             reach = new_reach.copy()
 
-        return reachable
+        for S in set(self.rules):
+            if S not in reachable:
+                del self.rules[S]
+                # print("the non-terminal {} is not reachable:".format(S))
 
     def compute_max_probability(self):
         """
         populates the dictionary max_probability
         """
-
-        # TO DO: when adding a program P, update its P.probability[S]
-
         for S in reversed(self.rules):
             # print("\n\n###########\nLooking at S", S)
-            best_program = None, 0
+            best_program = None
+            best_probability = 0
+
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
                 # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
@@ -166,27 +140,36 @@ class PCFG:
 
                 if len(args_P) == 0:
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,P,w))
-                    self.max_probability[(S, P)] = (P, w)
-                    P.probability[S] = w
+                    self.max_probability[(S, P)] = P_unique
+                    # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
+                    assert(S not in P_unique.probability)
+                    P_unique.probability[S] = w
+                    assert(P_unique.probability[S] == self.probability_program(S, P_unique))
 
                 else:
                     new_program = Function(
-                        function=P,
-                        arguments=[self.max_probability[arg][0] for arg in args_P],
-                        type_=S[0],
+                        function = P_unique,
+                        arguments = [self.max_probability[arg] for arg in args_P],
+                        type_ = S[0],
+                        probability = {}
                     )
-                    new_program = self.return_unique(new_program)
-                    probability = w * prod(
-                        [self.max_probability[arg][1] for arg in args_P]
-                    )
+                    P_unique = self.return_unique(new_program)
+                    # print(self.hash_table_programs)
+                    probability = w 
+                    for arg in args_P:
+                        probability *= self.max_probability[arg].probability[arg]
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
-                    self.max_probability[(S, P)] = (new_program, probability)
-                    new_program.probability[S] = probability
+                    self.max_probability[(S, P)] = P_unique
+                    # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
+                    assert(S not in P_unique.probability)
+                    P_unique.probability[S] = probability
+                    assert(P_unique.probability[S] == self.probability_program(S, P_unique))
 
-                if self.max_probability[(S, P)][1] > best_program[1]:
+                if self.max_probability[(S, P)].probability[S] > best_probability:
                     best_program = self.max_probability[(S, P)]
+                    best_probability = self.max_probability[(S, P)].probability[S]
 
-            assert best_program[1] > 0
+            assert best_probability > 0
             # print("max_probability[{}] = {}".format(S,best_program))
             self.max_probability[S] = best_program
 
@@ -252,3 +235,5 @@ class PCFG:
             for i, arg in enumerate(args_P):
                 probability *= self.probability_program(self.rules[S][F][0][i], arg)
             return probability
+        assert(False)
+        # print(P, P.__class__.__name__)

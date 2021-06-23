@@ -51,9 +51,6 @@ class heap_search_object:
 
         # print(self.G)
 
-        # TO DO: update with the convention: for a program P,
-        # P.probability[S] is the probability that P is generated from S
-
         # Initialisation heaps
         ## 1. add P(max(S1),max(S2), ...) to self.heaps[S] for all S -> P(S1, S2, ...) 
         for S in reversed(self.rules):
@@ -61,8 +58,7 @@ class heap_search_object:
             for P in self.rules[S]:
                 # print("####\nP", P)
                 args_P, w = self.rules[S][P]
-                program, probability = self.G.max_probability[(S,P)]
-                # print(program, probability)
+                program = self.G.max_probability[(S,P)]
  
                 hash_program = program.__hash__()
  
@@ -75,8 +71,8 @@ class heap_search_object:
                 # are represented by the same object
                 self.hash_table_global[hash_program] = program
  
-                # print("adding to the heap", program, probability)
-                heappush(self.heaps[S], (-probability, program))
+                # print("adding to the heap", program, program.probability[S])
+                heappush(self.heaps[S], (-program.probability[S], program))
 
         # for S in self.rules:
         #     print("\nheaps[", S, "] = ", self.heaps[S], "\n")
@@ -119,7 +115,7 @@ class heap_search_object:
 
         # otherwise the successor is the next element in the heap
         try:
-            probability, succ = heappop(self.heaps[S])
+            _, succ = heappop(self.heaps[S])
             # print("found succ in the heap", S, program, succ)
         except:
             succ = -1 # the heap is empty: there are no successors from S
@@ -142,7 +138,7 @@ class heap_search_object:
                     new_arguments = succ.arguments[:]
                     new_arguments[i] = succ_sub_program
 
-                    new_program = Function(F, new_arguments)
+                    new_program = Function(F, new_arguments, type_ = succ.type, probability = {})
                     hash_new_program, new_program = self.return_unique(new_program)
 
                     if hash_new_program not in self.hash_table_program[S]:

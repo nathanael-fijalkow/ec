@@ -24,10 +24,10 @@ class DSL:
         for p in primitive_types:
             if format(p) in semantics:
                 self.semantics[p] = semantics[format(p)]
-                P = BasicPrimitive(primitive = format(p), type_ = primitive_types[p])
+                P = BasicPrimitive(primitive = format(p), type_ = primitive_types[p], probability = {})
                 self.list_primitives.append(P)
             else:
-                P = New(body = p.body, type_ = primitive_types[p])
+                P = New(body = p.body, type_ = primitive_types[p], probability = {})
                 self.list_primitives.append(P)
 
     def __repr__(self):
@@ -79,9 +79,9 @@ class DSL:
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
                     if isinstance(P, New):
-                        instantiated_P = New(P.body, type_)
+                        instantiated_P = New(P.body, type_, probability = {})
                     if isinstance(P, BasicPrimitive):
-                        instantiated_P = BasicPrimitive(P.primitive, type_)
+                        instantiated_P = BasicPrimitive(P.primitive, type_, probability = {})
                     self.list_primitives.append(instantiated_P)
                 self.list_primitives.remove(P)
 
@@ -127,7 +127,7 @@ class DSL:
             if depth < max_program_depth and depth >= min_variable_depth:
                 for i in range(len(args)):
                     if current_type == args[i]:
-                        var = Variable(i, current_type)
+                        var = Variable(i, current_type, probability = {})
                         rules[non_terminal][var] = []
 
             if depth == max_program_depth - 1:

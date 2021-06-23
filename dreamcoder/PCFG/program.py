@@ -47,20 +47,21 @@ class Program:
     def __le__(self, other): False
 
     def __hash__(self):
-        # return hash(str(self) + str(self.type))
-        if isinstance(self, Variable):
-            return self.variable + 1
-        if isinstance(self, Function):
-            return id(self.function) + sum([id(arg) for arg in self.arguments])
-        if isinstance(self, Lambda):
-            return id(self.body)
-        if isinstance(self, New):
-            return id(self.body) + self.type.__hash__()
-        if isinstance(self, BasicPrimitive):
-            return hash(self.primitive) + self.type.__hash__()
-        if self == None:
-            return 0
-        assert(False)
+        # print(self, hash(str(self) + str(self.type)))
+        return hash(str(self) + str(self.type))
+        # if isinstance(self, Variable):
+        #     return self.variable + 1
+        # if isinstance(self, Function):
+        #     return id(self.function) + sum([id(arg) for arg in self.arguments])
+        # if isinstance(self, Lambda):
+        #     return id(self.body)
+        # if isinstance(self, New):
+        #     return id(self.body) + self.type.__hash__()
+        # if isinstance(self, BasicPrimitive):
+        #     return hash(self.primitive) + self.type.__hash__()
+        # if self == None:
+        #     return 0
+        # assert(False)
 
 class Variable(Program):
     def __init__(self, variable, type_ = UnknownType(), probability = {}):
