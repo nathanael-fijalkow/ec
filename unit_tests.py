@@ -10,11 +10,13 @@ from dreamcoder.PCFG.DSL.deepcoder import *
 
 from dreamcoder.PCFG.Algorithms.heap_search import *
 from dreamcoder.PCFG.Algorithms.a_star import *
+from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
 # from dreamcoder.PCFG.Algorithms.threshold_search import *
 # from dreamcoder.PCFG.Algorithms.dfs import *
 
 from scipy.stats import chisquare
+from math import sqrt
 
 
 class TestSum(unittest.TestCase):
@@ -388,6 +390,41 @@ class TestSum(unittest.TestCase):
         self.assertLessEqual(alpha,p_value)
         # print(chisquare(f_obs, f_exp = f_exp))
 # # TODO: test sqrt(G)
+
+
+    def test_sqrt_sampling(self):
+        '''
+        test if sqrt_sampling algorithm samples according to the correct probabilities
+        '''
+        K = 100_000 # number of programs sampled
+        L = 100 # we test the probabilities of the first L programs are ok
+        alpha = 0.05 # threshold to reject the "H0 hypothesis"
+
+        deepcoder = dsl.DSL(semantics, primitive_types)
+        type_request = Arrow(List(INT), List(INT))
+        toy_PCFG = deepcoder.DSL_to_Random_PCFG(type_request, alpha=0.7)
+
+        gen_heap_search = heap_search(toy_PCFG) # to generate the L first programs
+        gen_sqrt_sampling = sqrt_sampling(toy_PCFG) # generator for sqrt sampling
+
+        count = {}
+        for _ in range(L):
+            program = next(gen_heap_search)
+            count[str(program)] = [toy_PCFG.probability_program(toy_PCFG.start,program),0]  # expected frequencies versus observed frequencies 
+        i = 0
+        while i < K:
+            if (100*i//K) != (100*(i+1)//K):
+                print(100*(i+1)//K, " %")
+            program = next(gen_sqrt_sampling)
+            program_hashed = str(program)
+            if program_hashed in count:
+                count[program_hashed][1]+=1
+                i+=1
+        ratios = []
+        for p in count:
+            ratios.append(count[p][1]/sqrt(count[p][0]))
+        print(ratios)
+
 
 
 if __name__ == "__main__":
