@@ -410,7 +410,7 @@ class TestSum(unittest.TestCase):
         count = {}
         for _ in range(L):
             program = next(gen_heap_search)
-            count[str(program)] = [toy_PCFG.probability_program(toy_PCFG.start,program),0]  # expected frequencies versus observed frequencies 
+            count[str(program)] = [K*toy_PCFG.probability_program(toy_PCFG.start,program),0]  # expected frequencies versus observed frequencies 
         i = 0
         while i < K:
             if (100*i//K) != (100*(i+1)//K):
