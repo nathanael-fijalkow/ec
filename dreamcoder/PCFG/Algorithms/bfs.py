@@ -11,7 +11,7 @@ def bfs(G : PCFG, beam_width = 50000):
     '''
     # We reverse the rules: they should be non-decreasing
     for S in G.rules:
-        G.rules[S].sort(key=lambda x: x[2])
+        sorted(G.rules[S], key=lambda x: G.rules[S][x][1])
 
     frontier = []
     initial_non_terminals = deque()
@@ -32,11 +32,12 @@ def bfs(G : PCFG, beam_width = 50000):
                     yield partial_program
                 else:
                     S = non_terminals.pop()
-                    for F, args_F, w in G.rules[S]:
-                        new_partial_program = (F, partial_program)
+                    for P in G.rules[S]:
+                        args_P, w = G.rules[S][P]
+                        new_partial_program = (P, partial_program)
                         new_non_terminals = non_terminals.copy()
                         new_probability = probability * w
-                        for arg in args_F:
+                        for arg in args_P:
                             new_non_terminals.append(arg)
                         if len(new_frontier) <= beam_width:
                             heappush(new_frontier, (new_probability, (new_partial_program, new_non_terminals)))

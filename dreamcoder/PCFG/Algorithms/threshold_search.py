@@ -25,12 +25,13 @@ def bounded_threshold(G : PCFG, threshold = 0.0001):
             yield partial_program
         else:
             S = non_terminals.pop()
-            for F, args_F, w in G.rules[S]:
+            for P in G.rules[S]:
+                args_P, w = G.rules[S][P]
                 new_probability = probability * w
                 if new_probability > threshold:
-                    new_partial_program = (F, partial_program)
+                    new_partial_program = (P, partial_program)
                     new_non_terminals = non_terminals.copy()
-                    for arg in args_F:
+                    for arg in args_P:
                         new_non_terminals.append(arg)
                     frontier.append((new_partial_program, new_non_terminals, new_probability))
 
