@@ -5,9 +5,10 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8,<3.10"
 dill = "^0.3.4"
 vose = {git = "https://github.com/MaxHalford/vose"}
+scipy = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"

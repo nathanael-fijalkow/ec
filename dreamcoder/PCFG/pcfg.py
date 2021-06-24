@@ -205,8 +205,8 @@ class PCFG:
         Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
         then w1 >= w2
         """
-        for S in self.rules:
-            self.rules[S].sort(key=lambda x: x[1])
+        # for S in self.rules:
+        #     self.rules[S].sort(key=lambda x: x[1])
 
         while True:
             yield self.sample_program(self.start)

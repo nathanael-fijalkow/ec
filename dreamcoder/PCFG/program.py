@@ -3,48 +3,83 @@ from dreamcoder.PCFG.cons_list import *
 
 # dictionary { number of environment : value }
 
-# environment: a cons list 
+# environment: a cons list
 # list = None | (value, list)
 
 # probability: a dictionary {S : probability}
 # such that P.probability[S] is the probability that P is generated
 # from the non-terminal S
 
-class Program:
-    '''
-    Object that represents a program: a lambda term with basic primitives
-    '''
-    def __eq__(self, other):
-        return isinstance(self,Program) and isinstance(other,Program) \
-        and self.type.__eq__(other.type) and self.typeless_eq(other)
 
-    def typeless_eq(self, other, verbose = False):
+class Program:
+    """
+    Object that represents a program: a lambda term with basic primitives
+    """
+
+    def __eq__(self, other):
+        return (
+            isinstance(self, Program)
+            and isinstance(other, Program)
+            and self.type.__eq__(other.type)
+            and self.typeless_eq(other)
+        )
+
+    def typeless_eq(self, other, verbose=False):
         if verbose:
-            print("checking:\n    1:{}\nclass: {}\n    2:{}\nclass: {}".format(self, self.__class__.__name__, other, other.__class__.__name__,))
-        b = isinstance(self,Program) and isinstance(other,Program)
-        b2 = (isinstance(self,Variable) \
-        and isinstance(other,Variable) \
-        and self.variable == other.variable)
-        b2 = b2 or (isinstance(self,Function) \
-            and isinstance(other,Function) \
-            and self.function.typeless_eq(other.function, verbose) \
-            and len(self.arguments) == len(other.arguments) \
-            and all([x.typeless_eq(y, verbose) for x,y in zip(self.arguments, other.arguments)]))
-        b2 = b2 or (isinstance(self,Lambda) \
-            and isinstance(other,Lambda) \
-            and self.body.typeless_eq(other.body))
-        b2 = b2 or (isinstance(self,BasicPrimitive) \
-            and isinstance(other,BasicPrimitive) \
-            and self.primitive == other.primitive)
-        b2 = b2 or (isinstance(self,New) \
-            and isinstance(other,New) \
-            and (self.body).typeless_eq(other.body, verbose))
+            print(
+                "checking:\n    1:{}\nclass: {}\n    2:{}\nclass: {}".format(
+                    self,
+                    self.__class__.__name__,
+                    other,
+                    other.__class__.__name__,
+                )
+            )
+        b = isinstance(self, Program) and isinstance(other, Program)
+        b2 = (
+            isinstance(self, Variable)
+            and isinstance(other, Variable)
+            and self.variable == other.variable
+        )
+        b2 = b2 or (
+            isinstance(self, Function)
+            and isinstance(other, Function)
+            and self.function.typeless_eq(other.function, verbose)
+            and len(self.arguments) == len(other.arguments)
+            and all(
+                [
+                    x.typeless_eq(y, verbose)
+                    for x, y in zip(self.arguments, other.arguments)
+                ]
+            )
+        )
+        b2 = b2 or (
+            isinstance(self, Lambda)
+            and isinstance(other, Lambda)
+            and self.body.typeless_eq(other.body)
+        )
+        b2 = b2 or (
+            isinstance(self, BasicPrimitive)
+            and isinstance(other, BasicPrimitive)
+            and self.primitive == other.primitive
+        )
+        b2 = b2 or (
+            isinstance(self, New)
+            and isinstance(other, New)
+            and (self.body).typeless_eq(other.body, verbose)
+        )
         return b and b2
 
-    def __gt__(self, other): True
-    def __lt__(self, other): False
-    def __ge__(self, other): True
-    def __le__(self, other): False
+    def __gt__(self, other):
+        True
+
+    def __lt__(self, other):
+        False
+
+    def __ge__(self, other):
+        True
+
+    def __le__(self, other):
+        False
 
     def __hash__(self):
         # print(self, hash(str(self) + str(self.type)))
@@ -63,12 +98,13 @@ class Program:
         #     return 0
         # assert(False)
 
+
 class Variable(Program):
-    def __init__(self, variable, type_ = UnknownType(), probability = {}):
+    def __init__(self, variable, type_=UnknownType(), probability={}):
         # self.variable is a natural number
-        assert(isinstance(variable,int))
+        assert isinstance(variable, int)
         self.variable = variable
-        assert(isinstance(type_,Type))
+        assert isinstance(type_, Type)
         self.type = type_
 
         self.probability = probability
@@ -87,11 +123,12 @@ class Variable(Program):
         except (IndexError, ValueError, TypeError):
             return None
 
+
 class Function(Program):
-    def __init__(self, function, arguments, type_ = UnknownType(), probability = {}):
-        assert(isinstance(function, Program))
+    def __init__(self, function, arguments, type_=UnknownType(), probability={}):
+        assert isinstance(function, Program)
         self.function = function
-        assert(isinstance(arguments, list))
+        assert isinstance(arguments, list)
         self.arguments = arguments
         self.type = type_
 
@@ -127,11 +164,12 @@ class Function(Program):
         except (IndexError, ValueError, TypeError):
             return None
 
+
 class Lambda(Program):
-    def __init__(self, body, type_ = UnknownType(), probability = {}):
-        assert(isinstance(body,Program))
+    def __init__(self, body, type_=UnknownType(), probability={}):
+        assert isinstance(body, Program)
         self.body = body
-        assert(isinstance(type_,Type))
+        assert isinstance(type_, Type)
         self.type = type_
 
         self.probability = probability
@@ -149,11 +187,12 @@ class Lambda(Program):
         except (IndexError, ValueError, TypeError):
             return None
 
+
 class BasicPrimitive(Program):
-    def __init__(self, primitive, type_ = UnknownType(), probability = {}):
-        assert(isinstance(primitive,str))
+    def __init__(self, primitive, type_=UnknownType(), probability={}):
+        assert isinstance(primitive, str)
         self.primitive = primitive
-        assert(isinstance(type_,Type))
+        assert isinstance(type_, Type)
         self.type = type_
 
         self.probability = probability
@@ -165,8 +204,9 @@ class BasicPrimitive(Program):
     def eval(self, dsl, environment, i):
         return dsl.semantics[self.primitive]
 
+
 class New(Program):
-    def __init__(self, body, type_ = UnknownType(), probability = {}):
+    def __init__(self, body, type_=UnknownType(), probability={}):
         self.body = body
         self.type = type_
 
@@ -185,8 +225,6 @@ class New(Program):
             return None
 
 
-
-
 def reconstruct_from_list(program_as_list, target_type):
     # print("program_as_list, target_type", program_as_list, target_type)
     if len(program_as_list) == 1:
@@ -197,12 +235,15 @@ def reconstruct_from_list(program_as_list, target_type):
             list_arguments = P.type.ends_with(target_type)
             arguments = [None] * len(list_arguments)
             for i in range(len(list_arguments)):
-                arguments[len(list_arguments)-i-1] = \
-                reconstruct_from_list(program_as_list, list_arguments[len(list_arguments)-i-1])
+                arguments[len(list_arguments) - i - 1] = reconstruct_from_list(
+                    program_as_list, list_arguments[len(list_arguments) - i - 1]
+                )
             return Function(P, arguments)
         if isinstance(P, Variable):
             return P
-        assert(False)
+        assert False
+
+
 
 def reconstruct_from_compressed(program, target_type):
     program_as_list = []
@@ -211,7 +252,8 @@ def reconstruct_from_compressed(program, target_type):
     # print(program_as_list)
     return reconstruct_from_list(program_as_list, target_type)
 
-def list_from_compressed(program, program_as_list = []):
+
+def list_from_compressed(program, program_as_list=[]):
     (P, sub_program) = program
     if sub_program:
         list_from_compressed(sub_program, program_as_list)
