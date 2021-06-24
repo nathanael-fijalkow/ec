@@ -126,7 +126,7 @@ class TestSum(unittest.TestCase):
         for S in toy_PCFG.rules:
             max_program = toy_PCFG.max_probability[S]
             self.assertTrue(
-                max_program.probability[S]
+                max_program.probability[(id(toy_PCFG),S)]
                 == toy_PCFG.probability_program(S, max_program)
             )
 
@@ -141,13 +141,13 @@ class TestSum(unittest.TestCase):
         for S in deepcoder_PCFG.rules:
             max_program = deepcoder_PCFG.max_probability[S]
             self.assertTrue(
-                deepcoder_PCFG.max_probability[S].probability[S]
+                deepcoder_PCFG.max_probability[S].probability[(id(deepcoder_PCFG),S)]
                 == deepcoder_PCFG.probability_program(S, max_program)
             )
             for P in deepcoder_PCFG.rules[S]:
                 max_program = deepcoder_PCFG.max_probability[(S, P)]
                 self.assertTrue(
-                    deepcoder_PCFG.max_probability[(S, P)].probability[S]
+                    deepcoder_PCFG.max_probability[(S, P)].probability[(id(deepcoder_PCFG),S)]
                     == deepcoder_PCFG.probability_program(S, max_program)
                 )
 
@@ -173,9 +173,9 @@ class TestSum(unittest.TestCase):
             if (100 * i // N) != (100 * (i + 1) // N):
                 print(100 * (i + 1) // N, " %")
             program = next(gen_heap_search)
-            new_probability = program.probability[toy_PCFG.start]
+            new_probability = program.probability[(id(toy_PCFG),toy_PCFG.start)]
             self.assertTrue(
-                program.probability[toy_PCFG.start]
+                program.probability[(id(toy_PCFG),toy_PCFG.start)]
                 == toy_PCFG.probability_program(toy_PCFG.start, program)
             )
             self.assertLessEqual(new_probability, current_probability)
@@ -396,7 +396,7 @@ class TestSum(unittest.TestCase):
         '''
         test if sqrt_sampling algorithm samples according to the correct probabilities
         '''
-        K = 100_000 # number of programs sampled
+        K = 10_000 # number of programs sampled
         L = 100 # we test the probabilities of the first L programs are ok
         alpha = 0.05 # threshold to reject the "H0 hypothesis"
 
@@ -410,7 +410,7 @@ class TestSum(unittest.TestCase):
         count = {}
         for _ in range(L):
             program = next(gen_heap_search)
-            count[str(program)] = [K*toy_PCFG.probability_program(toy_PCFG.start,program),0]  # expected frequencies versus observed frequencies 
+            count[str(program)] = [K*sqrt(toy_PCFG.probability_program(toy_PCFG.start,program)),0]  # expected frequencies versus observed frequencies 
         i = 0
         while i < K:
             if (100*i//K) != (100*(i+1)//K):
@@ -422,8 +422,9 @@ class TestSum(unittest.TestCase):
                 i+=1
         ratios = []
         for p in count:
-            ratios.append(count[p][1]/sqrt(count[p][0]))
-        print(ratios)
+            ratios.append(count[p][1]/count[p][0])
+        # TODO: do a real statistical test on this; we must find what it the theoretical law and take the p-value
+        print("ratios probability given by sqrt sampling divided by sqrt(probability program)  :", ratios)
 
 
 

@@ -142,9 +142,9 @@ class PCFG:
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,P,w))
                     self.max_probability[(S, P)] = P_unique
                     # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
-                    assert(S not in P_unique.probability)
-                    P_unique.probability[S] = w
-                    assert(P_unique.probability[S] == self.probability_program(S, P_unique))
+                    # assert(S not in P_unique.probability)
+                    P_unique.probability[(id(self), S)] = w
+                    assert(P_unique.probability[(id(self), S)] == self.probability_program(S, P_unique))
 
                 else:
                     new_program = Function(
@@ -157,17 +157,17 @@ class PCFG:
                     # print(self.hash_table_programs)
                     probability = w 
                     for arg in args_P:
-                        probability *= self.max_probability[arg].probability[arg]
+                        probability *= self.max_probability[arg].probability[(id(self),arg)]
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
                     self.max_probability[(S, P)] = P_unique
                     # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
-                    assert(S not in P_unique.probability)
-                    P_unique.probability[S] = probability
-                    assert(P_unique.probability[S] == self.probability_program(S, P_unique))
+                    assert((id(self), S) not in P_unique.probability)
+                    P_unique.probability[(id(self), S)] = probability
+                    assert(P_unique.probability[(id(self), S)] == self.probability_program(S, P_unique))
 
-                if self.max_probability[(S, P)].probability[S] > best_probability:
+                if self.max_probability[(S, P)].probability[(id(self),S)] > best_probability:
                     best_program = self.max_probability[(S, P)]
-                    best_probability = self.max_probability[(S, P)].probability[S]
+                    best_probability = self.max_probability[(S, P)].probability[(id(self),S)]
 
             assert best_probability > 0
             # print("max_probability[{}] = {}".format(S,best_program))
