@@ -270,7 +270,7 @@ class TestSum(unittest.TestCase):
 
     def test_threshold_search(self):
         """
-        Test if threshold search does not miss any program and output programs above the given threshold
+        Test if threshold search does not miss any program and outputs programs above the given threshold
         """
 
         deepcoder = dsl.DSL(semantics, primitive_types)
@@ -293,13 +293,13 @@ class TestSum(unittest.TestCase):
                 seen_threshold.add(str(program))
             except StopIteration:
                 break
-        K = len(seen_threshold) // 10
+        K = len(seen_threshold) // 5
 
-        S = toy_PCFG.sampling()
+        gen_sampling = toy_PCFG.sampling()
 
         seen_sampling = set()
         while len(seen_sampling) < K:
-            program = next(S)
+            program = next(gen_sampling)
             proba_t = toy_PCFG.probability_program(toy_PCFG.start, program)
             if proba_t >= threshold:
                 seen_sampling.add(str(program))
