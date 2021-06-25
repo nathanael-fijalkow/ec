@@ -7,8 +7,9 @@ from collections import deque
 import copy
 import time
 
+
 class DSL:
-    '''
+    """
     Object that represents a domain specific language
 
     list_primitives: a list of primitives, either BasicPrimitive or New
@@ -16,7 +17,8 @@ class DSL:
     semantics: a dictionary of the form {P : f}
     mapping a program P to its semantics f
     for P a BasicPrimitive
-    '''
+    """
+
     def __init__(self, semantics, primitive_types):
         self.list_primitives = []
         self.semantics = {}
@@ -24,10 +26,12 @@ class DSL:
         for p in primitive_types:
             if format(p) in semantics:
                 self.semantics[p] = semantics[format(p)]
-                P = BasicPrimitive(primitive = format(p), type_ = primitive_types[p], probability = {})
+                P = BasicPrimitive(
+                    primitive=format(p), type_=primitive_types[p], probability={}
+                )
                 self.list_primitives.append(P)
             else:
-                P = New(body = p.body, type_ = primitive_types[p], probability = {})
+                P = New(body=p.body, type_=primitive_types[p], probability={})
                 self.list_primitives.append(P)
 
     def __repr__(self):
@@ -36,7 +40,7 @@ class DSL:
             s = s + "{}: {}\n".format(P, P.type)
         return s
 
-    def instantiate_polymorphic_types(self, upper_bound_type_size = 10):
+    def instantiate_polymorphic_types(self, upper_bound_type_size=10):
         set_basic_types = set()
         for P in self.list_primitives:
             set_basic_types_P, set_polymorphic_types_P = P.type.decompose_type()
@@ -61,9 +65,9 @@ class DSL:
         new_primitive_types = {}
 
         for P in self.list_primitives:
-            assert(isinstance(P, (New, BasicPrimitive)))
+            assert isinstance(P, (New, BasicPrimitive))
             type_P = P.type
-            set_basic_types_P,set_polymorphic_types_P = type_P.decompose_type()
+            set_basic_types_P, set_polymorphic_types_P = type_P.decompose_type()
             if set_polymorphic_types_P:
                 set_instantiated_types = set()
                 set_instantiated_types.add(type_P)
@@ -79,22 +83,26 @@ class DSL:
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
                     if isinstance(P, New):
-                        instantiated_P = New(P.body, type_, probability = {})
+                        instantiated_P = New(P.body, type_, probability={})
                     if isinstance(P, BasicPrimitive):
-                        instantiated_P = BasicPrimitive(P.primitive, type_, probability = {})
+                        instantiated_P = BasicPrimitive(
+                            P.primitive, type_, probability={}
+                        )
                     self.list_primitives.append(instantiated_P)
                 self.list_primitives.remove(P)
 
-    def DSL_to_CFG(self, 
-        type_request, 
-        upper_bound_type_size = 10, 
-        max_program_depth = 4,
-        min_variable_depth = 1,
-        n_gram = 1):
-        '''
+    def DSL_to_CFG(
+        self,
+        type_request,
+        upper_bound_type_size=10,
+        max_program_depth=4,
+        min_variable_depth=1,
+        n_gram=1,
+    ):
+        """
         Constructs a CFG from a DSL imposing bounds on size of the types
         and on the maximum program depth
-        '''
+        """
         self.instantiate_polymorphic_types(upper_bound_type_size)
 
         return_type = type_request.returns()
@@ -127,7 +135,7 @@ class DSL:
             if depth < max_program_depth and depth >= min_variable_depth:
                 for i in range(len(args)):
                     if current_type == args[i]:
-                        var = Variable(i, current_type, probability = {})
+                        var = Variable(i, current_type, probability={})
                         rules[non_terminal][var] = []
 
             if depth == max_program_depth - 1:
@@ -145,64 +153,81 @@ class DSL:
                         decorated_arguments_P = []
                         for i, arg in enumerate(arguments_P):
                             new_context = context.copy()
-                            new_context = [(P,i)] + new_context
-                            if len(new_context) > n_gram: new_context.pop()
-                            decorated_arguments_P.append(repr(arg, new_context, depth + 1))
+                            new_context = [(P, i)] + new_context
+                            if len(new_context) > n_gram:
+                                new_context.pop()
+                            decorated_arguments_P.append(
+                                repr(arg, new_context, depth + 1)
+                            )
                             if (arg, new_context, depth + 1) not in list_to_be_treated:
-                                list_to_be_treated.appendleft((arg, new_context, depth + 1))
+                                list_to_be_treated.appendleft(
+                                    (arg, new_context, depth + 1)
+                                )
 
                         rules[non_terminal][P] = decorated_arguments_P
 
         # print(rules)
-        return CFG(start = (return_type, None, 0), 
-            rules = rules, 
-            max_program_depth = max_program_depth)
+        return CFG(
+            start=(return_type, None, 0),
+            rules=rules,
+            max_program_depth=max_program_depth,
+        )
 
-    def DSL_to_Uniform_PCFG(self, 
-        type_request, 
-        upper_bound_type_size = 10, 
-        max_program_depth = 4,
-        min_variable_depth = 1,
-        n_gram = 1):
-        CFG = self.DSL_to_CFG(type_request, 
-            upper_bound_type_size, 
-            max_program_depth, 
-            min_variable_depth, 
-            n_gram)
+    def DSL_to_Uniform_PCFG(
+        self,
+        type_request,
+        upper_bound_type_size=10,
+        max_program_depth=4,
+        min_variable_depth=1,
+        n_gram=1,
+    ):
+        CFG = self.DSL_to_CFG(
+            type_request,
+            upper_bound_type_size,
+            max_program_depth,
+            min_variable_depth,
+            n_gram,
+        )
         augmented_rules = {}
         for S in CFG.rules:
             augmented_rules[S] = {}
             p = len(CFG.rules[S])
             for P in CFG.rules[S]:
                 augmented_rules[S][P] = (CFG.rules[S][P], 1 / p)
-        return PCFG(start = CFG.start, 
-            rules = augmented_rules, 
-            max_program_depth = max_program_depth)
+        return PCFG(
+            start=CFG.start, rules=augmented_rules, max_program_depth=max_program_depth
+        )
 
-    def DSL_to_Random_PCFG(self, 
-        type_request, 
-        upper_bound_type_size = 10, 
-        max_program_depth = 4,
-        min_variable_depth = 1,
-        n_gram = 1,
-        alpha = 0.7):
-        CFG = self.DSL_to_CFG(type_request, 
-            upper_bound_type_size, 
-            max_program_depth, 
-            min_variable_depth, 
-            n_gram)
+    def DSL_to_Random_PCFG(
+        self,
+        type_request,
+        upper_bound_type_size=10,
+        max_program_depth=4,
+        min_variable_depth=1,
+        n_gram=1,
+        alpha=0.7,
+    ):
+        CFG = self.DSL_to_CFG(
+            type_request,
+            upper_bound_type_size,
+            max_program_depth,
+            min_variable_depth,
+            n_gram,
+        )
         new_rules = {}
         for S in CFG.rules:
             out_degree = len(CFG.rules[S])
             # weights with alpha-exponential decrease
-            weights = [random.random()*(alpha**i) for i in range(out_degree)] 
+            weights = [random.random() * (alpha ** i) for i in range(out_degree)]
             s = sum(weights)
             # normalization
-            weights = [w / s for w in weights] 
-            random_permutation = list(np.random.permutation([i for i in range(out_degree)]))
+            weights = [w / s for w in weights]
+            random_permutation = list(
+                np.random.permutation([i for i in range(out_degree)])
+            )
             new_rules[S] = {}
             for i, P in enumerate(CFG.rules[S]):
                 new_rules[S][P] = (CFG.rules[S][P], weights[random_permutation[i]])
-        return PCFG(start = CFG.start, 
-            rules = new_rules, 
-            max_program_depth = max_program_depth)
+        return PCFG(
+            start=CFG.start, rules=new_rules, max_program_depth=max_program_depth
+        )

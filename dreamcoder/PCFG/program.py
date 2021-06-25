@@ -82,21 +82,21 @@ class Program:
         False
 
     def __hash__(self):
-        # print(self, hash(str(self) + str(self.type)))
-        return hash(str(self) + str(self.type))
-        # if isinstance(self, Variable):
-        #     return self.variable + 1
-        # if isinstance(self, Function):
-        #     return id(self.function) + sum([id(arg) for arg in self.arguments])
-        # if isinstance(self, Lambda):
-        #     return id(self.body)
-        # if isinstance(self, New):
-        #     return id(self.body) + self.type.__hash__()
-        # if isinstance(self, BasicPrimitive):
-        #     return hash(self.primitive) + self.type.__hash__()
-        # if self == None:
-        #     return 0
-        # assert(False)
+        if isinstance(self, Function):
+            return hash(
+                self.function.primitive + str([id(arg) for arg in self.arguments])
+            )
+        if isinstance(self, Variable):
+            return self.variable
+        if isinstance(self, (Lambda, New)):
+            # This has never been tested with our current grammars
+            return hash(str(self.body)) + self.type.__hash__()
+        if isinstance(self, BasicPrimitive):
+            return hash(self.primitive) + self.type.__hash__()
+        if self == None:
+            return 0
+        assert False
+        # return hash(str(self) + str(self.type)) # trivial hash
 
 
 class Variable(Program):
@@ -242,7 +242,6 @@ def reconstruct_from_list(program_as_list, target_type):
         if isinstance(P, Variable):
             return P
         assert False
-
 
 
 def reconstruct_from_compressed(program, target_type):

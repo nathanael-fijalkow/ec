@@ -126,7 +126,7 @@ class TestSum(unittest.TestCase):
         for S in toy_PCFG.rules:
             max_program = toy_PCFG.max_probability[S]
             self.assertTrue(
-                max_program.probability[(toy_PCFG.__hash__(),S)]
+                max_program.probability[(toy_PCFG.__hash__(), S)]
                 == toy_PCFG.probability_program(S, max_program)
             )
 
@@ -141,13 +141,17 @@ class TestSum(unittest.TestCase):
         for S in deepcoder_PCFG.rules:
             max_program = deepcoder_PCFG.max_probability[S]
             self.assertTrue(
-                deepcoder_PCFG.max_probability[S].probability[(deepcoder_PCFG.__hash__(),S)]
+                deepcoder_PCFG.max_probability[S].probability[
+                    (deepcoder_PCFG.__hash__(), S)
+                ]
                 == deepcoder_PCFG.probability_program(S, max_program)
             )
             for P in deepcoder_PCFG.rules[S]:
                 max_program = deepcoder_PCFG.max_probability[(S, P)]
                 self.assertTrue(
-                    deepcoder_PCFG.max_probability[(S, P)].probability[(deepcoder_PCFG.__hash__(),S)]
+                    deepcoder_PCFG.max_probability[(S, P)].probability[
+                        (deepcoder_PCFG.__hash__(), S)
+                    ]
                     == deepcoder_PCFG.probability_program(S, max_program)
                 )
 
@@ -173,9 +177,9 @@ class TestSum(unittest.TestCase):
             if (100 * i // N) != (100 * (i + 1) // N):
                 print(100 * (i + 1) // N, " %")
             program = next(gen_heap_search)
-            new_probability = program.probability[(id(toy_PCFG),toy_PCFG.start)]
+            new_probability = program.probability[(id(toy_PCFG), toy_PCFG.start)]
             self.assertTrue(
-                program.probability[(id(toy_PCFG),toy_PCFG.start)]
+                program.probability[(id(toy_PCFG), toy_PCFG.start)]
                 == toy_PCFG.probability_program(toy_PCFG.start, program)
             )
             self.assertLessEqual(new_probability, current_probability)
@@ -216,7 +220,7 @@ class TestSum(unittest.TestCase):
             program = next(gen_a_star)
             program = reconstruct_from_compressed(program, type_request.returns())
             new_probability = toy_PCFG.probability_program(toy_PCFG.start, program)
-            self.assertLessEqual(new_probability, current_probability+10e-15)
+            self.assertLessEqual(new_probability, current_probability + 10e-15)
             current_probability = new_probability
             seen_astar.add(str(program))
 
@@ -230,154 +234,149 @@ class TestSum(unittest.TestCase):
         diff = seen_sampling - seen_astar
         self.assertEqual(0, len(diff))
 
+    # def test_completeness_a_star(self):
+    #     '''
+    #     Check if A* does not miss any program and if it outputs programs in decreasing order.
+    #     '''
 
-# def test_completeness_a_star(self):
-#     '''
-#     Check if A* does not miss any program and if it outputs programs in decreasing order.
-#     '''
+    #     N = 20_000 # number of programs to be genetared by A*
+    #     K = 200 # number of programs to be sampled from the PCFG
 
-#     N = 20_000 # number of programs to be genetared by A*
-#     K = 200 # number of programs to be sampled from the PCFG
+    #     gen_sampling = deepcoder_PCFG.sampling()
+    #     gen_a_star = a_star(deepcoder_PCFG)
 
-#     gen_sampling = deepcoder_PCFG.sampling()
-#     gen_a_star = a_star(deepcoder_PCFG)
+    #     seen_sampling = set()
+    #     seen_a_star = set()
 
-#     seen_sampling = set()
-#     seen_a_star = set()
+    #     current_probability = 1
+    #     for i in range(N):
+    #         if (100*i//N) != (100*(i+1)//N):
+    #             print(100*(i+1)//N, " %")
+    #         t = next(gen_a_star)
+    #         t = deepcoder.reconstruct_from_compressed(t)
+    #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    #         toy_PCFG.assertTrue(proba_t<=current_probability or abs(current_probability-proba_t) <= 1e-10) # check if in decreasing order
+    #         current_probability = proba_t
+    #         seen_a_star.add(str(t))
 
-#     current_probability = 1
-#     for i in range(N):
-#         if (100*i//N) != (100*(i+1)//N):
-#             print(100*(i+1)//N, " %")
-#         t = next(gen_a_star)
-#         t = deepcoder.reconstruct_from_compressed(t)
-#         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-#         toy_PCFG.assertTrue(proba_t<=current_probability or abs(current_probability-proba_t) <= 1e-10) # check if in decreasing order
-#         current_probability = proba_t
-#         seen_a_star.add(str(t))
+    #     min_proba = current_probability
 
-#     min_proba = current_probability
+    #     while len(seen_sampling) < K:
+    #         t = next(gen_sampling)
+    #         # t.reverse()
+    #         # t = deepcoder.reconstruct_from_list(t)
+    #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    #         if proba_t > min_proba:
+    #             seen_sampling.add(str(t))
 
-#     while len(seen_sampling) < K:
-#         t = next(gen_sampling)
-#         # t.reverse()
-#         # t = deepcoder.reconstruct_from_list(t)
-#         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-#         if proba_t > min_proba:
-#             seen_sampling.add(str(t))
+    #     diff = seen_sampling - seen_a_star
 
-#     diff = seen_sampling - seen_a_star
+    #     toy_PCFG.assertEqual(0, len(diff))
 
-#     toy_PCFG.assertEqual(0, len(diff))
+    # # def test_completeness_dfs(self):
+    # #     '''
+    # #     Check if DFS does not miss any program
+    # #     '''
 
+    # #     N = 100_000 # number of programs to be generated by DFS
+    # #     K = 2 # number of programs to be sampled from the PCFG
 
-# # def test_completeness_dfs(self):
-# #     '''
-# #     Check if DFS does not miss any program
-# #     '''
+    # #     gen_sampling = deepcoder_PCFG.sampling()
+    # #     gen_dfs = dfs(deepcoder_PCFG)
 
-# #     N = 100_000 # number of programs to be generated by DFS
-# #     K = 2 # number of programs to be sampled from the PCFG
+    # #     seen_sampling = set()
+    # #     seen_dfs = set()
 
-# #     gen_sampling = deepcoder_PCFG.sampling()
-# #     gen_dfs = dfs(deepcoder_PCFG)
+    # #     current_probability = 1
+    # #     for i in range(N):
+    # #         if (100*i//N) != (100*(i+1)//N):
+    # #             print(100*(i+1)//N, " %")
+    # #         t = next(gen_dfs)
+    # #         t = deepcoder.reconstruct_from_compressed(t)
+    # #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    # #         current_probability = proba_t
+    # #         seen_dfs.add(str(t))
 
-# #     seen_sampling = set()
-# #     seen_dfs = set()
+    # #     while len(seen_sampling) < K:
+    # #         t = next(gen_sampling)
+    # #         print(len(seen_sampling))
+    # #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    # #         seen_sampling.add(str(t))
 
-# #     current_probability = 1
-# #     for i in range(N):
-# #         if (100*i//N) != (100*(i+1)//N):
-# #             print(100*(i+1)//N, " %")
-# #         t = next(gen_dfs)
-# #         t = deepcoder.reconstruct_from_compressed(t)
-# #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-# #         current_probability = proba_t
-# #         seen_dfs.add(str(t))
+    # #     diff = seen_sampling - seen_dfs
 
+    # #     toy_PCFG.assertEqual(0, len(diff))
 
-# #     while len(seen_sampling) < K:
-# #         t = next(gen_sampling)
-# #         print(len(seen_sampling))
-# #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-# #         seen_sampling.add(str(t))
+    # def test_threshold_search(self):
+    #     '''
+    #     Test if threshold search does not miss any program and output programs above the given threshold
+    #     '''
 
+    #     threshold = 0.00001
+    #     gen_threshold = bounded_threshold(deepcoder_PCFG, threshold)
 
-# #     diff = seen_sampling - seen_dfs
+    #     seen_threshold = set()
 
-# #     toy_PCFG.assertEqual(0, len(diff))
+    #     while True:
+    #         try:
+    #             t = next(gen_threshold)
+    #             t = deepcoder.reconstruct_from_compressed(t)
+    #             proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    #             toy_PCFG.assertLessEqual(threshold, proba_t) # check if the program is above threshold
+    #             seen_threshold.add(str(t))
+    #         except StopIteration:
+    #             break
+    #     K = len(seen_threshold)//10
 
+    #     S = deepcoder_PCFG.sampling()
 
-# def test_threshold_search(self):
-#     '''
-#     Test if threshold search does not miss any program and output programs above the given threshold
-#     '''
+    #     seen_sampling = set()
+    #     while len(seen_sampling) < K:
+    #         t = next(S)
+    #         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
+    #         if proba_t >= threshold:
+    #             seen_sampling.add(str(t))
 
-#     threshold = 0.00001
-#     gen_threshold = bounded_threshold(deepcoder_PCFG, threshold)
+    #     diff = seen_sampling - seen_threshold
 
-
-#     seen_threshold = set()
-
-#     while True:
-#         try:
-#             t = next(gen_threshold)
-#             t = deepcoder.reconstruct_from_compressed(t)
-#             proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-#             toy_PCFG.assertLessEqual(threshold, proba_t) # check if the program is above threshold
-#             seen_threshold.add(str(t))
-#         except StopIteration:
-#             break
-#     K = len(seen_threshold)//10
-
-
-#     S = deepcoder_PCFG.sampling()
-
-#     seen_sampling = set()
-#     while len(seen_sampling) < K:
-#         t = next(S)
-#         proba_t = deepcoder_PCFG.proba_term(deepcoder_PCFG.start, t)
-#         if proba_t >= threshold:
-#             seen_sampling.add(str(t))
-
-#     diff = seen_sampling - seen_threshold
-
-#     toy_PCFG.assertEqual(0, len(diff))
-
+    #     toy_PCFG.assertEqual(0, len(diff))
 
     def test_sampling(self):
-        '''
+        """
         test if the sampling algorithm samples according to the true probabilities using a chi_square test
-        '''
-        K = 100_000 # number of programs sampled
-        L = 100 # we test the probabilities of the first L programs are ok
-        alpha = 0.05 # threshold to reject the "H0 hypothesis"
+        """
+        K = 10_000  # number of programs sampled
+        L = 100  # we test the probabilities of the first L programs are ok
+        alpha = 0.05  # threshold to reject the "H0 hypothesis"
 
         deepcoder = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT), List(INT))
         toy_PCFG = deepcoder.DSL_to_Random_PCFG(type_request, alpha=0.7)
 
-        gen_heap_search = heap_search(toy_PCFG) # to generate the L first programs
-        gen_sampling = toy_PCFG.sampling() # generator for sampling
+        gen_heap_search = heap_search(toy_PCFG)  # to generate the L first programs
+        gen_sampling = toy_PCFG.sampling()  # generator for sampling
 
         count = {}
         for _ in range(L):
             program = next(gen_heap_search)
-            count[str(program)] = [toy_PCFG.probability_program(toy_PCFG.start,program),0]  # expected frequencies versus observed frequencies 
+            count[str(program)] = [
+                toy_PCFG.probability_program(toy_PCFG.start, program),
+                0,
+            ]  # expected frequencies versus observed frequencies
 
         normalisation_factor = sum(count[program][0] for program in count)
         for program in count:
-            count[program][0]*=K/normalisation_factor
+            count[program][0] *= K / normalisation_factor
 
         i = 0
         while i < K:
-            if (100*i//K) != (100*(i+1)//K):
-                print(100*(i+1)//K, " %")
+            if (100 * i // K) != (100 * (i + 1) // K):
+                print(100 * (i + 1) // K, " %")
             program = next(gen_sampling)
             program_hashed = str(program)
             if program_hashed in count:
-                count[program_hashed][1]+=1
-                i+=1
+                count[program_hashed][1] += 1
+                i += 1
         f_exp = []
         f_obs = []
         for p in count:
@@ -387,43 +386,47 @@ class TestSum(unittest.TestCase):
         # print(f_obs)
         chisq, p_value = chisquare(f_obs, f_exp=f_exp)
         print("chisq: ", chisq, "  p_value: ", p_value)
-        self.assertLessEqual(alpha,p_value)
+        self.assertLessEqual(alpha, p_value)
         # print(chisquare(f_obs, f_exp = f_exp))
 
     def test_sqrt_sampling(self):
-        '''
+        """
         test if sqrt_sampling algorithm samples according to the correct probabilities
-        '''
-        K = 100_000 # number of programs sampled
-        L = 1000 # we test the probabilities of the first L programs are ok
-        alpha = 0.05 # threshold to reject the "H0 hypothesis"
+        """
+        K = 10_000  # number of programs sampled
+        L = 100  # we test the probabilities of the first L programs are ok
 
         deepcoder = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT), List(INT))
         toy_PCFG = deepcoder.DSL_to_Random_PCFG(type_request, alpha=0.7)
 
-        gen_heap_search = heap_search(toy_PCFG) # to generate the L first programs
-        gen_sqrt_sampling = sqrt_sampling(toy_PCFG) # generator for sqrt sampling
+        gen_heap_search = heap_search(toy_PCFG)  # to generate the L first programs
+        gen_sqrt_sampling = sqrt_sampling(toy_PCFG)  # generator for sqrt sampling
 
         count = {}
         for _ in range(L):
             program = next(gen_heap_search)
-            count[str(program)] = [K*sqrt(toy_PCFG.probability_program(toy_PCFG.start,program)),0]  # expected frequencies versus observed frequencies 
+            count[str(program)] = [
+                K * sqrt(toy_PCFG.probability_program(toy_PCFG.start, program)),
+                0,
+            ]  # expected frequencies versus observed frequencies
         i = 0
         while i < K:
-            if (100*i//K) != (100*(i+1)//K):
-                print(100*(i+1)//K, " %")
+            if (100 * i // K) != (100 * (i + 1) // K):
+                print(100 * (i + 1) // K, " %")
             program = next(gen_sqrt_sampling)
             program_hashed = str(program)
             if program_hashed in count:
-                count[program_hashed][1]+=1
-                i+=1
+                count[program_hashed][1] += 1
+                i += 1
         ratios = []
         for p in count:
-            ratios.append(count[p][1]/count[p][0])
+            ratios.append(count[p][1] / count[p][0])
         # TODO: do a real statistical test on this; we must find what it the theoretical law and take the p-value
-        print("ratios probability given by sqrt sampling divided by sqrt(probability program)  :", ratios)
-
+        print(
+            "ratios probability given by sqrt sampling divided by sqrt(probability program)  :",
+            ratios,
+        )
 
 
 if __name__ == "__main__":

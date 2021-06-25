@@ -69,13 +69,13 @@ class PCFG:
             self.hash_table_programs[hash_P] = P
             return P
 
-    def remove_non_productive(self, max_program_depth = 4):
-        '''
+    def remove_non_productive(self, max_program_depth=4):
+        """
         remove non-terminals which do not produce programs
-        '''
+        """
         new_rules = {}
         for S in reversed(self.rules):
-            # print("\n\n###########\nLooking at S", S)            
+            # print("\n\n###########\nLooking at S", S)
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
                 # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
@@ -93,10 +93,10 @@ class PCFG:
                 del self.rules[S]
                 # print("the non-terminal {} is non-productive".format(S))
 
-    def remove_non_reachable(self, max_program_depth = 4):
-        '''
+    def remove_non_reachable(self, max_program_depth=4):
+        """
         remove non-terminals which are not reachable from the initial non-terminal
-        '''
+        """
         reachable = set()
         reachable.add(self.start)
 
@@ -144,30 +144,41 @@ class PCFG:
                     # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
                     # assert(S not in P_unique.probability)
                     P_unique.probability[(id(self), S)] = w
-                    assert(P_unique.probability[(id(self), S)] == self.probability_program(S, P_unique))
+                    assert P_unique.probability[
+                        (id(self), S)
+                    ] == self.probability_program(S, P_unique)
 
                 else:
                     new_program = Function(
-                        function = P_unique,
-                        arguments = [self.max_probability[arg] for arg in args_P],
-                        type_ = S[0],
-                        probability = {}
+                        function=P_unique,
+                        arguments=[self.max_probability[arg] for arg in args_P],
+                        type_=S[0],
+                        probability={},
                     )
                     P_unique = self.return_unique(new_program)
                     # print(self.hash_table_programs)
-                    probability = w 
+                    probability = w
                     for arg in args_P:
-                        probability *= self.max_probability[arg].probability[(id(self),arg)]
+                        probability *= self.max_probability[arg].probability[
+                            (id(self), arg)
+                        ]
                     # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
                     self.max_probability[(S, P)] = P_unique
                     # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
-                    assert((id(self), S) not in P_unique.probability)
+                    assert (id(self), S) not in P_unique.probability
                     P_unique.probability[(id(self), S)] = probability
-                    assert(P_unique.probability[(id(self), S)] == self.probability_program(S, P_unique))
+                    assert P_unique.probability[
+                        (id(self), S)
+                    ] == self.probability_program(S, P_unique)
 
-                if self.max_probability[(S, P)].probability[(id(self),S)] > best_probability:
+                if (
+                    self.max_probability[(S, P)].probability[(id(self), S)]
+                    > best_probability
+                ):
                     best_program = self.max_probability[(S, P)]
-                    best_probability = self.max_probability[(S, P)].probability[(id(self),S)]
+                    best_probability = self.max_probability[(S, P)].probability[
+                        (id(self), S)
+                    ]
 
             assert best_probability > 0
             # print("max_probability[{}] = {}".format(S,best_program))
@@ -238,5 +249,5 @@ class PCFG:
             for i, arg in enumerate(args_P):
                 probability *= self.probability_program(self.rules[S][F][0][i], arg)
             return probability
-        assert(False)
+        assert False
         # print(P, P.__class__.__name__)
