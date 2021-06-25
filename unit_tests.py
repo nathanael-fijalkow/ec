@@ -363,7 +363,7 @@ class TestSum(unittest.TestCase):
 
         deepcoder = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT), List(INT))
-        toy_PCFG = deepcoder.DSL_to_Random_PCFG(type_request, alpha=0.8)
+        toy_PCFG = deepcoder.DSL_to_Random_PCFG(type_request, alpha=0.6)
 
         gen_heap_search = heap_search(toy_PCFG)  # to generate the L first programs
         gen_sqrt_sampling = sqrt_sampling(toy_PCFG)  # generator for sqrt sampling
