@@ -1,5 +1,4 @@
-from dreamcoder.PCFG.program import *
-from dreamcoder.PCFG.pcfg import *
+from dreamcoder.PCFG.pcfg import PCFG
 
 from collections import deque 
 import time 
@@ -9,15 +8,6 @@ def dfs(G : PCFG):
     A generator that enumerates all programs using a DFS.
     Assumes that the rules are non-increasing
     '''
-    # chrono = -time.perf_counter()
-    # We reverse the rules: they should be non-increasing
-
-    # for S in G.rules:
-    #     G.rules[S].sort(key=lambda x: x[2])
-        
-    # chrono += time.perf_counter()
-    # print("Sorted the rules in {}".format(chrono))
-
     frontier = deque()
     initial_non_terminals = deque()
     initial_non_terminals.append(G.start)
@@ -32,7 +22,6 @@ def dfs(G : PCFG):
             yield partial_program
         else:
             S = non_terminals.pop()
-            # for F, args_F, w in G.rules[S]:
             for P in G.list_derivations[S]:
                 args_F, w = G.rules[P]
                 new_partial_program = (P, partial_program)

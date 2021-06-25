@@ -1,11 +1,11 @@
-from dreamcoder.PCFG.type_system import *
-from dreamcoder.PCFG.program import *
-
 import random
 import numpy as np
-import vose
 from math import prod
 
+import vose
+
+from dreamcoder.PCFG.type_system import *
+from dreamcoder.PCFG.program import Program, Function, Variable, BasicPrimitive, New
 
 class PCFG:
     """
@@ -19,12 +19,6 @@ class PCFG:
     list_derivations: a dictionary of type {S: l}
     with S a non-terminal and l the list of programs P appearing in derivations from S,
     sorted from most probable to least probable
-
-    cumulatives: a dictionary of type {S: l}
-    with S a non-terminal and l a list of weights representing the sum of the probabilities from S
-    of all previous derivations
-    Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
-    then cumulatives[S] = [w1, w1 + w2]
 
     max_probability: a dictionary of type {S: (Pmax, probability)} cup {(S, P): (Pmax, probability)}
     with S a non-terminal
@@ -75,23 +69,18 @@ class PCFG:
         """
         new_rules = {}
         for S in reversed(self.rules):
-            # print("\n\n###########\nLooking at S", S)
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
-                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
                 if all([arg in new_rules for arg in args_P]) and w > 0:
                     if S not in new_rules:
                         new_rules[S] = {}
                     new_rules[S][P] = self.rules[S][P]
-                # else:
-                #     print("the rule {} from {} is non-productive".format(P,S))
 
         for S in set(self.rules):
             if S in new_rules:
                 self.rules[S] = new_rules[S]
             else:
                 del self.rules[S]
-                # print("the non-terminal {} is non-productive".format(S))
 
     def remove_non_reachable(self, max_program_depth=4):
         """
@@ -118,20 +107,17 @@ class PCFG:
         for S in set(self.rules):
             if S not in reachable:
                 del self.rules[S]
-                # print("the non-terminal {} is not reachable:".format(S))
 
     def compute_max_probability(self):
         """
         populates the dictionary max_probability
         """
         for S in reversed(self.rules):
-            # print("\n\n###########\nLooking at S", S)
             best_program = None
             best_probability = 0
 
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
-                # print("####\nFrom S: ", S, "\nargument P: ", P, args_P, w)
                 P_unique = self.return_unique(P)
                 # we want to have a unique representation of the program
                 # so that it is evaluated only once
@@ -139,10 +125,7 @@ class PCFG:
                 # with different probabilities
 
                 if len(args_P) == 0:
-                    # print("max_probability[({},{})] = ({}, {})".format(S,P,P,w))
                     self.max_probability[(S, P)] = P_unique
-                    # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
-                    # assert(S not in P_unique.probability)
                     P_unique.probability[(id(self), S)] = w
                     assert P_unique.probability[
                         (id(self), S)
@@ -156,15 +139,12 @@ class PCFG:
                         probability={},
                     )
                     P_unique = self.return_unique(new_program)
-                    # print(self.hash_table_programs)
                     probability = w
                     for arg in args_P:
                         probability *= self.max_probability[arg].probability[
                             (id(self), arg)
                         ]
-                    # print("max_probability[({},{})] = ({}, {})".format(S,P,new_program,probability))
                     self.max_probability[(S, P)] = P_unique
-                    # print("Found:\n{}\nwith probabilities:\n{}".format(P_unique, P_unique.probability))
                     assert (id(self), S) not in P_unique.probability
                     P_unique.probability[(id(self), S)] = probability
                     assert P_unique.probability[
@@ -181,7 +161,6 @@ class PCFG:
                     ]
 
             assert best_probability > 0
-            # print("max_probability[{}] = {}".format(S,best_program))
             self.max_probability[S] = best_program
 
     def __getstate__(self):
@@ -214,13 +193,7 @@ class PCFG:
     def sampling(self):
         """
         A generator that samples programs according to the PCFG G
-
-        IMPORTANT: we need that the derivations are sorted in non-decreasing order of weights,
-        Example: if rules[S] = {P1: (l1, w1), P2: (l2, w2)}
-        then w1 >= w2
         """
-        # for S in self.rules:
-        #     self.rules[S].sort(key=lambda x: x[1])
 
         while True:
             yield self.sample_program(self.start)
@@ -250,4 +223,3 @@ class PCFG:
                 probability *= self.probability_program(self.rules[S][F][0][i], arg)
             return probability
         assert False
-        # print(P, P.__class__.__name__)

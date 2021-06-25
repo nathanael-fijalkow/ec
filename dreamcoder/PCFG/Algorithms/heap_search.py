@@ -1,10 +1,10 @@
-from dreamcoder.PCFG.program import *
-from dreamcoder.PCFG.pcfg import *
-
-from collections import deque
-from heapq import heappush, heappop
 import copy
 import functools
+from collections import deque
+from heapq import heappush, heappop
+
+from dreamcoder.PCFG.program import Program, Function, Variable
+from dreamcoder.PCFG.pcfg import PCFG
 
 
 def heap_search(G: PCFG):
@@ -51,17 +51,12 @@ class heap_search_object:
         # hashes to programs for all programs ever added to some heap
         self.hash_table_global = {}
 
-        # print(self.G)
-
         # Initialisation heaps
         ## 1. add P(max(S1),max(S2), ...) to self.heaps[S] for all S -> P(S1, S2, ...)
         for S in reversed(self.rules):
-            # print("###########\nS", S)
             for P in self.rules[S]:
-                # print("####\nP", P)
                 args_P, w = self.rules[S][P]
                 program = self.G.max_probability[(S, P)]
-
                 hash_program = program.__hash__()
 
                 # Remark: the program cannot already be in self.heaps[S]
@@ -79,39 +74,24 @@ class heap_search_object:
                     (-program.probability[(self.G.__hash__(), S)], program),
                 )
 
-        # for S in self.rules:
-        #     print("\nheaps[", S, "] = ", self.heaps[S], "\n")
-
-        # print("\n######################\nInitialisation phase 1 over\n######################\n")
-
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
-
         for S in reversed(self.rules):
             self.query(S, None)
 
-        # print("\n######################\nInitialisation phase 2 over\n######################\n")
-
     def generator(self):
         """
-        generator which outputs the next most probabilityble program
+        A generator which outputs the next most probable program
         """
         while True:
-            # print("current:", self.current)
             program = self.query(self.start, self.current)
             self.current = program
-            # self.compute_evaluation(self.current)
-            # print("yield:", self.current)
             yield program
 
     def query(self, S, program):
         """
         computing the successor of program from S
         """
-        # print("\nquery:", S, program, program.__class__.__name__)
-
         hash_program = program.__hash__()
-
-        # print("\nheaps[", S, "] = ", self.heaps[S], "\n")
 
         # if we have already computed the successor of program from S, we return its stored value
         if hash_program in self.succ[S]:

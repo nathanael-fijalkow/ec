@@ -1,9 +1,8 @@
-from dreamcoder.PCFG.program import *
-from dreamcoder.PCFG.pcfg import *
-
+import time
 from collections import deque
 from heapq import heappush, heappop
-import time
+
+from dreamcoder.PCFG.pcfg import PCFG
 
 
 def a_star(G: PCFG):
@@ -34,7 +33,6 @@ def a_star(G: PCFG):
             frontier
         )
         if len(non_terminals) == 0:
-            # print(partial_program)
             yield partial_program
         else:
             S = non_terminals.pop()

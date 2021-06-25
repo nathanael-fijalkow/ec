@@ -1,14 +1,12 @@
 from dreamcoder.PCFG.type_system import *
-from dreamcoder.PCFG.cons_list import *
+from dreamcoder.PCFG.cons_list import index
 
 # dictionary { number of environment : value }
-
 # environment: a cons list
 # list = None | (value, list)
-
-# probability: a dictionary {S : probability}
+# probability: a dictionary {(G.__hash(), S) : probability}
 # such that P.probability[S] is the probability that P is generated
-# from the non-terminal S
+# from the non-terminal S when the underlying PCFG is G.
 
 
 class Program:
@@ -94,9 +92,8 @@ class Program:
         if isinstance(self, BasicPrimitive):
             return hash(self.primitive) + self.type.__hash__()
         if self == None:
-            return 123891 # random int to avoid a collision with self.variable
+            return 123891  # random int to avoid a collision with self.variable
         assert False
-        # return hash(str(self) + str(self.type)) # trivial hash
 
 
 class Variable(Program):
@@ -146,9 +143,7 @@ class Function(Program):
 
     def eval(self, dsl, environment, i):
         if i in self.evaluation:
-            # print("already evaluated")
             return self.evaluation[i]
-        # print("not yet evaluated")
         try:
             if len(self.arguments) == 0:
                 return self.function.eval(dsl, environment, i)
@@ -226,7 +221,6 @@ class New(Program):
 
 
 def reconstruct_from_list(program_as_list, target_type):
-    # print("program_as_list, target_type", program_as_list, target_type)
     if len(program_as_list) == 1:
         return program_as_list.pop()
     else:
@@ -248,7 +242,6 @@ def reconstruct_from_compressed(program, target_type):
     program_as_list = []
     list_from_compressed(program, program_as_list)
     program_as_list.reverse()
-    # print(program_as_list)
     return reconstruct_from_list(program_as_list, target_type)
 
 
