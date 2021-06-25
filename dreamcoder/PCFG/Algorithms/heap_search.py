@@ -72,7 +72,7 @@ class heap_search_object:
                 self.hash_table_global[hash_program] = program
  
                 # print("adding to the heap", program, program.probability[S])
-                heappush(self.heaps[S], (-program.probability[(id(self.G),S)], program))
+                heappush(self.heaps[S], (-program.probability[(self.G.__hash__(),S)], program))
 
         # for S in self.rules:
         #     print("\nheaps[", S, "] = ", self.heaps[S], "\n")
@@ -145,8 +145,8 @@ class heap_search_object:
                         self.hash_table_program[S].add(hash_new_program)
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                            probability *= arg.probability[(id(self.G),S3)]
+                            probability *= arg.probability[(self.G.__hash__(),S3)]
                         heappush(self.heaps[S], (-probability, new_program))
-                        new_program.probability[(id(self.G), S)] = probability
+                        new_program.probability[(self.G.__hash__(), S)] = probability
 
         return succ

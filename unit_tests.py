@@ -126,7 +126,7 @@ class TestSum(unittest.TestCase):
         for S in toy_PCFG.rules:
             max_program = toy_PCFG.max_probability[S]
             self.assertTrue(
-                max_program.probability[(id(toy_PCFG),S)]
+                max_program.probability[(toy_PCFG.__hash__(),S)]
                 == toy_PCFG.probability_program(S, max_program)
             )
 
@@ -141,13 +141,13 @@ class TestSum(unittest.TestCase):
         for S in deepcoder_PCFG.rules:
             max_program = deepcoder_PCFG.max_probability[S]
             self.assertTrue(
-                deepcoder_PCFG.max_probability[S].probability[(id(deepcoder_PCFG),S)]
+                deepcoder_PCFG.max_probability[S].probability[(deepcoder_PCFG.__hash__(),S)]
                 == deepcoder_PCFG.probability_program(S, max_program)
             )
             for P in deepcoder_PCFG.rules[S]:
                 max_program = deepcoder_PCFG.max_probability[(S, P)]
                 self.assertTrue(
-                    deepcoder_PCFG.max_probability[(S, P)].probability[(id(deepcoder_PCFG),S)]
+                    deepcoder_PCFG.max_probability[(S, P)].probability[(deepcoder_PCFG.__hash__(),S)]
                     == deepcoder_PCFG.probability_program(S, max_program)
                 )
 
@@ -389,15 +389,13 @@ class TestSum(unittest.TestCase):
         print("chisq: ", chisq, "  p_value: ", p_value)
         self.assertLessEqual(alpha,p_value)
         # print(chisquare(f_obs, f_exp = f_exp))
-# # TODO: test sqrt(G)
-
 
     def test_sqrt_sampling(self):
         '''
         test if sqrt_sampling algorithm samples according to the correct probabilities
         '''
-        K = 10_000 # number of programs sampled
-        L = 100 # we test the probabilities of the first L programs are ok
+        K = 100_000 # number of programs sampled
+        L = 1000 # we test the probabilities of the first L programs are ok
         alpha = 0.05 # threshold to reject the "H0 hypothesis"
 
         deepcoder = dsl.DSL(semantics, primitive_types)

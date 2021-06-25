@@ -187,6 +187,9 @@ class PCFG:
             for S in self.rules
         }
 
+    def __hash__(self):
+        return id(self)
+
     def __repr__(self):
         s = "Print a PCFG\n"
         s += "start: {}\n".format(self.start)
