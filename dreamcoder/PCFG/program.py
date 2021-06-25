@@ -94,7 +94,7 @@ class Program:
         if isinstance(self, BasicPrimitive):
             return hash(self.primitive) + self.type.__hash__()
         if self == None:
-            return 0
+            return 123891 # random int to avoid a collision with self.variable
         assert False
         # return hash(str(self) + str(self.type)) # trivial hash
 
