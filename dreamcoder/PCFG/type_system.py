@@ -25,7 +25,7 @@ class Type:
     def __le__(self, other): False
 
     def __hash__(self):
-        return hash(str(self))
+        return self.hash
 
     def returns(self):
         if isinstance(self,Arrow):
@@ -164,6 +164,7 @@ class PolymorphicType(Type):
     def __init__(self, name):
         assert(isinstance(name,str))
         self.name = name
+        self.hash = hash(name)
 
     def __repr__(self):
         return str(self.name)
@@ -172,6 +173,7 @@ class PrimitiveType(Type):
     def __init__(self, type_):
         assert(isinstance(type_,str))
         self.type = type_
+        self.hash = hash(type_)
 
     def __repr__(self):
         return str(self.type)
@@ -182,6 +184,7 @@ class Arrow(Type):
         assert(isinstance(type_out,Type))
         self.type_in = type_in
         self.type_out = type_out
+        self.hash = hash(type_in.hash + type_out.hash)
 
     def __repr__(self):
         rep_in = repr(self.type_in)
@@ -192,6 +195,7 @@ class List(Type):
     def __init__(self, _type):
         assert(isinstance(_type,Type))
         self.type_elt = _type
+        self.hash = hash(18923 + _type.hash)
 
     def __repr__(self):
         if isinstance(self.type_elt,Arrow):
@@ -205,6 +209,7 @@ class UnknownType(Type):
     '''
     def __init__(self):
         self.type = ""
+        self.hash = 1984
 
     def __repr__(self):
         return "UnknownType"

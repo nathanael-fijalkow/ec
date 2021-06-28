@@ -19,12 +19,12 @@ class heap_search_object:
         it is represented by the same object,
         so we do not evaluate it several times
         """
-        hash_P = P.__hash__()
+        hash_P = P.hash
         if hash_P in self.hash_table_global:
-            return hash_P, self.hash_table_global[hash_P]
+            return self.hash_table_global[hash_P]
         else:
             self.hash_table_global[hash_P] = P
-            return hash_P, P
+            return P
 
     def __init__(self, G: PCFG):
         self.current = None
@@ -33,6 +33,7 @@ class heap_search_object:
         self.start = G.start
         self.rules = G.rules
         self.symbols = [S for S in self.rules]
+        self.hash_G = G.__hash__()
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps = {S: [] for S in self.symbols}
@@ -57,7 +58,7 @@ class heap_search_object:
             for P in self.rules[S]:
                 args_P, w = self.rules[S][P]
                 program = self.G.max_probability[(S, P)]
-                hash_program = program.__hash__()
+                hash_program = program.hash
 
                 # Remark: the program cannot already be in self.heaps[S]
                 assert hash_program not in self.hash_table_program[S]
@@ -71,7 +72,7 @@ class heap_search_object:
                 # print("adding to the heap", program, program.probability[S])
                 heappush(
                     self.heaps[S],
-                    (-program.probability[(self.G.__hash__(), S)], program),
+                    (-program.probability[(self.hash_G, S)], program),
                 )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
@@ -91,7 +92,10 @@ class heap_search_object:
         """
         computing the successor of program from S
         """
-        hash_program = program.__hash__()
+        if program:
+            hash_program = program.hash
+        else:
+            hash_program = 123891
 
         # if we have already computed the successor of program from S, we return its stored value
         if hash_program in self.succ[S]:
@@ -126,14 +130,16 @@ class heap_search_object:
                     new_program = Function(
                         F, new_arguments, type_=succ.type, probability={}
                     )
-                    hash_new_program, new_program = self.return_unique(new_program)
+                    new_program = self.return_unique(new_program)
+                    hash_new_program = new_program.hash
 
+                    # if hash_new_program not in self.hash_table_program[S]:
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                            probability *= arg.probability[(self.G.__hash__(), S3)]
+                            probability *= arg.probability[(self.hash_G, S3)]
                         heappush(self.heaps[S], (-probability, new_program))
-                        new_program.probability[(self.G.__hash__(), S)] = probability
+                        new_program.probability[(self.hash_G, S)] = probability
 
         return succ

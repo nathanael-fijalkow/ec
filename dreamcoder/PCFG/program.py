@@ -80,20 +80,25 @@ class Program:
         False
 
     def __hash__(self):
-        if isinstance(self, Function):
-            return hash(
-                self.function.primitive + str([id(arg) for arg in self.arguments])
-            )
-        if isinstance(self, Variable):
-            return self.variable
-        if isinstance(self, (Lambda, New)):
-            # This has never been tested with our current grammars
-            return hash(str(self.body)) + self.type.__hash__()
-        if isinstance(self, BasicPrimitive):
-            return hash(self.primitive) + self.type.__hash__()
-        if self == None:
-            return 123891  # random int to avoid a collision with self.variable
-        assert False
+        return hash(str(self)) + hash(self.type)
+        return self.hash
+
+    # def compute_hash(self):
+    #     if isinstance(self, Function):
+    #         return hash(
+    #             # self.function.primitive + str([id(arg) for arg in self.arguments])
+    #             hash(self.function) + str([id(arg) for arg in self.arguments])
+    #         )
+    #     if isinstance(self, Variable):
+    #         return self.variable
+    #     if isinstance(self, (Lambda, New)):
+    #         # This has never been tested with our current grammars
+    #         return hash(str(self.body)) + self.type.hash
+    #     if isinstance(self, BasicPrimitive):
+    #         return hash(self.primitive) + self.type.hash
+    #     if self == None:
+    #         return 123891  # random int to avoid a collision with self.variable
+    #     assert False
 
 
 class Variable(Program):
@@ -103,6 +108,7 @@ class Variable(Program):
         self.variable = variable
         assert isinstance(type_, Type)
         self.type = type_
+        self.hash = variable
 
         self.probability = probability
         self.evaluation = {}
@@ -128,6 +134,7 @@ class Function(Program):
         assert isinstance(arguments, list)
         self.arguments = arguments
         self.type = type_
+        self.hash = hash(arg.hash for arg in self.arguments) + self.function.hash
 
         self.probability = probability
         self.evaluation = {}
@@ -166,6 +173,7 @@ class Lambda(Program):
         self.body = body
         assert isinstance(type_, Type)
         self.type = type_
+        self.hash = hash(94135 + body.hash)
 
         self.probability = probability
         self.evaluation = {}
@@ -189,6 +197,7 @@ class BasicPrimitive(Program):
         self.primitive = primitive
         assert isinstance(type_, Type)
         self.type = type_
+        self.hash = hash(primitive)
 
         self.probability = probability
         self.evaluation = {}
@@ -204,6 +213,7 @@ class New(Program):
     def __init__(self, body, type_=UnknownType(), probability={}):
         self.body = body
         self.type = type_
+        self.hash = hash(783712 + body.hash)
 
         self.probability = probability
         self.evaluation = {}
