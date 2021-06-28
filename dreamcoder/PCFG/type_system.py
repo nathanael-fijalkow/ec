@@ -175,6 +175,7 @@ class PrimitiveType(Type):
         self.type = type_
         self.hash = hash(type_)
 
+
     def __repr__(self):
         return str(self.type)
 
@@ -184,7 +185,9 @@ class Arrow(Type):
         assert(isinstance(type_out,Type))
         self.type_in = type_in
         self.type_out = type_out
-        self.hash = hash(type_in.hash + type_out.hash)
+        self.hash = hash((type_in.hash,type_out.hash))
+        # self.hash = hash(str(self))
+
 
     def __repr__(self):
         rep_in = repr(self.type_in)
@@ -196,6 +199,7 @@ class List(Type):
         assert(isinstance(_type,Type))
         self.type_elt = _type
         self.hash = hash(18923 + _type.hash)
+
 
     def __repr__(self):
         if isinstance(self.type_elt,Arrow):

@@ -80,7 +80,6 @@ class Program:
         False
 
     def __hash__(self):
-        return hash(str(self)) + hash(self.type)
         return self.hash
 
     # def compute_hash(self):
@@ -134,7 +133,7 @@ class Function(Program):
         assert isinstance(arguments, list)
         self.arguments = arguments
         self.type = type_
-        self.hash = hash(arg.hash for arg in self.arguments) + self.function.hash
+        self.hash = hash(tuple([arg.hash for arg in self.arguments] + [self.function.hash]))
 
         self.probability = probability
         self.evaluation = {}
@@ -197,7 +196,7 @@ class BasicPrimitive(Program):
         self.primitive = primitive
         assert isinstance(type_, Type)
         self.type = type_
-        self.hash = hash(primitive)
+        self.hash = hash(primitive) + self.type.__hash__()
 
         self.probability = probability
         self.evaluation = {}
