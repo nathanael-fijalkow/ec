@@ -38,6 +38,12 @@ class PCFG:
         self.remove_non_productive(max_program_depth)
         self.remove_non_reachable(max_program_depth)
 
+        for S in self.rules:
+            s = sum([self.rules[S][P][1] for P in self.rules[S]])
+            for P in self.rules[S]:
+                args_P, w = self.rules[S][P]
+                self.rules[S][P] = (args_P, w / s)
+
         self.hash_table_programs = {}
         self.max_probability = {}
         self.compute_max_probability()

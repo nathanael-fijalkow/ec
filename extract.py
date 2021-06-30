@@ -91,8 +91,10 @@ def translate_type(old_type):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', '-v', dest='verbose', default=0, action='count')
+parser.add_argument('--range_task', '-r', dest='range_task', default=1)
 args,unknown = parser.parse_known_args()
 verbosity = int(args.verbose)
+range_task = range(int(args.range_task))
 
 logging.basicConfig(format='%(message)s', level=logging_levels[verbosity])
 
@@ -103,7 +105,6 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
     from dreamcoder.PCFG.DSL.list import semantics
    
-    range_task = range(1)
     for i, task in enumerate(tasks):
         if i in range_task:
             logging.info('Task number: %d'%i)
@@ -119,7 +120,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                     examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
                 else:
                     examples[j] = tuple2constlist(examples[j][0]), examples[j][1]
-            logging.info('Examples:\n%s'%examples)
+            logging.debug('Examples:\n%s'%examples)
 
             contextual_grammar = tasks[task]
             logging.debug('Contextual grammar: %s'%format(contextual_grammar))

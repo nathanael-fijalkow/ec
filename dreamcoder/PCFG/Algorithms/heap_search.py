@@ -106,7 +106,7 @@ class heap_search_object:
             _, succ = heappop(self.heaps[S])
             # print("found succ in the heap", S, program, succ)
         except:
-            succ = -1  # the heap is empty: there are no successors from S
+            return # the heap is empty: there are no successors from S
 
         self.succ[S][hash_program] = succ  # we store the succesor
 
@@ -132,7 +132,6 @@ class heap_search_object:
                     new_program = self.return_unique(new_program)
                     hash_new_program = new_program.hash
 
-                    # if hash_new_program not in self.hash_table_program[S]:
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
                         probability = self.G.rules[S][F][1]
