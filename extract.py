@@ -7,17 +7,13 @@ from dreamcoder.PCFG.dsl import *
 
 from dreamcoder.grammar import *
 
-# Import algorithms
-from dreamcoder.PCFG.Algorithms.heap_search import heap_search
-from dreamcoder.PCFG.Algorithms.a_star import a_star
-from dreamcoder.PCFG.Algorithms.threshold_search import threshold_search
-from dreamcoder.PCFG.Algorithms.dfs import dfs
-from dreamcoder.PCFG.Algorithms.bfs import bfs
-from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
-
 from collections import deque
-import pickle
 from math import exp
+import pickle
+import logging
+import argparse
+
+logging_levels = {0:logging.INFO, 1:logging.DEBUG}
 
 def construct_PCFG(DSL, 
     type_request,
@@ -30,7 +26,7 @@ def construct_PCFG(DSL,
         max_program_depth, 
         min_variable_depth,
         n_gram = 1)    
-    # print(CFG)
+    logging.debug('CFG: %s'%format(CFG))
 
     augmented_rules = {}
     newQ = {}
@@ -55,12 +51,11 @@ def construct_PCFG(DSL,
                     newQ[primitive, argument_number, P] = Q[p, a, P2]
             if not found:
                 newQ[primitive, argument_number, P] = 0
-                # print("not initialised", P)
 
             augmented_rules[S][P] = \
             CFG.rules[S][P], newQ[primitive, argument_number, P]
 
-    # print(augmented_rules[CFG.start])
+    logging.debug('Rules of the CFG from the initial non-terminal:\n%s'%format(augmented_rules[CFG.start]))
 
     return PCFG(start = CFG.start, 
         rules = augmented_rules, 
@@ -68,16 +63,17 @@ def construct_PCFG(DSL,
 
 def translate_program(old_program):
     if isinstance(old_program, Primitive):
-        return BasicPrimitive(old_program.name)
+        return BasicPrimitive(old_program.name, type_=UnknownType(), probability={})
     if isinstance(old_program, Index):
-        return Variable(old_program.i)
+        return Variable(old_program.i, type_=UnknownType(), probability={})
     if isinstance(old_program, Application):
         return Function(translate_program(old_program.f), 
-            [translate_program(old_program.x)])
+            [translate_program(old_program.x)], 
+            type_=UnknownType(), probability={})
     if isinstance(old_program, Abstraction):
-        return Lambda(translate_program(old_program.body))
+        return Lambda(translate_program(old_program.body), type_=UnknownType(), probability={})
     if isinstance(old_program, Invented):
-        return New(translate_program(old_program.body))
+        return New(translate_program(old_program.body), type_=UnknownType(), probability={})
 
 def translate_type(old_type):
     if isinstance(old_type, TypeVariable):
@@ -92,6 +88,14 @@ def translate_type(old_type):
         type_out = translate_type(old_type.arguments[1])
         return Arrow(type_in = type_in, type_out = type_out)
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--verbose', '-v', dest='verbose', default=0, action='count')
+args,unknown = parser.parse_known_args()
+verbosity = int(args.verbose)
+
+logging.basicConfig(format='%(message)s', level=logging_levels[verbosity])
+
 with open('tmp/all_grammars.pickle', 'rb') as f:
     _, tasks = pickle.load(f)
 
@@ -99,29 +103,26 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
 
     from dreamcoder.PCFG.DSL.list import semantics
    
-    # print(tasks)
     range_task = range(1)
     for i, task in enumerate(tasks):
         if i in range_task:
-            print(i)
-            print(task.name)
-            # print(tasks[task])
+            logging.info('Task number: %d'%i)
+            logging.info('Task name: %s'%task.name)
 
             type_request = translate_type(task.request)
-            # print("type request", type_request)
+            logging.debug('Type request: %s'%format(type_request))
             arguments = type_request.arguments()
-            # print("arguments", arguments)
+            logging.debug('Arguments: %s'%format(arguments))
             examples = task.examples
-            # print(examples)
             for j in range(len(examples)):
                 if isinstance(examples[j][1], list):
                     examples[j] = tuple2constlist(examples[j][0]), list(examples[j][1])
                 else:
                     examples[j] = tuple2constlist(examples[j][0]), examples[j][1]
-            # print("examples", examples)
+            logging.info('Examples:\n%s'%examples)
 
             contextual_grammar = tasks[task]
-            # print(contextual_grammar)
+            logging.debug('Contextual grammar: %s'%format(contextual_grammar))
 
             Q = {}
 
@@ -156,10 +157,10 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                         else:
                             Q[new_primitive, j, var] = 0 
 
-            # print(Q)
+            logging.debug('Probability function: %s'%format(Q))
 
             dsl = DSL(semantics = semantics, primitive_types = primitive_types)
-            # print(dsl)
+            logging.debug('DSL: %s'%format(dsl))
 
             pcfg = construct_PCFG(DSL = dsl, 
                 type_request = type_request,
@@ -167,7 +168,8 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 upper_bound_type_size = 8,
                 min_variable_depth = 1,
                 max_program_depth = 3)
-            print(pcfg)
+
+            logging.debug('PCFG: %s'%format(pcfg))
 
             info = task.name, dsl, pcfg, examples
 

@@ -82,24 +82,6 @@ class Program:
     def __hash__(self):
         return self.hash
 
-    # def compute_hash(self):
-    #     if isinstance(self, Function):
-    #         return hash(
-    #             # self.function.primitive + str([id(arg) for arg in self.arguments])
-    #             hash(self.function) + str([id(arg) for arg in self.arguments])
-    #         )
-    #     if isinstance(self, Variable):
-    #         return self.variable
-    #     if isinstance(self, (Lambda, New)):
-    #         # This has never been tested with our current grammars
-    #         return hash(str(self.body)) + self.type.hash
-    #     if isinstance(self, BasicPrimitive):
-    #         return hash(self.primitive) + self.type.hash
-    #     if self == None:
-    #         return 123891  # random int to avoid a collision with self.variable
-    #     assert False
-
-
 class Variable(Program):
     def __init__(self, variable, type_=UnknownType(), probability={}):
         # self.variable is a natural number
@@ -196,7 +178,7 @@ class BasicPrimitive(Program):
         self.primitive = primitive
         assert isinstance(type_, Type)
         self.type = type_
-        self.hash = hash(primitive) + self.type.__hash__()
+        self.hash = hash(primitive) + self.type.hash
 
         self.probability = probability
         self.evaluation = {}
@@ -212,7 +194,7 @@ class New(Program):
     def __init__(self, body, type_=UnknownType(), probability={}):
         self.body = body
         self.type = type_
-        self.hash = hash(783712 + body.hash)
+        self.hash = hash(783712 + body.hash) + type_.hash
 
         self.probability = probability
         self.evaluation = {}

@@ -33,7 +33,6 @@ class heap_search_object:
         self.start = G.start
         self.rules = G.rules
         self.symbols = [S for S in self.rules]
-        self.hash_G = G.__hash__()
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps = {S: [] for S in self.symbols}
@@ -72,7 +71,7 @@ class heap_search_object:
                 # print("adding to the heap", program, program.probability[S])
                 heappush(
                     self.heaps[S],
-                    (-program.probability[(self.hash_G, S)], program),
+                    (-program.probability[(self.G.hash, S)], program),
                 )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
@@ -138,8 +137,8 @@ class heap_search_object:
                         self.hash_table_program[S].add(hash_new_program)
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                            probability *= arg.probability[(self.hash_G, S3)]
+                            probability *= arg.probability[(self.G.hash, S3)]
                         heappush(self.heaps[S], (-probability, new_program))
-                        new_program.probability[(self.hash_G, S)] = probability
+                        new_program.probability[(self.G.hash, S)] = probability
 
         return succ

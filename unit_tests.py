@@ -267,8 +267,8 @@ class TestSum(unittest.TestCase):
         """
         Check if the sampling algorithm samples according to the correct probabilities using a chi_square test
         """
-        K = 10_000  # number of samples from the L-th first programs
-        L = 100  # we test the probabilities of the first L programs are ok
+        K = 20_000  # number of samples from the L-th first programs
+        L = 50  # we test the probabilities of the first L programs are ok
         alpha = 0.05  # threshold to reject the "H0 hypothesis"
 
         deepcoder = dsl.DSL(semantics, primitive_types)
@@ -313,7 +313,7 @@ class TestSum(unittest.TestCase):
         Check if sqrt_sampling algorithm samples according to the correct probabilities
         """
         K = 300_000  # number of samples from the L-th first programs
-        L = 1000  # we test the probabilities of the first L programs are ok
+        L = 50  # we test the probabilities of the first L programs are ok
 
         deepcoder = dsl.DSL(semantics, primitive_types)
         type_request = Arrow(List(INT), List(INT))
@@ -342,7 +342,7 @@ class TestSum(unittest.TestCase):
 
         random_ratios = random.sample(ratios, 5)
         for r in random_ratios:
-            self.assertAlmostEqual(ratios[0], r, 2)
+            self.assertAlmostEqual(ratios[0], r, 1)
 
 
 if __name__ == "__main__":

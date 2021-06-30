@@ -29,14 +29,14 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
     '''
     Run the algorithm until either timeout or 1M programs, and for each program record probability and time of output
     '''
-    print("Running: %s" % algorithm.__name__)
+    print("\nRunning: %s" % algorithm.__name__)
     search_time = 0
     evaluation_time = 0
     gen = algorithm(pcfg, **param)
     found = False
     # print(dsl)
     # print(pcfg)
-    print("examples", examples)
+    # print("examples", examples)
     if name_algo == "SQRT":
         _ = next(gen)  
         print("initialised")
@@ -49,19 +49,28 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
 
         if algorithm in reconstruct:
             target_type = pcfg.start[0]
-            program = dsl.reconstruct_from_compressed(program, target_type)
+            program = reconstruct_from_compressed(program, target_type)
         # print(program)
 
         if not program.probability:
             pcfg.probability_program(pcfg.start, program)
-        # print(program.probability, program)
+
+        # print(program)
 
         if program == -1:
             break
 
         evaluation_time -= time.perf_counter()
-        if all([program.eval(dsl, input_, i) == output for i,(input_,output) in enumerate(examples)]):
+
+        correct = True
+        i = 0
+        while correct and i < len(examples):
+            input_,output = examples[i]
+            correct = program.eval(dsl, input_, i) == output
+            i += 1
+        if correct:
             found = True
+
         evaluation_time += time.perf_counter()
 
 
@@ -79,11 +88,11 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
 
 list_algorithms = [
     (heap_search, 'heap search', {}), 
-    # (sqrt_sampling, 'SQRT', {}), 
-    # (a_star, 'A*', {}),
-    # (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
-    # (bfs, 'bfs', {'beam_width' : 50000}),
-    # (dfs, 'dfs', {}), 
+    (sqrt_sampling, 'SQRT', {}), 
+    (a_star, 'A*', {}),
+    (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
+    (bfs, 'bfs', {'beam_width' : 50000}),
+    (dfs, 'dfs', {}), 
 # sort and add ???????
     ]
 
@@ -95,8 +104,9 @@ for i in range_experiments:
     with open(r'tmp/list_{}.pickle'.format(str(i)), 'rb') as f:
         name_task, dsl, pcfg, examples = pickle.load(f)
 
+    print("\nSolving task number {} called {}".format(i, name_task))
+    print("Set of examples:\n", examples)
     for algo, name_algo, param in list_algorithms:
-        print("\nSolving task number {} called {}".format(i, name_task))
 
         program, search_time, evaluation_time, nb_programs = run_algorithm(dsl, examples, pcfg, algo, name_algo, param)
         result[name_algo] = (name_task, search_time, evaluation_time, nb_programs)
@@ -105,17 +115,3 @@ for i in range_experiments:
             pickle.dump(result, f)
 
     result.clear()
-
-
-# from dreamcoder.PCFG.DSL.deepcoder import *
-
-# deepcoder = DSL(semantics, primitive_types, no_repetitions)
-# t = Arrow(List(INT),List(INT))
-# deepcoder_PCFG_t = deepcoder.DSL_to_Random_PCFG(t, alpha = .7, max_program_depth = 5)
-
-# examples = deque()
-# examples.append((([1,2,3,8], None), [8]))
-# examples.append((([4,2,3,9,6,4], None), [6]))
-
-# param = {}
-# print(run_algorithm(deepcoder, examples, deepcoder_PCFG_t, heap_search, "heap_search", param))
