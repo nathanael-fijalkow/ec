@@ -168,7 +168,7 @@ with open('tmp/all_grammars.pickle', 'rb') as f:
                 Q = Q, 
                 upper_bound_type_size = 8,
                 min_variable_depth = 1,
-                max_program_depth = 3)
+                max_program_depth = 5)
 
             logging.debug('PCFG: %s'%format(pcfg))
 

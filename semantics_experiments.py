@@ -93,7 +93,7 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
             found = True
         evaluation_time += time.perf_counter()
 
-        if nb_programs % 10_000 == 0:
+        if nb_programs % 100_000 == 0:
             logging.info('tested {} programs'.format(nb_programs))
 
         if found:
@@ -113,11 +113,11 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
 
 list_algorithms = [
     (heap_search, 'heap search', {}), 
-    # (sqrt_sampling, 'SQRT', {}), 
+    (sqrt_sampling, 'SQRT', {}), 
     (a_star, 'A*', {}),
-    # (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
-    # (bfs, 'bfs', {'beam_width' : 50000}),
-    # (dfs, 'dfs', {}), 
+    (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
+    (bfs, 'bfs', {'beam_width' : 50000}),
+    (dfs, 'dfs', {}), 
 # sort and add ???????
     ]
 
