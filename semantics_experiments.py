@@ -8,10 +8,12 @@ from dreamcoder.grammar import *
 
 # Import algorithms
 from dreamcoder.PCFG.Algorithms.heap_search import heap_search
+from dreamcoder.PCFG.Algorithms.heap_search_naive import heap_search_naive
 from dreamcoder.PCFG.Algorithms.a_star import a_star
 from dreamcoder.PCFG.Algorithms.threshold_search import threshold_search
 from dreamcoder.PCFG.Algorithms.dfs import dfs
 from dreamcoder.PCFG.Algorithms.bfs import bfs
+from dreamcoder.PCFG.Algorithms.sort_and_add import sort_and_add
 from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
 
 from collections import deque
@@ -40,7 +42,7 @@ total_number_programs = int(args.total_number_programs)
 range_task = range(int(args.range_task_begin), int(args.range_task_end))
 
 # Set of algorithms where we need to reconstruct the programs
-reconstruct = {dfs, bfs, threshold_search, a_star}
+reconstruct = {dfs, bfs, threshold_search, a_star, sort_and_add}
 
 def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
     '''
@@ -66,13 +68,13 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
             search_time += time.perf_counter()
             logging.info("Output the last program after {}".format(nb_programs))
             break # no next program            
-        search_time += time.perf_counter()
 
         # Reconstruction if needed
         if algorithm in reconstruct:
             target_type = pcfg.start[0]
             program = reconstruct_from_compressed(program, target_type)
-        logging.debug('program found: %s'%program)
+        search_time += time.perf_counter()
+        logging.debug('program found: {}'.format(program))
 
         if program == None:
             logging.info("Output the last program after {}".format(nb_programs))
@@ -112,13 +114,14 @@ def run_algorithm(dsl, examples, pcfg, algorithm, name_algo, param):
     return None, timeout, timeout, nb_programs
 
 list_algorithms = [
-    (heap_search, 'heap search', {}), 
-    (sqrt_sampling, 'SQRT', {}), 
-    (a_star, 'A*', {}),
-    (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
-    (bfs, 'bfs', {'beam_width' : 50000}),
-    (dfs, 'dfs', {}), 
-# sort and add ???????
+    # (heap_search, 'heap search', {}), 
+    (heap_search_naive, 'heap search naive', {}), 
+    # (sqrt_sampling, 'SQRT', {}), 
+    # (a_star, 'A*', {}),
+    # (threshold_search, 'threshold', {'initial_threshold' : 0.0001, 'scale_factor' : 10}), 
+    # (bfs, 'bfs', {'beam_width' : 50000}),
+    # (dfs, 'dfs', {}), 
+    # (sort_and_add, 'sort and add', {}), 
     ]
 
 for i in range_task:
