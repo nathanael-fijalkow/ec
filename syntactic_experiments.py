@@ -1,20 +1,20 @@
 # Import tools
-from dreamcoder.PCFG.type_system import *
-from dreamcoder.PCFG.program import *
-from dreamcoder.PCFG.cfg import *
-from dreamcoder.PCFG.pcfg import *
-from dreamcoder.PCFG.dsl import *
+from type_system import *
+from program import *
+from cfg import *
+from pcfg import *
+from dsl import *
 
 # Import DSL
-from dreamcoder.PCFG.DSL.deepcoder import *
+from DSL.deepcoder import *
 
 # Import algorithms
-from dreamcoder.PCFG.Algorithms.heap_search import heap_search
-from dreamcoder.PCFG.Algorithms.a_star import a_star
-from dreamcoder.PCFG.Algorithms.threshold_search import threshold_search
-from dreamcoder.PCFG.Algorithms.dfs import dfs
-from dreamcoder.PCFG.Algorithms.bfs import bfs
-from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
+from Algorithms.heap_search import heap_search
+from Algorithms.a_star import a_star
+from Algorithms.threshold_search import threshold_search
+from Algorithms.dfs import dfs
+from Algorithms.bfs import bfs
+from Algorithms.sqrt_sampling import sqrt_sampling
 
 import pickle
 import time

@@ -5,12 +5,12 @@ from math import sqrt
 
 from scipy.stats import chisquare
 
-import dreamcoder.PCFG.dsl as dsl
-from dreamcoder.PCFG.DSL.deepcoder import *
-from dreamcoder.PCFG.Algorithms.heap_search import heap_search
-from dreamcoder.PCFG.Algorithms.a_star import a_star
-from dreamcoder.PCFG.Algorithms.sqrt_sampling import sqrt_sampling
-from dreamcoder.PCFG.Algorithms.threshold_search import bounded_threshold
+import dsl as dsl
+from DSL.deepcoder import *
+from Algorithms.heap_search import heap_search
+from Algorithms.a_star import a_star
+from Algorithms.sqrt_sampling import sqrt_sampling
+from Algorithms.threshold_search import bounded_threshold
 
 
 class TestSum(unittest.TestCase):
